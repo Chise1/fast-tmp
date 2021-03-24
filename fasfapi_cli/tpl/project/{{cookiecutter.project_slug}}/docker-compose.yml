@@ -1,0 +1,10 @@
+version: '3'
+services:
+  {{cookiecutter.project_slug}}:
+    build: .
+    env_file:
+      - .env
+    ports:
+      - '8000:8000'
+    image: {{cookiecutter.project_slug}}
+    command: uvicorn {{cookiecutter.project_slug}}.main:app --port 8000 --host 0.0.0.0
