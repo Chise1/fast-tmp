@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "fastapi-cli"
+version = "0.1.0"
+description = ""
+authors = ["Chise1 <chise123@live.com>"]
+include = ["LICENSE", "README.md"]
+license = "Apache-2.0"
+repository = "https://github.com/Chise1/fastapi-cli"
+
+[tool.poetry.dependencies]
+python = "^3.7"
+
+[tool.poetry.dev-dependencies]
+python-dotenv = "^0.15.0"
+
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+
+[[tool.poetry.source]]
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+name = "tuna"
+default = true
