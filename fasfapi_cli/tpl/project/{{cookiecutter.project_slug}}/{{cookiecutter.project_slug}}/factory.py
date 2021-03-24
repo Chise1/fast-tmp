@@ -1,11 +1,10 @@
 from starlette.applications import Starlette
 # from starlette.middleware.sessions import SessionMiddleware
-from fast_tmp.amis_app import AmisAPI
+from tortoise import Tortoise
+from tortoise.contrib.fastapi import register_tortoise
 from fast_tmp.conf import settings
 from starlette.middleware.cors import CORSMiddleware
-from fast_tmp import factory
-# from fast_tmp.depends.cas import cas_middleware
-# from fast_tmp.redis import AsyncRedisUtil
+from fastapi import FastAPI
 from {{cookiecutter.project_slug}}.apps.api import {{cookiecutter.project_slug}}_app
 
 def init_app(main_app: Starlette):
@@ -20,13 +19,13 @@ def init_app(main_app: Starlette):
         # await AsyncRedisUtil.close()
 
 
-def create_app() -> AmisAPI:
-    app = AmisAPI(title='fast_tmp example', debug=settings.DEBUG)
-    settings.app = app
+def create_app() -> FastAPI:
+    app = FastAPI(title='{{cookiecutter.project_slug}}', debug=settings.DEBUG)
+    # 先注册app
 
-    r_app = factory.create_fast_tmp_app()
-    app.mount(settings.FAST_TMP_URL, r_app)
-    app.mount("/api",{{cookiecutter.project_slug}}_app)
+    #注册app的位置,注意：导入先执行
+
+    # cors
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
@@ -37,7 +36,8 @@ def create_app() -> AmisAPI:
     # Sentry的插件
     # app.add_middleware(SentryAsgiMiddleware)
     # app.middleware("http")(cas_middleware)
-    # 在cookie存儲session
+    # 在cookie存储session
     # app.add_middleware(SessionMiddleware, secret_key=settings.CAS_SESSION_SECRET)
+    register_tortoise(app, config=settings.TORTOISE_ORM)
     init_app(app)
     return app

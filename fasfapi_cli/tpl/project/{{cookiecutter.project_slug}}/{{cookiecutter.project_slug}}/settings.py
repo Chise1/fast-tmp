@@ -8,15 +8,30 @@ dotenv.load_dotenv()
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 DEBUG = os.getenv("DEBUG") == "True"
-PROJECT_CODE = "AUDIT"
-SECRET_KEY = "asdfadagre"  # user密码的密钥
-# 注意：默认情况下创建的是同步的url，需要自己改为异步的驱动，
-DATABASE_URL = os.getenv(
-    "DATABASE_URL")  # 数据库链接，例如：postgresql+asyncpg://postgres:mininet@localhost/fasttmp
+SECRET_KEY = os.getenv("SECRET_KEY")
 
 SERVER_HOST = os.getenv("SERVER_HOST", '127.0.0.1')  # 服务器运行的IP或者域名
-# 存储静态文件的地方，主要是配合amis
-STATIC_ROOT = "static"
+TORTOISE_ORM = {
+    'connections': {
+        'default': {
+            'engine': 'tortoise.backends.aiomysql',
+            'credentials': {
+                'host': os.getenv("DB_HOST"),
+                'port': os.getenv("DB_PORT"),
+                'user': os.getenv("DB_USER"),
+                'password': os.getenv("DB_PASSWORD"),
+                'database': os.getenv("DB_NAME"),
+            }
+        },
+    },
+    'apps': {
+        'models': {
+            'models': [],  # 注册app.models
+            'default_connection': 'default',
+        }
+    }
+}
+
 # redis配置
 # REDIS_HOST = os.getenv("REDIS_HOST", "127.0.0.1")
 # REDIS_PORT = os.getenv("REDIS_PORT", 6379)
@@ -49,11 +64,3 @@ STATIC_ROOT = "static"
 #     )
 # )
 # LOGGER.addHandler(sh)
-
-
-# CAS账户登录依赖
-# CAS_LOGIN_URL = "/cas-lo"
-# 前端cookie存储session的配置，需要安装额外依赖包
-# CAS_SESSION_SECRET = "!secret"
-# 如果使用了cas依赖，则需要配置
-# CAS_SERVER_URL = "http://127.0.0.1:8000/cas"

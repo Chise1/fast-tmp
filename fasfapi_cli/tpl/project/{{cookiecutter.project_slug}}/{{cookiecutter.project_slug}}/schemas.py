@@ -1,3 +1,2 @@
 # 这里主要保存根据model生成的schema
-from pydantic_sqlalchemy import sqlalchemy_to_pydantic
 from pydantic import BaseModel
