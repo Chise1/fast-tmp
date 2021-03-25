@@ -8,11 +8,12 @@
 @info    :
 """
 from typing import Dict
+
 from tortoise import Tortoise
 
 
 def init_model(settings):
     tortoise_setting = settings.TORTOISE_ORM
-    apps: Dict[str, dict] = tortoise_setting['apps']
+    apps: Dict[str, dict] = tortoise_setting["apps"]
     for app_name, value in apps.items():
-        Tortoise.init_models(value['models'], app_name)
+        Tortoise.init_models(value["models"], app_name)
