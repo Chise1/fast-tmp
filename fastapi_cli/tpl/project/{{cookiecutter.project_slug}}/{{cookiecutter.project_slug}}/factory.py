@@ -4,7 +4,6 @@ from starlette.applications import Starlette
 from tortoise.contrib.fastapi import register_tortoise
 from starlette.middleware.cors import CORSMiddleware
 from fastapi import FastAPI
-from {{cookiecutter.project_slug}}.apps.api import {{cookiecutter.project_slug}}_app
 
 def init_app(main_app: Starlette):
     @main_app.on_event("startup")

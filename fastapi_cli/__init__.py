@@ -29,7 +29,7 @@ def startapp():
 
 
 @app.command()
-def start_project():
+def startproject():
     basedir = os.path.abspath(os.path.dirname(__file__))
     from cookiecutter.main import cookiecutter
     cookiecutter(basedir + "/tpl/project")
