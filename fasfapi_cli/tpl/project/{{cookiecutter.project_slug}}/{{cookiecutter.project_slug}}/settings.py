@@ -25,8 +25,8 @@ TORTOISE_ORM = {
         },
     },
     'apps': {
-        'models': {
-            'models': [],  # 注册app.models
+        'tmp': {
+            'models': ['tmp.models', 'aerich.models'],  # 注册app.models
             'default_connection': 'default',
         }
     }

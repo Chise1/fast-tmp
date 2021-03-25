@@ -1,13 +1,9 @@
-
+import importlib
 import os
-from typing import Dict
-
-from tortoise import Tortoise
-
 from . import global_settings
+from ..utils.db import init_model
 
 FASTAPI_VARIABLE = "FASTAPI_SETTINGS_MODULE"
-import importlib
 
 
 class Settings:
@@ -33,10 +29,3 @@ class Settings:
 
 
 settings = Settings()
-
-
-def init_model(settings):
-    tortoise_setting = settings.TORTOISE_ORM
-    apps: Dict[str, dict] = tortoise_setting['apps']
-    for app_name, value in apps.items():
-        Tortoise.init_models(value['models'], app_name)
