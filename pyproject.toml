@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "fastapi-cli"
+name = "fast-tmp"
 version = "0.1.0"
 description = ""
 authors = ["Chise1 <chise123@live.com>"]
@@ -44,4 +44,4 @@ default = true
 
 
 [tool.poetry.scripts]
-fastapi-cli = "fastapi_cli:main"
+fast-tmp = "fastapi_cli:main"
