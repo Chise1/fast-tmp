@@ -30,4 +30,11 @@ check: deps
 	bandit -x test -r $(checkfiles)
 
 test: deps
-	$(py_warn) $(test_settings) py.test
+	$(py_warn) $(test_settings) pytest
+
+
+
+testall: deps test
+	coverage report
+
+ci: check testall
