@@ -1,11 +1,16 @@
 import asyncio
 import importlib
 import os
-from fast_tmp.conf import settings
 import typer
 
 app = typer.Typer()
-settings.script_app = app
+try:
+    from fast_tmp.conf import settings
+
+    settings.script_app = app
+except Exception as e:
+    print(f"warning:{e}")
+    settings = None
 
 
 async def __create_superuser(username: str, password: str):
@@ -36,8 +41,9 @@ def startproject():
 
 
 # 导入自定义脚本执行方式
-for i in settings.EXTRA_SCRIPT:
-    mod = importlib.import_module(i)
+if settings:
+    for i in settings.EXTRA_SCRIPT:
+        mod = importlib.import_module(i)
 
 
 def main():

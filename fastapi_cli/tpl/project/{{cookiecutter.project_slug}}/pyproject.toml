@@ -12,6 +12,8 @@ uvicorn = "^0.13"
 python-dotenv = "^0.15.0"
 fast-tmp = "*"
 tortoise-orm = "^0.17.0"
+aerich = "^0.5.2"
+
 
 
 [tool.poetry.dev-dependencies]

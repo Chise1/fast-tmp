@@ -11,12 +11,17 @@ class Settings:
     def __init__(self):
         settings_module = os.environ.get(FASTAPI_VARIABLE)
         if not settings_module:
-            raise ImportError("未找到settings.py" f"你必须设置环境变量{FASTAPI_VARIABLE}=你的settings.py的位置")
+            project_slug = os.path.split(os.getcwd())[1]
+            os.environ.setdefault('FASTAPI_SETTINGS_MODULE', project_slug + ".settings")
         for setting in dir(global_settings):
             if setting.isupper():
                 setattr(self, setting, getattr(global_settings, setting))
         self.SETTINGS_MODULE = settings_module
-        mod = importlib.import_module(self.SETTINGS_MODULE)
+        try:
+            mod = importlib.import_module(self.SETTINGS_MODULE)
+        except Exception as e:
+            raise ImportError(f"导入settings报错:{e}")
+
         for setting in dir(mod):
             if setting.isupper():
                 setting_value = getattr(mod, setting)

@@ -1,4 +1,4 @@
-from typing import Container, List, Type, Union
+from typing import List, Type, Union, Iterable
 
 from pydantic import BaseModel
 from tortoise import Model, fields
@@ -9,11 +9,12 @@ from fast_tmp.utils.password import make_password, verify_password
 class Permission(Model):
     label = fields.CharField(max_length=128)
     codename = fields.CharField(max_length=128, unique=True)
+    groups: fields.ManyToManyRelation['Group']
 
     @classmethod
     def make_permission(
-        cls,
-        model: Type[BaseModel],
+            cls,
+            model: Type[BaseModel],
     ):
         """
         生成model对应的权限
@@ -65,7 +66,7 @@ class User(Model):
     password = fields.CharField(max_length=255)
     is_active = fields.BooleanField(default=True)
     is_superuser = fields.BooleanField(default=False)
-    groups = fields.ManyToManyField("fast_tmp.Group", related_name="users")
+    groups: fields.ManyToManyRelation['Group']
 
     def set_password(self, raw_password: str):
         """
@@ -92,12 +93,12 @@ class User(Model):
         """
         if self.is_superuser:
             return True
-        for permission_instance in self.perms:
+        for permission_instance in await self.perms:
             if permission_instance == perm:
                 return True
         return False
 
-    async def has_perms(self, perms: Container[Union[Permission, str]]) -> bool:
+    async def has_perms(self, perms: Iterable[Union[Permission, str]]) -> bool:
         """
         根据permission的codename进行判定
         """
@@ -121,7 +122,7 @@ class User(Model):
 class Group(Model):
     name = fields.CharField(max_length=128, unique=True)
     permissions = fields.ManyToManyField("fast_tmp.Permission", related_name="groups")
-    users: fields.ManyToManyRelation[User]
+    users = fields.ManyToManyField("fast_tmp.User", related_name="groups")
 
     def __str__(self):
         return self.name
