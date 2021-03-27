@@ -14,7 +14,7 @@ python-multipart = "^0.0.5"
 python-jose = "^3.2.0"
 passlib = "^1.7.4"
 python-dotenv = "^0.15.0"
-fastapi-cli = "*"
+fast-tmp = "*"
 
 [tool.poetry.dev-dependencies]
 flake8 = "*"

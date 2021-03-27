@@ -7,6 +7,7 @@
 @Software: PyCharm
 @info    :
 """
+from typing import Container
 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
@@ -24,3 +25,4 @@ CAS_LOGOUT_CALLBACK_URL = "/cas-loutout-callback"
 HOME_URL = "/"
 CAS_CHECK_USER = "fast_tmp.func.get_userinfo"  # 检查用户的
 STATIC_APP = "static"
+EXTRA_SCRIPT:Container[str] = []  # 额外的脚本指令地址

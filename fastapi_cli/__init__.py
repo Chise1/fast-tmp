@@ -1,9 +1,11 @@
 import asyncio
+import importlib
 import os
-
+from tmp.conf import settings
 import typer
 
 app = typer.Typer()
+settings.script_app = app
 
 
 async def __create_superuser(username: str, password: str):
@@ -15,8 +17,6 @@ def createsuperuser(username: str, password: str):
     """
     创建超级用户
     """
-    project_slug = os.path.split(os.getcwd())[1]
-    os.environ.setdefault('FASTAPI_SETTINGS_MODULE', project_slug + ".settings")
     asyncio.run(__create_superuser(username, password))
     print(f"创建{username}成功")
 
@@ -33,6 +33,11 @@ def startproject():
     basedir = os.path.abspath(os.path.dirname(__file__))
     from cookiecutter.main import cookiecutter
     cookiecutter(basedir + "/tpl/project")
+
+
+# 导入自定义脚本执行方式
+for i in settings.EXTRA_SCRIPT:
+    mod = importlib.import_module(i)
 
 
 def main():
