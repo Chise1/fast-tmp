@@ -3,7 +3,7 @@ from typing import Container, List, Type, Union
 from pydantic import BaseModel
 from tortoise import Model, fields
 
-from tmp.utils.password import make_password, verify_password
+from fast_tmp.utils.password import make_password, verify_password
 
 
 class Permission(Model):

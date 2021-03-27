@@ -1,7 +1,7 @@
 import asyncio
 import importlib
 import os
-from tmp.conf import settings
+from fast_tmp.conf import settings
 import typer
 
 app = typer.Typer()

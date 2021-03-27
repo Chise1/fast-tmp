@@ -7,7 +7,7 @@ include = ["LICENSE", "README.md"]
 license = "Apache-2.0"
 packages = [
     { include = "fastapi_cli" },
-    { include = "tmp" }
+    { include = "fast_tmp" }
 ]
 repository = "https://github.com/Chise1/fastapi-cli"
 

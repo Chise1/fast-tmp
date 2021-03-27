@@ -2,7 +2,7 @@
 import binascii
 import hashlib
 
-from tmp.conf import settings
+from fast_tmp.conf import settings
 
 
 def make_password(raw_password: str) -> str:

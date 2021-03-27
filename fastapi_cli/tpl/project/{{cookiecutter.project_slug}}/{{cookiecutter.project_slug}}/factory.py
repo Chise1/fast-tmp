@@ -1,4 +1,4 @@
-from tmp.conf import settings #放第一个不要变
+from fast_tmp.conf import settings #放第一个不要变
 from starlette.applications import Starlette
 # from starlette.middleware.sessions import SessionMiddleware
 from tortoise.contrib.fastapi import register_tortoise

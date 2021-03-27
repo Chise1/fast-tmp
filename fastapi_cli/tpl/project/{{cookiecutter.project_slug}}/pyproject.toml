@@ -8,13 +8,11 @@ license = "Apache-2.0"
 [tool.poetry.dependencies]
 python = "^3.7"
 fastapi = "^0.63.0"
-watchgod = "^0.6"
 uvicorn = "^0.13"
-python-multipart = "^0.0.5"
-python-jose = "^3.2.0"
-passlib = "^1.7.4"
 python-dotenv = "^0.15.0"
 fast-tmp = "*"
+tortoise-orm = "^0.17.0"
+
 
 [tool.poetry.dev-dependencies]
 flake8 = "*"
