@@ -1,9 +1,11 @@
 import importlib
+import logging
 import os
 
 from ..utils.db import init_model
 from . import global_settings
 
+logger = logging.Logger(__name__)
 FASTAPI_VARIABLE = "FASTAPI_SETTINGS_MODULE"
 
 
@@ -29,7 +31,7 @@ class Settings:
         if not getattr(self, "SECRET_KEY"):
             raise AttributeError("SECRET_KEY不能为空")
         if not getattr(self, "TORTOISE_ORM"):
-            raise AttributeError("TORTOISE_ORM不能为空")
+            logger.warning("TORTOISE_ORM为空")
         else:
             init_model(self)
 

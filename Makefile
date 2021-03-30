@@ -29,12 +29,8 @@ check: deps
 	flake8 $(checkfiles)
 	bandit -x test -r $(checkfiles)
 
-test: deps
-	$(py_warn) $(test_settings) pytest
 
-
-
-testall: deps test
+test_sqlite:
+	$(py_warn) FASTAPI_SETTINGS_MODULE=tests.settings TORTOISE_TEST_DB=sqlite://:memory: pytest --cov-report=
+test: deps test_sqlite
 	coverage report
-
-ci: check testall

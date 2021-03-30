@@ -3,8 +3,6 @@ from typing import Iterable, List, Type, Union
 from pydantic import BaseModel
 from tortoise import Model, fields
 
-from fast_tmp.utils.password import make_password, verify_password
-
 
 class Permission(Model):
     label = fields.CharField(max_length=128)
@@ -72,12 +70,16 @@ class User(Model):
         """
         设置密码
         """
+        from fast_tmp.utils.password import make_password
+
         self.password = make_password(raw_password)
 
     def verify_password(self, raw_password: str) -> bool:
         """
         验证密码
         """
+        from fast_tmp.utils.password import verify_password
+
         return verify_password(raw_password, self.password)
 
     @property

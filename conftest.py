@@ -1,9 +1,11 @@
-# -*- encoding: utf-8 -*-
-"""
-@File    : conftest.py
-@Time    : 2021/3/25 12:36
-@Author  : chise
-@Email   : chise123@live.com
-@Software: PyCharm
-@info    :
-"""
+import os
+
+import pytest
+from tortoise.contrib.test import finalizer, initializer
+
+
+@pytest.fixture(scope="session", autouse=True)
+def initialize_tests(request):
+    db_url = os.environ.get("TORTOISE_TEST_DB", "sqlite://:memory:")
+    initializer(["tests.testmodels", "fast_tmp.models"], db_url=db_url, app_label="fast_tmp")
+    request.addfinalizer(finalizer)

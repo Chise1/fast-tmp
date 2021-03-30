@@ -11,7 +11,7 @@ fastapi = "^0.63.0"
 uvicorn = "^0.13"
 python-dotenv = "^0.15.0"
 fast-tmp = "*"
-tortoise-orm = "^0.17.0"
+tortoise-orm = {extras = ["accel"], version = "^0.17.1"}
 aerich = "^0.5.2"
 
 
