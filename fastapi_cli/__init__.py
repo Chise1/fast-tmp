@@ -13,16 +13,17 @@ except Exception as e:
     settings = None
 
 
-async def __create_superuser(username: str, password: str):
-    pass
-
-
 @app.command()
 def createsuperuser(username: str, password: str):
     """
     创建超级用户
     """
-    asyncio.run(__create_superuser(username, password))
+
+    async def create_superuser(username: str, password: str):
+        from fast_tmp.models import User
+        await User.create(username=username, password=password, is_superuser=True)
+
+    asyncio.run(create_superuser(username, password))
     print(f"创建{username}成功")
 
 

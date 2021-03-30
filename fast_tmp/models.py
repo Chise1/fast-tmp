@@ -1,4 +1,4 @@
-from typing import List, Type, Union, Iterable
+from typing import Iterable, List, Type, Union
 
 from pydantic import BaseModel
 from tortoise import Model, fields
@@ -9,12 +9,12 @@ from fast_tmp.utils.password import make_password, verify_password
 class Permission(Model):
     label = fields.CharField(max_length=128)
     codename = fields.CharField(max_length=128, unique=True)
-    groups: fields.ManyToManyRelation['Group']
+    groups: fields.ManyToManyRelation["Group"]
 
     @classmethod
     def make_permission(
-            cls,
-            model: Type[BaseModel],
+        cls,
+        model: Type[BaseModel],
     ):
         """
         生成model对应的权限
@@ -66,7 +66,7 @@ class User(Model):
     password = fields.CharField(max_length=255)
     is_active = fields.BooleanField(default=True)
     is_superuser = fields.BooleanField(default=False)
-    groups: fields.ManyToManyRelation['Group']
+    groups: fields.ManyToManyRelation["Group"]
 
     def set_password(self, raw_password: str):
         """
