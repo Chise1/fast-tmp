@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "fast-tmp"
-version = "0.1.1"
+version = "0.1.2"
 description = ""
 authors = ["Chise1 <chise123@live.com>"]
 include = ["LICENSE", "README.md"]
@@ -9,27 +9,12 @@ packages = [
     { include = "fastapi_cli" },
     { include = "fast_tmp" }
 ]
-repository = "https://github.com/Chise1/fastapi-cli"
+repository = "https://github.com/Chise1/fast-tmp"
 
 [tool.poetry.dependencies]
 python = "^3.7"
 cookiecutter = "^1.7.2"
 typer = "^0.3.2"
-pypika-tortoise = "^0.1.0"
-iso8601 = "^0.1.13"
-aiosqlite = "^0.16.0"
-pytz = "^2020.4"
-ciso8601 = { version = "^2.1.2", markers = "sys_platform != 'win32' and implementation_name == 'cpython'", optional = true }
-uvloop = { version = "^0.14.0", markers = "sys_platform != 'win32' and implementation_name == 'cpython'", optional = true }
-python-rapidjson = { version = "*", optional = true }
-asyncpg = { version = "*", optional = true }
-aiomysql = { version = "*", optional = true }
-asyncmy = { version = "*", optional = true }
-# Documentation tools, which should in dev-dependencies but has bug, https://github.com/readthedocs/readthedocs.org/issues/4912
-sphinx = { version = "*", optional = true }
-cloud_sptheme = { version = "*", optional = true }
-Pygments = { version = "*", optional = true }
-docutils = { version = "*", optional = true }
 
 [tool.poetry.dev-dependencies]
 python-dotenv = "^0.15.0"
