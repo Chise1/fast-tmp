@@ -11,11 +11,14 @@ try:
 except Exception as e:
     print(f"warning:{e}")
     settings = None
+
+
 async def create_superuser(username: str, password: str):
     from tortoise import Tortoise
     await Tortoise.init(config=settings.TORTOISE_ORM)
     from fast_tmp.models import User
     await User.create(username=username, password=password, is_superuser=True)
+
 
 @app.command()
 def createsuperuser(username: str, password: str):

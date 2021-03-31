@@ -14,7 +14,7 @@ class Settings:
         settings_module = os.environ.get(FASTAPI_VARIABLE)
         if not settings_module:
             project_slug = os.path.split(os.getcwd())[1]
-            os.environ.setdefault("FASTAPI_SETTINGS_MODULE", project_slug + ".settings")
+            settings_module = project_slug + ".settings"
         for setting in dir(global_settings):
             if setting.isupper():
                 setattr(self, setting, getattr(global_settings, setting))
