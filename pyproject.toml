@@ -31,7 +31,6 @@ pytest-asyncio = "*"
 asynctest = "*"
 bandit = "*"
 mypy = "*"
-aiosqlite = "^0.16.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
