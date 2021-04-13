@@ -14,7 +14,7 @@ SERVER_HOST = os.getenv("SERVER_HOST", '127.0.0.1')  # 服务器运行的IP或�
 TORTOISE_ORM = {
     'connections': {
         'default': {
-            'engine': 'tortoise.backends.aiomysql',
+            'engine': 'tortoise.backends.mysql',
             'credentials': {
                 'host': os.getenv("DB_HOST"),
                 'port': os.getenv("DB_PORT"),
