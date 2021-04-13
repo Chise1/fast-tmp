@@ -32,6 +32,9 @@ def createsuperuser(username: str, password: str):
 
 @app.command()
 def startapp():
+    """
+    创建app
+    """
     basedir = os.path.abspath(os.path.dirname(__file__))
     from cookiecutter.main import cookiecutter
     cookiecutter(basedir + "/tpl/app/")
@@ -39,6 +42,9 @@ def startapp():
 
 @app.command()
 def startproject():
+    """
+    创建项目
+    """
     basedir = os.path.abspath(os.path.dirname(__file__))
     from cookiecutter.main import cookiecutter
     cookiecutter(basedir + "/tpl/project")
