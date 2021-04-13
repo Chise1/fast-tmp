@@ -1,7 +1,9 @@
-from typing import Iterable, List, Type, Union
+from typing import Iterable, Sequence, Type, Union
 
 from pydantic import BaseModel
 from tortoise import Model, fields
+
+from fast_tmp.conf import settings
 
 
 class Permission(Model):
@@ -66,13 +68,16 @@ class User(Model):
     is_superuser = fields.BooleanField(default=False)
     groups: fields.ManyToManyRelation["Group"]
 
+    class Meta:
+        abstract = settings.AUTH_USER_MODEL_NAME != "User"
+
     def set_password(self, raw_password: str):
         """
         设置密码
         """
         from fast_tmp.utils.password import make_password
 
-        self.password = make_password(raw_password)
+        self.password = make_password(raw_password)  # mypy:ignore
 
     def verify_password(self, raw_password: str) -> bool:
         """
@@ -83,11 +88,11 @@ class User(Model):
         return verify_password(raw_password, self.password)
 
     @property
-    async def perms(self) -> List[str]:
+    async def perms(self) -> Sequence[str]:
         if not hasattr(self, "__perms"):
             permission_instances = await Permission.filter(groups__users=self.pk)
             self.__perms = [permission.codename for permission in permission_instances]
-        return self.__perms
+        return self.__perms  # mypy:ignore
 
     async def has_perm(self, perm: Union[Permission, str]) -> bool:
         """
@@ -123,8 +128,12 @@ class User(Model):
 
 class Group(Model):
     name = fields.CharField(max_length=128, unique=True)
-    permissions = fields.ManyToManyField("fast_tmp.Permission", related_name="groups")
-    users = fields.ManyToManyField("fast_tmp.User", related_name="groups")
+    permissions = fields.ManyToManyField(
+        f"{settings.AUTH_APP_NAME}.Permission", related_name="groups"
+    )
+    users = fields.ManyToManyField(
+        f"{settings.AUTH_APP_NAME}.{settings.AUTH_USER_MODEL_NAME}", related_name="groups"
+    )
 
     def __str__(self):
         return self.name
