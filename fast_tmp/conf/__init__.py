@@ -1,12 +1,11 @@
 import importlib
-import os
 from typing import Any, Dict, List, Optional, Union
 
 from fast_tmp.utils.db import init_model
 
 FASTAPI_VARIABLE = "FASTAPI_SETTINGS_MODULE"
 
-from pydantic import AnyHttpUrl, BaseSettings, EmailStr, HttpUrl, PostgresDsn, validator
+from pydantic import AnyHttpUrl, BaseSettings, HttpUrl, validator
 
 
 class Settings(BaseSettings):
@@ -16,16 +15,17 @@ class Settings(BaseSettings):
     AUTH_APP_NAME: str = "fast_tmp"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
     BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = []
+    SETTINGS_MODULE: str
 
     @validator("BACKEND_CORS_ORIGINS", pre=True)
-    def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[List[str], str]:
+    def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[
+        List[str], str]:
         if isinstance(v, str) and not v.startswith("["):
             return [i.strip() for i in v.split(",")]
         elif isinstance(v, (list, str)):
             return v
         raise ValueError(v)
 
-    PROJECT_NAME: str
     SENTRY_DSN: Optional[HttpUrl] = None
     SENTRY_ENVIROMENT: str = "development"
 
@@ -45,14 +45,10 @@ class Settings(BaseSettings):
 
     class Config:
         case_sensitive = True
+        env_file = '.env'
 
     def __init__(self):
         super(Settings, self).__init__()
-        settings_module = os.environ.get(FASTAPI_VARIABLE)
-        if not settings_module:
-            project_slug = os.path.split(os.getcwd())[1]
-            settings_module = project_slug + ".settings"
-        self.SETTINGS_MODULE = settings_module
         try:
             mod = importlib.import_module(self.SETTINGS_MODULE)
         except Exception as e:
@@ -68,6 +64,13 @@ class Settings(BaseSettings):
             warnings.warn("TORTOISE_ORM为空")
         else:
             init_model(self)
+        if self.SENTRY_DSN:
+            import sentry_sdk
+
+            sentry_sdk.init(
+                dsn=self.SENTRY_DSN,
+                environment=self.SENTRY_ENVIROMENT,
+            )
 
 
 settings = Settings()

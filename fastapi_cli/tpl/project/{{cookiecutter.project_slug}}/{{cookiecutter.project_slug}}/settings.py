@@ -1,16 +1,12 @@
 import os
-import dotenv
 
 # import sentry_sdk
 # from sentry_sdk.integrations.redis import RedisIntegration
 
-dotenv.load_dotenv()
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 DEBUG = os.getenv("DEBUG") == "True"
-SECRET_KEY = os.getenv("SECRET_KEY")
 
-SERVER_HOST = os.getenv("SERVER_HOST", '127.0.0.1')  # 服务器运行的IP或者域名
 TORTOISE_ORM = {
     'connections': {
         'default': {
