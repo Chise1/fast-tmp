@@ -16,6 +16,14 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
     BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = []
     SETTINGS_MODULE: str
+    DEBUG: bool = True
+
+    @validator("DEBUG", pre=True)
+    def get_debug(cls, v: str) -> bool:
+        if isinstance(v, str):
+            if v != "True":
+                return False
+        return True
 
     @validator("BACKEND_CORS_ORIGINS", pre=True)
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[
@@ -31,9 +39,9 @@ class Settings(BaseSettings):
 
     @validator("SENTRY_DSN", pre=True)
     def sentry_dsn_can_be_blank(cls, v: str) -> Optional[str]:
-        if len(v) == 0:
-            return None
-        return v
+        if v and len(v) > 0:
+            return v
+        return None
 
     DB_HOST: str
     DB_PORT: str
@@ -42,6 +50,7 @@ class Settings(BaseSettings):
     DB_NAME: str
     DB_TYPE: str = "mysql"
     TORTOISE_ORM: Optional[Dict[str, Any]] = None
+    EXTRA_SETTINGS: Dict[str, Any] = {}
 
     class Config:
         case_sensitive = True
@@ -57,20 +66,24 @@ class Settings(BaseSettings):
         for setting in dir(mod):
             if setting.isupper():
                 setting_value = getattr(mod, setting)
-                setattr(self, setting, setting_value)
-        if not getattr(self, "TORTOISE_ORM"):
-            import warnings
-
-            warnings.warn("TORTOISE_ORM为空")
-        else:
-            init_model(self)
+                if hasattr(self, setting):
+                    setattr(self, setting, setting_value)
+                else:
+                    self.EXTRA_SETTINGS[setting] = setting_value
         if self.SENTRY_DSN:
             import sentry_sdk
-
             sentry_sdk.init(
                 dsn=self.SENTRY_DSN,
                 environment=self.SENTRY_ENVIROMENT,
             )
 
+    def _init_model(self):
+        if not getattr(self, "TORTOISE_ORM"):
+            import warnings
+            warnings.warn("TORTOISE_ORM为空")
+        else:
+            init_model(self)
+
 
 settings = Settings()
+settings._init_model()
