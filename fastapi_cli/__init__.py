@@ -6,8 +6,6 @@ import typer
 app = typer.Typer()
 try:
     from fast_tmp.conf import settings
-
-    settings.script_app = app
 except Exception as e:
     print(f"warning:{e}")
     settings = None
@@ -17,7 +15,9 @@ async def create_superuser(username: str, password: str):
     from tortoise import Tortoise
     await Tortoise.init(config=settings.TORTOISE_ORM)
     from fast_tmp.models import User
-    await User.create(username=username, password=password, is_superuser=True)
+    user=User(username=username,is_superuser=True)
+    user.set_password(password)
+    await user.save()
 
 
 @app.command()
@@ -52,8 +52,9 @@ def startproject():
 
 # 导入自定义脚本执行方式
 if settings:
-    for i in settings.EXTRA_SCRIPT:
-        mod = importlib.import_module(i)
+    if settings.EXTRA_SETTINGS.get("EXTRA_SCRIPT"):
+        for i in settings.EXTRA_SETTINGS.get("EXTRA_SCRIPT"):
+            mod = importlib.import_module(i)
 
 
 def main():

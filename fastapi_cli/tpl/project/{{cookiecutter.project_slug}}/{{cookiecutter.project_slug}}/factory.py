@@ -5,6 +5,8 @@ from tortoise.contrib.fastapi import register_tortoise
 from starlette.middleware.cors import CORSMiddleware
 from fastapi import FastAPI
 
+from fast_tmp.depends.auth import registe_app
+
 settings._init_model()
 
 
@@ -23,7 +25,7 @@ def init_app(main_app: Starlette):
 def create_app() -> FastAPI:
     app = FastAPI(title='{{cookiecutter.project_slug}}', debug=settings.DEBUG)
     # 注册app的位置
-
+    registe_app(app)
     if settings.BACKEND_CORS_ORIGINS:
         app.add_middleware(
             CORSMiddleware,

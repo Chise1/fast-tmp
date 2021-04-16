@@ -13,7 +13,8 @@ python-dotenv = "^0.15.0"
 fast-tmp = "^0.1.5"
 tortoise-orm = {extras = ["accel"], version = "^0.17.1"}
 aerich = "^0.5.2"
-
+python-jose = "^3.2.0"
+python-multipart = "^0.0.5"
 
 
 [tool.poetry.dev-dependencies]

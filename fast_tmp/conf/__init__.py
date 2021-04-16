@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = []
     SETTINGS_MODULE: str
     DEBUG: bool = True
+    LOGIN_URL: str = "/api-token-auth"
 
     @validator("DEBUG", pre=True)
     def get_debug(cls, v: str) -> bool:

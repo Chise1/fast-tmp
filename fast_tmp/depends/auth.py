@@ -1,14 +1,39 @@
+from datetime import timedelta
 from typing import Any, List, Optional
 
-from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError
 
 from fast_tmp.conf import settings
 from fast_tmp.models import User
-from fast_tmp.utils.token import decode_access_token
+from fast_tmp.utils.token import create_access_token, decode_access_token
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl=settings.FAST_TMP_URL + "/auth/token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl=settings.LOGIN_URL)
+
+
+def registe_app(app: FastAPI):
+    """
+    注册权限认证路由
+    """
+
+    @app.post(settings.LOGIN_URL)
+    async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+        """
+        仅用于docs页面测试返回用
+        """
+        user = await authenticate_user(form_data.username, form_data.password)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect username or password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"sub": user.username, "id": user.pk}, expires_delta=access_token_expires
+        )
+        return {"access_token": access_token, "token_type": "bearer"}
 
 
 async def get_user(username: str) -> Optional[User]:
