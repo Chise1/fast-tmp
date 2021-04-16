@@ -45,7 +45,11 @@ class Settings(BaseSettings):
 
     DB_TYPE: str = "mysql"
     TORTOISE_ORM: Optional[Dict[str, Any]] = None
+    # 额外的配置信息
     EXTRA_SETTINGS: Dict[str, Any] = {}
+
+    # cas相关配置
+    CAS_SERVER_URL: Optional[str] = None
 
     class Config:
         case_sensitive = True
