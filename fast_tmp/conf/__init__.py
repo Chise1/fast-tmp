@@ -42,11 +42,6 @@ class Settings(BaseSettings):
             return v
         return None
 
-    DB_HOST: str
-    DB_PORT: str
-    DB_USER: str
-    DB_PASSWORD: str
-    DB_NAME: str
     DB_TYPE: str = "mysql"
     TORTOISE_ORM: Optional[Dict[str, Any]] = None
     EXTRA_SETTINGS: Dict[str, Any] = {}

@@ -1,4 +1,6 @@
 import os
+import dotenv
+dotenv.load_dotenv()
 
 # import sentry_sdk
 # from sentry_sdk.integrations.redis import RedisIntegration
