@@ -26,8 +26,7 @@ class Settings(BaseSettings):
         return True
 
     @validator("BACKEND_CORS_ORIGINS", pre=True)
-    def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[
-        List[str], str]:
+    def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[List[str], str]:
         if isinstance(v, str) and not v.startswith("["):
             return [i.strip() for i in v.split(",")]
         elif isinstance(v, (list, str)):
@@ -54,7 +53,7 @@ class Settings(BaseSettings):
 
     class Config:
         case_sensitive = True
-        env_file = '.env'
+        env_file = ".env"
 
     def __init__(self):
         super(Settings, self).__init__()
@@ -72,6 +71,7 @@ class Settings(BaseSettings):
                     self.EXTRA_SETTINGS[setting] = setting_value
         if self.SENTRY_DSN:
             import sentry_sdk
+
             sentry_sdk.init(
                 dsn=self.SENTRY_DSN,
                 environment=self.SENTRY_ENVIROMENT,
@@ -80,10 +80,10 @@ class Settings(BaseSettings):
     def _init_model(self):
         if not getattr(self, "TORTOISE_ORM"):
             import warnings
+
             warnings.warn("TORTOISE_ORM为空")
         else:
             init_model(self)
 
 
 settings = Settings()
-settings._init_model()

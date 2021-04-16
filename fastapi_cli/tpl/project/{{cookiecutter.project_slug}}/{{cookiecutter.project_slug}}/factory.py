@@ -1,9 +1,12 @@
-from fast_tmp.conf import settings #放第一个不要变
+from fast_tmp.conf import settings  # 放第一个不要变
 from starlette.applications import Starlette
 # from starlette.middleware.sessions import SessionMiddleware
 from tortoise.contrib.fastapi import register_tortoise
 from starlette.middleware.cors import CORSMiddleware
 from fastapi import FastAPI
+
+settings._init_model()
+
 
 def init_app(main_app: Starlette):
     @main_app.on_event("startup")
@@ -36,7 +39,7 @@ def create_app() -> FastAPI:
             dsn=settings.SENTRY_DSN,
             environment=settings.SENTRY_ENVIROMENT,
         )
-        #Sentry的插件
+        # Sentry的插件
         from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
         app.add_middleware(SentryAsgiMiddleware)
     # app.middleware("http")(cas_middleware)
