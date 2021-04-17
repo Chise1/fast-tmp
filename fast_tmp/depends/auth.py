@@ -95,7 +95,7 @@ def get_user_has_perms(perms: Optional[List[Any]]):
 
     async def user_has_perms(user: User = Depends(get_current_active_user)):
 
-        if perms and await user.has_perms(perms):
+        if not perms or await user.has_perms(perms):
             return user
         else:
             raise HTTPException(
