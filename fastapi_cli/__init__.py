@@ -15,7 +15,7 @@ async def create_superuser(username: str, password: str):
     from tortoise import Tortoise
     await Tortoise.init(config=settings.TORTOISE_ORM)
     from fast_tmp.models import User
-    user=User(username=username,is_superuser=True)
+    user = User(username=username, is_superuser=True)
     user.set_password(password)
     await user.save()
 
@@ -48,6 +48,16 @@ def startproject():
     basedir = os.path.abspath(os.path.dirname(__file__))
     from cookiecutter.main import cookiecutter
     cookiecutter(basedir + "/tpl/project")
+
+
+@app.command()
+def staticfile():
+    """
+    离线环境下的swagger静态文件
+    """
+    basedir = os.path.abspath(os.path.dirname(__file__))
+    from cookiecutter.main import cookiecutter
+    cookiecutter(basedir + "/tpl/static")
 
 
 # 导入自定义脚本执行方式
