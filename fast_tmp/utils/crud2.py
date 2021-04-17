@@ -1,4 +1,5 @@
-from typing import List, Optional
+import inspect
+from typing import Callable, List, Optional
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
@@ -8,82 +9,77 @@ from tortoise.query_utils import Q
 
 from fast_tmp.depends.auth import get_user_has_perms
 
-# def add_filter(func, filters: List[str] = None):
-#     signature = inspect.signature(func)
-#     res = []
-#     for k, v in signature.parameters.items():
-#         if k == "kwargs":
-#             continue
-#         res.append(v)
-#     if filters:
-#         for filter_ in filters:
-#             res.append(
-#                 inspect.Parameter(
-#                     filter_, kind=inspect.Parameter.KEYWORD_ONLY, annotation=str, default=None
-#                 )
-#             )  # fixme:之后支持根据字段类型进行自定义
-#     func.__signature__ = inspect.Signature(parameters=res, __validate_parameters__=False)
+
+class Empty_:
+    pass
+
+
+def add_filter(func: Callable, filters: List[str] = None):
+    signature = inspect.signature(func)
+    res = []
+    for k, v in signature.parameters.items():
+        if k == "kwargs":
+            continue
+        res.append(v)
+    if filters:
+        for filter_ in filters:
+            res.append(
+                inspect.Parameter(
+                    filter_, kind=inspect.Parameter.KEYWORD_ONLY, annotation=str, default=Empty_
+                )
+            )
+    func.__signature__ = inspect.Signature(parameters=res, __validate_parameters__=False)
 
 
 # fixme:等待测试
-# def create_list_route(
-#     route: APIRouter,
-#     path: str,
-#     model: Model,
-#     schema: BaseModel,
-#     codenames: Optional[List[str]] = None,
-#     filters: Optional[List[str]] = None,
-#     searchs: Optional[List[str]] = None,
-# ):
-#     """
-#     创建list的路由
-#     """
-#
-#     async def model_list(
-#         offset: int = 0,
-#         limit: int = 10,
-#         search: Optional[str] = None,
-#         **kwargs,
-#     ):
-#         count =await model.all().count()
-#         query = model.all().limit(limit).offset(offset)
-#         search_query = None
-#         filter_query = None
-#         if search and searchs:  # fixme:等待测试
-#             x=[Q(  **{f"{i}__like":search}) for i in searchs]
-#             if x:
-#                 q=x[0]
-#                 for i in x[1:]:
-#                     q=q|i
-#                 query=query.filter(q)
-#         if kwargs:
-#             s = []
-#             for k, v in kwargs.items():
-#                 if v:
-#                     if v == "null_":
-#                         s.append(getattr(model, k) == None)
-#                     else:
-#                         s.append(getattr(model, k) == v)
-#                 else:
-#                     pass
-#             if s:
-#                 for i in s:
-#                     query=query.filter()
-#         if search_query is not None and filter_query is not None:
-#             query = query.where(and_(search_query, filter_query))
-#             total_query = total_query.where(and_(search_query, filter_query))
-#         else:
-#             if search_query is not None:
-#                 query = query.where(search_query)
-#                 total_query = total_query.where(search_query)
-#             if filter_query is not None:
-#                 query = query.where(filter_query)
-#                 total_query = total_query.where(filter_query)
-#         data = session.execute(query).scalars().all()
-#         return {"total": total_query.scalar(), "items": [schema.from_orm(i) for i in data]}
-#
-#     add_filter(model_list, filters)
-#     route.get(path, codenames=codenames)(model_list)
+def create_list_route2(
+    route: APIRouter,
+    path: str,
+    model: Model,
+    schema: BaseModel,
+    codenames: Optional[List[str]] = None,
+    filters: Optional[List[str]] = None,
+    searchs: Optional[List[str]] = None,
+):
+    """
+    创建list的路由
+    """
+
+    async def model_list(
+        offset: int = 0,
+        limit: int = 10,
+        search: Optional[str] = None,
+        **kwargs,
+    ):
+        count = model.all()
+        query = model.all().limit(limit).offset(offset)
+        search_query = None
+        filter_query = None
+        if search and searchs:  # fixme:等待测试
+            x = [Q(**{f"{i}__like": search}) for i in searchs]
+            if x:
+                q = x[0]
+                for i in x[1:]:
+                    q = q | i
+                query = query.filter(q)
+                count = count.filter(q)
+        if kwargs:
+            s = {}
+            for k, v in kwargs.items():
+                if v and not isinstance(v, Empty_):
+                    s[k] = v
+                else:
+                    pass
+            if s:
+                query = query.filter(**s)
+                count = count.filter(**s)
+        data = await query
+        return {"total": await count.count(), "items": [schema.from_orm(i) for i in data]}
+
+    add_filter(model_list, filters)
+    route.get(path, dependencies=[Depends(get_user_has_perms(codenames))])(model_list)
+
+
 def create_list_route(
     route: APIRouter,
     path: str,
