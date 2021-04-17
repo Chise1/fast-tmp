@@ -45,6 +45,18 @@ def create_list_route(
     """
     创建list的路由
     """
+    if res_pydantic_model:
+        schema = res_pydantic_model
+    elif list_display:
+        schema = pydantic_model_creator(
+            model,
+            name=f"CREATORList{model.__name__}{path.replace('/', '_')}",
+            include=list_display,
+        )
+    else:
+        schema = pydantic_model_creator(
+            model, name=f"CREATORList{model.__name__}{path.replace('/', '_')}"
+        )
 
     async def model_list(
         offset: int = 0,
@@ -72,18 +84,6 @@ def create_list_route(
             if s:
                 query = query.filter(**s)
                 count = count.filter(**s)
-        if res_pydantic_model:
-            schema = res_pydantic_model
-        elif list_display:
-            schema = pydantic_model_creator(
-                model,
-                name=f"CREATORList{model.__name__}{path.replace('/', '_')}",
-                include=list_display,
-            )
-        else:
-            schema = pydantic_model_creator(
-                model, name=f"CREATORList{model.__name__}{path.replace('/', '_')}"
-            )
 
         data = await query
         return {"total": await count.count(), "items": [schema.from_orm(i) for i in data]}
@@ -100,21 +100,22 @@ def create_retrieve_route(
     codenames: Optional[Tuple[str, ...]] = None,
     res_pydantic_model: Optional[Type[BaseModel]] = None,
 ):
+    if res_pydantic_model:
+        schema = res_pydantic_model
+    elif list_display:
+        schema = pydantic_model_creator(
+            model,
+            name=f"CREATORRetrieve{model.__name__}{path.replace('/', '_')}ID",
+            include=list_display,
+        )
+    else:
+        schema = pydantic_model_creator(
+            model, name=f"CREATORRetrieve{model.__name__}{path.replace('/', '_')}ID"
+        )
+
     async def model_retrieve(
         id: int,
     ):
-        if res_pydantic_model:
-            schema = res_pydantic_model
-        elif list_display:
-            schema = pydantic_model_creator(
-                model,
-                name=f"CREATORRetrieve{model.__name__}{path.replace('/', '_')}ID",
-                include=list_display,
-            )
-        else:
-            schema = pydantic_model_creator(
-                model, name=f"CREATORRetrieve{model.__name__}{path.replace('/', '_')}ID"
-            )
         instance = await model.get(pk=id)
         return schema.from_orm(instance).dict()
 
@@ -149,45 +150,28 @@ def create_post_route(
     path: str,
     model: Type[Model],
     in_fields: Optional[Tuple[str, ...]] = None,
-    out_fields: Optional[Tuple[str, ...]] = None,
     codenames: Optional[Tuple[str, ...]] = None,
-    in_pydantic_model: Optional[Type[BaseModel]] = None,
-    out_pydantic_model: Optional[Type[BaseModel]] = None,
+    res_pydantic_model: Optional[Type[BaseModel]] = None,
 ):
-    if in_pydantic_model:
-        in_schema = in_pydantic_model
+    if res_pydantic_model:
+        schema = res_pydantic_model
     elif in_fields:
-        in_schema = pydantic_model_creator(
+        schema = pydantic_model_creator(
             model, name=f"CREATORPost{model.__name__}{path.replace('/', '_')}In", include=in_fields
         )
     else:
-        in_schema = pydantic_model_creator(
+        schema = pydantic_model_creator(
             model,
             name=f"CREATORPost{model.__name__}{path.replace('/', '_')}In",
             exclude_readonly=True,
         )
-    if out_pydantic_model:
-        out_schema = out_pydantic_model
-    elif out_fields:
-        out_schema = pydantic_model_creator(
-            model,
-            name=f"CREATORPost{model.__name__}{path.replace('/', '_')}Out",
-            include=out_fields,
-        )
-    else:
-        out_schema = pydantic_model_creator(
-            model, name=f"CREATORPost{model.__name__}{path.replace('/', '_')}Out"
-        )
 
     async def model_post(
-        info: in_schema,
+        info: schema,
     ):
-        instance = await model.create(**info.dict())
-        return out_schema.from_orm(instance)
+        await model.create(**info.dict())
 
-    route.post(
-        path, response_model=out_schema, dependencies=[Depends(get_user_has_perms(codenames))]
-    )(model_post)
+    route.post(path, dependencies=[Depends(get_user_has_perms(codenames))])(model_post)
 
 
 # fixme:等待测试
@@ -196,45 +180,29 @@ def create_put_route(
     path: str,
     model: Type[Model],
     in_fields: Optional[Tuple[str, ...]] = None,
-    out_fields: Optional[Tuple[str, ...]] = None,
     codenames: Optional[Tuple[str, ...]] = None,
-    in_pydantic_model: Optional[Type[BaseModel]] = None,
-    out_pydantic_model: Optional[Type[BaseModel]] = None,
+    res_pydantic_model: Optional[Type[BaseModel]] = None,
 ):
-    if in_pydantic_model:
-        in_schema = in_pydantic_model
+    if res_pydantic_model:
+        schema = res_pydantic_model
     elif in_fields:
-        in_schema = pydantic_model_creator(
+        schema = pydantic_model_creator(
             model, name=f"CREATORPut{model.__name__}{path.replace('/', '_')}In", include=in_fields
         )
     else:
-        in_schema = pydantic_model_creator(
+        schema = pydantic_model_creator(
             model,
             name=f"CREATORPut{model.__name__}{path.replace('/', '_')}In",
             exclude_readonly=True,
         )
-    if out_pydantic_model:
-        out_schema = out_pydantic_model
-    elif out_fields:
-        out_schema = pydantic_model_creator(
-            model, name=f"CREATORPut{model.__name__}{path.replace('/', '_')}Out", include=out_fields
-        )
-    else:
-        out_schema = pydantic_model_creator(
-            model, name=f"CREATORPut{model.__name__}{path.replace('/', '_')}Out"
-        )
 
     async def model_put(
         id: int,
-        info: in_schema,
+        info: schema,
     ):
-        instance = await model.get(pk=id)
-        await instance.update_from_dict(info.dict())
         await model.filter(pk=id).update(**info.dict())
-        return out_schema.from_orm(instance)
 
     route.put(
         path + "/{id}",
-        response_model=out_schema,
         dependencies=[Depends(get_user_has_perms(codenames))],
     )(model_put)
