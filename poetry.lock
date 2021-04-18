@@ -1280,7 +1280,7 @@ reference = "aliyun"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "420e5a7ea7227d780a4011fa2653dbcea1264cbc7653df92103fbad0361f5d4f"
+content-hash = "06a5f5f5bd78acbb0bc51f1c1b122e9b97d58634db0a38fc6bf132d83115637f"
 
 [metadata.files]
 aioredis = [

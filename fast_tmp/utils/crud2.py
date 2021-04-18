@@ -1,5 +1,5 @@
 import inspect
-from typing import Callable, Optional, Tuple, Type
+from typing import Callable, List, Optional, Tuple, Type
 
 from fastapi import APIRouter, Depends
 from pydantic.main import BaseModel
@@ -10,10 +10,6 @@ from tortoise.query_utils import Q
 
 from fast_tmp.depends.auth import get_user_has_perms
 from fast_tmp.utils.pydantic_creator import pydantic_offsetlimit_creator
-
-
-class Empty_:
-    pass
 
 
 def add_filter(func: Callable, filters: Optional[Tuple[str, ...]] = None):
@@ -27,14 +23,70 @@ def add_filter(func: Callable, filters: Optional[Tuple[str, ...]] = None):
         for filter_ in filters:
             res.append(
                 inspect.Parameter(
-                    filter_, kind=inspect.Parameter.KEYWORD_ONLY, annotation=str, default=Empty_
+                    filter_, kind=inspect.Parameter.KEYWORD_ONLY, annotation=str, default="__null__"
                 )
             )
-    # noinspection Mypy
+    # noinspection Mypy,PyArgumentList
     func.__signature__ = inspect.Signature(parameters=res, __validate_parameters__=False)
 
 
 def create_list_route(
+    route: APIRouter,
+    path: str,
+    model: Type[Model],
+    fields: Optional[Tuple[str, ...]] = None,
+    codenames: Optional[Tuple[str, ...]] = None,
+    searchs: Optional[Tuple[str, ...]] = None,
+    filters: Optional[Tuple[str, ...]] = None,
+    res_pydantic_model: Optional[Type[BaseModel]] = None,
+):
+    """
+    创建list的路由
+    """
+    if res_pydantic_model:
+        schema = res_pydantic_model
+    elif fields:
+        schema = pydantic_model_creator(
+            model,
+            name=f"CREATORList{model.__name__}{path.replace('/', '_')}",
+            include=fields,
+        )
+    else:
+        schema = pydantic_model_creator(
+            model, name=f"CREATORList{model.__name__}{path.replace('/', '_')}"
+        )
+
+    async def model_list(
+        search: Optional[str] = None,
+        **kwargs,
+    ):
+        query = model.all()
+        if search and searchs:
+            x = [Q(**{f"{i}__contains": search}) for i in searchs]
+            if x:
+                q = x[0]
+                for i in x[1:]:
+                    q = q | i
+                query = query.filter(q)
+        if kwargs:
+            s = {}
+            for k, v in kwargs.items():
+                if not v == "__null__":
+                    s[k] = v
+                else:
+                    pass
+            if s:
+                query = query.filter(**s)
+        data = await query
+        return [schema.from_orm(i) for i in data]
+
+    add_filter(model_list, filters)
+    route.get(
+        path, dependencies=[Depends(get_user_has_perms(codenames))], response_model=List[schema]
+    )(model_list)
+
+
+def create_list_route_with_page(
     route: APIRouter,
     path: str,
     model: Type[Model],
@@ -80,7 +132,7 @@ def create_list_route(
         if kwargs:
             s = {}
             for k, v in kwargs.items():
-                if not v == Empty_:
+                if not v == "__null__":
                     s[k] = v
                 else:
                     pass
@@ -89,10 +141,12 @@ def create_list_route(
                 count = count.filter(**s)
 
         data = await query
-        return {"total": await count.count(), "items": [schema.from_orm(i) for i in data]}
+        return paging_schema(total=await count.count(), data=[schema.from_orm(i) for i in data])
 
     add_filter(model_list, filters)
-    route.get(path, dependencies=[Depends(get_user_has_perms(codenames))])(model_list)
+    route.get(
+        path, dependencies=[Depends(get_user_has_perms(codenames))], response_model=paging_schema
+    )(model_list)
 
 
 def create_retrieve_route(

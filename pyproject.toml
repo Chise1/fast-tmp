@@ -18,7 +18,7 @@ typer = "^0.3.2"
 
 [tool.poetry.dev-dependencies]
 python-dotenv = "^0.15.0"
-tortoise-orm = "^0.17.0"
+tortoise-orm = "^0.17.2"
 pydantic = "^1.8.1"
 fastapi = "^0.63.0"
 flake8 = "*"
