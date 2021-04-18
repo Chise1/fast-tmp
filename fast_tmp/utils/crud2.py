@@ -37,7 +37,7 @@ def create_list_route(
     route: APIRouter,
     path: str,
     model: Type[Model],
-    list_display: Optional[Tuple[str, ...]] = None,
+    fields: Optional[Tuple[str, ...]] = None,
     codenames: Optional[Tuple[str, ...]] = None,
     searchs: Optional[Tuple[str, ...]] = None,
     filters: Optional[Tuple[str, ...]] = None,
@@ -48,11 +48,11 @@ def create_list_route(
     """
     if res_pydantic_model:
         schema = res_pydantic_model
-    elif list_display:
+    elif fields:
         schema = pydantic_model_creator(
             model,
             name=f"CREATORList{model.__name__}{path.replace('/', '_')}",
-            include=list_display,
+            include=fields,
         )
     else:
         schema = pydantic_model_creator(
@@ -97,17 +97,17 @@ def create_retrieve_route(
     route: APIRouter,
     path: str,
     model: Type[Model],
-    list_display: Optional[Tuple[str, ...]] = None,
+    fields: Optional[Tuple[str, ...]] = None,
     codenames: Optional[Tuple[str, ...]] = None,
     res_pydantic_model: Optional[Type[BaseModel]] = None,
 ):
     if res_pydantic_model:
         schema = res_pydantic_model
-    elif list_display:
+    elif fields:
         schema = pydantic_model_creator(
             model,
             name=f"CREATORRetrieve{model.__name__}{path.replace('/', '_')}ID",
-            include=list_display,
+            include=fields,
         )
     else:
         schema = pydantic_model_creator(
@@ -150,15 +150,15 @@ def create_post_route(
     route: APIRouter,
     path: str,
     model: Type[Model],
-    in_fields: Optional[Tuple[str, ...]] = None,
+    fields: Optional[Tuple[str, ...]] = None,
     codenames: Optional[Tuple[str, ...]] = None,
     res_pydantic_model: Optional[Type[BaseModel]] = None,
 ):
     if res_pydantic_model:
         schema = res_pydantic_model
-    elif in_fields:
+    elif fields:
         schema = pydantic_model_creator(
-            model, name=f"CREATORPost{model.__name__}{path.replace('/', '_')}In", include=in_fields
+            model, name=f"CREATORPost{model.__name__}{path.replace('/', '_')}In", include=fields
         )
     else:
         schema = pydantic_model_creator(
@@ -180,15 +180,15 @@ def create_put_route(
     route: APIRouter,
     path: str,
     model: Type[Model],
-    in_fields: Optional[Tuple[str, ...]] = None,
+    fields: Optional[Tuple[str, ...]] = None,
     codenames: Optional[Tuple[str, ...]] = None,
     res_pydantic_model: Optional[Type[BaseModel]] = None,
 ):
     if res_pydantic_model:
         schema = res_pydantic_model
-    elif in_fields:
+    elif fields:
         schema = pydantic_model_creator(
-            model, name=f"CREATORPut{model.__name__}{path.replace('/', '_')}In", include=in_fields
+            model, name=f"CREATORPut{model.__name__}{path.replace('/', '_')}In", include=fields
         )
     else:
         schema = pydantic_model_creator(
