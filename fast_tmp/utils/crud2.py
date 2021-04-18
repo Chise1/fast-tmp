@@ -9,6 +9,7 @@ from tortoise.contrib.pydantic import pydantic_model_creator
 from tortoise.query_utils import Q
 
 from fast_tmp.depends.auth import get_user_has_perms
+from fast_tmp.utils.pydantic_creator import pydantic_offsetlimit_creator
 
 
 class Empty_:
@@ -58,6 +59,7 @@ def create_list_route(
         schema = pydantic_model_creator(
             model, name=f"CREATORList{model.__name__}{path.replace('/', '_')}"
         )
+    paging_schema = pydantic_offsetlimit_creator(schema)
 
     async def model_list(
         offset: int = 0,

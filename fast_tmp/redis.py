@@ -6,7 +6,14 @@ from aioredis import Redis
 
 class AsyncRedisUtil:
     """
-    异步redis操作
+    异步redis操作,
+    配置说明：
+        在startup配置：
+        await AsyncRedisUtil.init(host,port,...)，参数
+        在shutdown配置
+        await AsyncRedisUtil.close()
+    note:
+        exp是指过期时间,单位是秒.
     """
 
     r: Optional[Redis] = None
