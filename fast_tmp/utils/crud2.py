@@ -1,5 +1,5 @@
 import inspect
-from typing import Callable, List, Optional, Tuple, Type
+from typing import Callable, Optional, Tuple, Type
 
 from fastapi import APIRouter, Depends
 from pydantic.main import BaseModel
@@ -15,7 +15,7 @@ class Empty_:
     pass
 
 
-def add_filter(func: Callable, filters: List[str] = None):
+def add_filter(func: Callable, filters: Optional[Tuple[str, ...]] = None):
     signature = inspect.signature(func)
     res = []
     for k, v in signature.parameters.items():
@@ -29,6 +29,7 @@ def add_filter(func: Callable, filters: List[str] = None):
                     filter_, kind=inspect.Parameter.KEYWORD_ONLY, annotation=str, default=Empty_
                 )
             )
+    # noinspection Mypy
     func.__signature__ = inspect.Signature(parameters=res, __validate_parameters__=False)
 
 

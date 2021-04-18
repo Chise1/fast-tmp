@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 
+# type: ignore
 from jose import jwt
 
 from fast_tmp.conf import settings
