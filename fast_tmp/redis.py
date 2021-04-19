@@ -48,31 +48,31 @@ class AsyncRedisUtil:
         await cls.r.set(key, value, expire=exp)
 
     @classmethod
-    async def get(cls, key, default=None):
+    async def get(cls, key, default=None, encoding="utf-8"):
         assert cls.r, "must call init first"
-        value = await cls.r.get(key)
+        value = await cls.r.get(key, encoding=encoding)
         if value is None:
             return default
         return value
 
     @classmethod
-    async def hget(cls, name, key, default=0):
+    async def hget(cls, name, key, default=0, encoding="utf-8"):
         """
         缓存清除，接收list or str
         """
         assert cls.r, "must call init first"
-        v = await cls.r.hget(name, key)
+        v = await cls.r.hget(name, key, encoding=encoding)
         if v is None:
             return default
         return v
 
     @classmethod
-    async def get_or_set(cls, key, default=None, value_fun=None):
+    async def get_or_set(cls, key, default=None, value_fun=None, encoding="utf-8"):
         """
         获取或者设置缓存
         """
         assert cls.r, "must call init first"
-        value = await cls.r.get(key)
+        value = await cls.r.get(key, encoding=encoding)
         if value is None and default:
             return default
         if value is not None:
@@ -118,7 +118,7 @@ class AsyncRedisUtil:
         return await cls._exp_of_none(name, value, exp_of_none=exp_of_none, callback="incrby")
 
     @classmethod
-    async def multi_exec(cls):
+    def multi_exec(cls):
         """
         批量提交的方式,不确定是否为原子性
         eg:
