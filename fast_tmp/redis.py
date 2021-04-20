@@ -19,7 +19,8 @@ class AsyncRedisUtil:
     r: Optional[Redis] = None
 
     @classmethod
-    async def init(cls, host="localhost", port=6379, password=None, db=0, **kwargs):
+    async def init(cls, host="localhost", port=6379, password=None, db=0,
+                   **kwargs):
         cls.r = await aioredis.create_redis_pool(
             f"redis://{host}:{port}", password=password, db=db, **kwargs
         )
@@ -67,7 +68,8 @@ class AsyncRedisUtil:
         return v
 
     @classmethod
-    async def get_or_set(cls, key, default=None, value_fun=None, encoding="utf-8"):
+    async def get_or_set(cls, key, default=None, value_fun=None,
+                         encoding="utf-8"):
         """
         获取或者设置缓存
         """
@@ -93,17 +95,26 @@ class AsyncRedisUtil:
     @classmethod
     async def sadd(cls, name, values, exp_of_none=None):
         assert cls.r, "must call init first"
-        return await cls._exp_of_none(name, values, exp_of_none=exp_of_none, callback="sadd")
+        return await cls._exp_of_none(name, values, exp_of_none=exp_of_none,
+                                      callback="sadd")
 
     @classmethod
     async def hset(cls, name, key, value, exp_of_none=None):
         assert cls.r, "must call init first"
-        return await cls._exp_of_none(name, key, value, exp_of_none=exp_of_none, callback="hset")
+        return await cls._exp_of_none(name, key, value, exp_of_none=exp_of_none,
+                                      callback="hset")
+
+    @classmethod
+    async def hdel(cls, name, key, exp_of_none=None):
+        assert cls.r, "must call init first"
+        return await cls._exp_of_none(name, key, exp_of_none=None,
+                                      callback="hdel")
 
     @classmethod
     async def hincrby(cls, name, key, value=1, exp_of_none=None):
         assert cls.r, "must call init first"
-        return await cls._exp_of_none(name, key, value, exp_of_none=exp_of_none, callback="hincrby")
+        return await cls._exp_of_none(name, key, value, exp_of_none=exp_of_none,
+                                      callback="hincrby")
 
     @classmethod
     async def hincrbyfloat(cls, name, key, value, exp_of_none=None):
@@ -115,7 +126,8 @@ class AsyncRedisUtil:
     @classmethod
     async def incrby(cls, name, value=1, exp_of_none=None):
         assert cls.r, "must call init first"
-        return await cls._exp_of_none(name, value, exp_of_none=exp_of_none, callback="incrby")
+        return await cls._exp_of_none(name, value, exp_of_none=exp_of_none,
+                                      callback="incrby")
 
     @classmethod
     def multi_exec(cls):
