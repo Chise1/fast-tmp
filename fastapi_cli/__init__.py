@@ -2,8 +2,14 @@ import asyncio
 import importlib
 import os
 import typer
+import sys
 
 app = typer.Typer()
+for path in sys.path:
+    if path == os.getcwd():
+        break
+else:
+    sys.path.append(os.getcwd())
 try:
     from fast_tmp.conf import settings
 except Exception as e:
@@ -15,7 +21,7 @@ async def create_superuser(username: str, password: str):
     from tortoise import Tortoise
     await Tortoise.init(config=settings.TORTOISE_ORM)
     from fast_tmp.models import User
-    user=User(username=username,is_superuser=True)
+    user = User(username=username, is_superuser=True)
     user.set_password(password)
     await user.save()
 
