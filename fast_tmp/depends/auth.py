@@ -1,18 +1,18 @@
 from datetime import timedelta
-from typing import Any, List, Optional, Union
+from typing import Any, Optional, Tuple
 
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError
 
 from fast_tmp.conf import settings
-from fast_tmp.models import Permission, User
+from fast_tmp.models import User
 from fast_tmp.utils.token import create_access_token, decode_access_token
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=settings.LOGIN_URL)
 
 
-def registe_app(app: FastAPI):
+def register_app(app: FastAPI):
     """
     注册权限认证路由
     """
@@ -88,14 +88,14 @@ async def get_superuser(current_user: User = Depends(get_current_active_user)):
     return current_user
 
 
-def get_user_has_perms(perms: Optional[List[Any]]):
+def get_user_has_perms(perms: Optional[Tuple[Any, ...]]):
     """
     判定用户是否具有相关权限
     """
 
     async def user_has_perms(user: User = Depends(get_current_active_user)):
 
-        if perms and await user.has_perms(perms):
+        if not perms or await user.has_perms(perms):
             return user
         else:
             raise HTTPException(

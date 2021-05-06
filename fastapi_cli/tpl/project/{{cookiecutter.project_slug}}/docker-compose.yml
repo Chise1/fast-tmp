@@ -7,4 +7,4 @@ services:
     ports:
       - '8000:8000'
     image: {{cookiecutter.project_slug}}
-    command: uvicorn {{cookiecutter.project_slug}}.main:app --port 8000 --host 0.0.0.0
+    command: uvicorn {{cookiecutter.project_slug}}.app:app --port 8000 --host 0.0.0.0

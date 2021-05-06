@@ -56,6 +56,16 @@ def startproject():
     cookiecutter(basedir + "/tpl/project")
 
 
+@app.command()
+def staticfile():
+    """
+    离线环境下的swagger静态文件
+    """
+    basedir = os.path.abspath(os.path.dirname(__file__))
+    from cookiecutter.main import cookiecutter
+    cookiecutter(basedir + "/tpl/static")
+
+
 # 导入自定义脚本执行方式
 if settings:
     if settings.EXTRA_SETTINGS.get("EXTRA_SCRIPT"):

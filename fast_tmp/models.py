@@ -1,4 +1,4 @@
-from typing import Iterable, Sequence, Type, Union
+from typing import Iterable, Sequence, Tuple, Type, Union
 
 from pydantic import BaseModel
 from tortoise import Model, fields
@@ -105,7 +105,7 @@ class User(Model):
                 return True
         return False
 
-    async def has_perms(self, perms: Iterable[Union[Permission, str]]) -> bool:
+    async def has_perms(self, perms: Tuple[Union[Permission, str], ...]) -> bool:
         """
         根据permission的codename进行判定
         """

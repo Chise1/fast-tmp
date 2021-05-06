@@ -1,11 +1,11 @@
 import importlib
 from typing import Any, Dict, List, Optional, Union
 
+from pydantic import AnyHttpUrl, BaseSettings, HttpUrl, validator
+
 from fast_tmp.utils.db import init_model
 
 FASTAPI_VARIABLE = "FASTAPI_SETTINGS_MODULE"
-
-from pydantic import AnyHttpUrl, BaseSettings, HttpUrl, validator
 
 
 class Settings(BaseSettings):
@@ -49,7 +49,7 @@ class Settings(BaseSettings):
     EXTRA_SETTINGS: Dict[str, Any] = {}
 
     # cas相关配置
-    CAS_SERVER_URL: Optional[str] = None
+    CAS_SERVER_URL: str = "/cas/"
 
     class Config:
         case_sensitive = True
