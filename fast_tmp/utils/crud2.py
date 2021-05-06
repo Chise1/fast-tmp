@@ -64,30 +64,49 @@ def create_list_route(
         schema = create_pydantic_schema(
             model, f"CREATORList{model.__name__}{path.replace('/', '_')}{random_str}", fields=fields
         )
+    if searchs:
 
-    async def model_list(
-        search: Optional[str] = None,
-        **kwargs,
-    ):
-        query = model.all()
-        if search and searchs:
-            x = [Q(**{f"{i}__contains": search}) for i in searchs]
-            if x:
-                q = x[0]
-                for i in x[1:]:
-                    q = q | i
-                query = query.filter(q)
-        if kwargs:
-            s = {}
-            for k, v in kwargs.items():
-                if not v == "__null__":
-                    s[k] = v
-                else:
-                    pass
-            if s:
-                query = query.filter(**s)
-        data = await query
-        return [schema.from_orm(i) for i in data]
+        async def model_list(
+            search: Optional[str] = None,
+            **kwargs,
+        ):
+            query = model.all()
+            if search:
+                x = [Q(**{f"{i}__contains": search}) for i in searchs]
+                if x:
+                    q = x[0]
+                    for i in x[1:]:
+                        q = q | i
+                    query = query.filter(q)
+            if kwargs:
+                s = {}
+                for k, v in kwargs.items():
+                    if not v == "__null__":
+                        s[k] = v
+                    else:
+                        pass
+                if s:
+                    query = query.filter(**s)
+            data = await query
+            return [schema.from_orm(i) for i in data]
+
+    else:
+
+        async def model_list(
+            **kwargs,
+        ):
+            query = model.all()
+            if kwargs:
+                s = {}
+                for k, v in kwargs.items():
+                    if not v == "__null__":
+                        s[k] = v
+                    else:
+                        pass
+                if s:
+                    query = query.filter(**s)
+            data = await query
+            return [schema.from_orm(i) for i in data]
 
     add_filter(model_list, filters)
     route.get(
@@ -118,36 +137,60 @@ def create_list_route_with_page(
             fields=fields,
         )
     paging_schema = pydantic_offsetlimit_creator(schema)
+    if searchs:
 
-    async def model_list(
-        offset: int = 0,
-        limit: int = 10,
-        search: Optional[str] = None,
-        **kwargs,
-    ):
-        count = model.all()
-        query = model.all().limit(limit).offset(offset)
-        if search and searchs:
-            x = [Q(**{f"{i}__contains": search}) for i in searchs]
-            if x:
-                q = x[0]
-                for i in x[1:]:
-                    q = q | i
-                query = query.filter(q)
-                count = count.filter(q)
-        if kwargs:
-            s = {}
-            for k, v in kwargs.items():
-                if not v == "__null__":
-                    s[k] = v
-                else:
-                    pass
-            if s:
-                query = query.filter(**s)
-                count = count.filter(**s)
+        async def model_list(
+            offset: int = 0,
+            limit: int = 10,
+            search: Optional[str] = None,
+            **kwargs,
+        ):
+            count = model.all()
+            query = model.all().limit(limit).offset(offset)
+            if search:
+                x = [Q(**{f"{i}__contains": search}) for i in searchs]
+                if x:
+                    q = x[0]
+                    for i in x[1:]:
+                        q = q | i
+                    query = query.filter(q)
+                    count = count.filter(q)
+            if kwargs:
+                s = {}
+                for k, v in kwargs.items():
+                    if not v == "__null__":
+                        s[k] = v
+                    else:
+                        pass
+                if s:
+                    query = query.filter(**s)
+                    count = count.filter(**s)
 
-        data = await query
-        return paging_schema(total=await count.count(), data=[schema.from_orm(i) for i in data])
+            data = await query
+            return paging_schema(total=await count.count(), data=[schema.from_orm(i) for i in data])
+
+    else:
+
+        async def model_list(
+            offset: int = 0,
+            limit: int = 10,
+            **kwargs,
+        ):
+            count = model.all()
+            query = model.all().limit(limit).offset(offset)
+            if kwargs:
+                s = {}
+                for k, v in kwargs.items():
+                    if not v == "__null__":
+                        s[k] = v
+                    else:
+                        pass
+                if s:
+                    query = query.filter(**s)
+                    count = count.filter(**s)
+
+            data = await query
+            return paging_schema(total=await count.count(), data=[schema.from_orm(i) for i in data])
 
     add_filter(model_list, filters)
     route.get(
