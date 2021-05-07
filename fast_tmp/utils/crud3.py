@@ -9,25 +9,8 @@ from tortoise.contrib.pydantic import pydantic_model_creator
 from tortoise.query_utils import Q
 
 from fast_tmp.depends.auth import get_user_has_perms
+from fast_tmp.utils.crud_tools import add_filter
 from fast_tmp.utils.pydantic_creator import pydantic_offsetlimit_creator
-
-
-def add_filter(func: Callable, filters: Optional[Tuple[str, ...]] = None):
-    signature = inspect.signature(func)
-    res = []
-    for k, v in signature.parameters.items():
-        if k == "kwargs":
-            continue
-        res.append(v)
-    if filters:
-        for filter_ in filters:
-            res.append(
-                inspect.Parameter(
-                    filter_, kind=inspect.Parameter.KEYWORD_ONLY, annotation=str, default="__null__"
-                )
-            )
-    # noinspection Mypy,PyArgumentList
-    func.__signature__ = inspect.Signature(parameters=res, __validate_parameters__=False)
 
 
 def create_pydantic_schema(
