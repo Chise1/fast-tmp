@@ -26,6 +26,8 @@ def create_app() -> FastAPI:
     app = FastAPI(title='{{cookiecutter.project_slug}}', debug=settings.DEBUG)
     # 注册app的位置
     register_app(app)
+    from {{cookiecutter.project_slug}}.apps.api.v1 import router
+    app.include_router(router)
     if settings.BACKEND_CORS_ORIGINS:
         app.add_middleware(
             CORSMiddleware,
