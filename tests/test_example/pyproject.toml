@@ -1,0 +1,39 @@
+[tool.poetry]
+name = "test-example"
+version = "0.1.0"
+description = ""
+authors = []
+license = "Apache-2.0"
+
+[tool.poetry.dependencies]
+python = "^3.7"
+fastapi = "^0.63.0"
+uvicorn = {extras = ["standard"], version = "^0.13.4"}
+python-dotenv = "^0.15.0"
+fast-tmp = "^0.1.8"
+tortoise-orm = {extras = ["accel"], version = "^0.17.1"}
+aerich = "^0.5.2"
+python-jose = "^3.2.0"
+python-multipart = "^0.0.5"
+
+
+[tool.poetry.dev-dependencies]
+flake8 = "*"
+isort = "*"
+black = "^20.8b1"
+pytest = "*"
+pytest-xdist = "*"
+pytest-cov = "*"
+pytest-asyncio = "*"
+asynctest = "*"
+bandit = "*"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+# 谨慎使用，会导致包更新不及时
+[[tool.poetry.source]]
+url = "https://mirrors.aliyun.com/pypi/simple/"
+name = "aliyun"
+default = true

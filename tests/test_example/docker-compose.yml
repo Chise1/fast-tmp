@@ -1,0 +1,10 @@
+version: '3'
+services:
+  test_example:
+    build: .
+    env_file:
+      - .env
+    ports:
+      - '8000:8000'
+    image: test_example
+    command: uvicorn test_example.app:app --port 8000 --host 0.0.0.0
