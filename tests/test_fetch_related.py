@@ -62,6 +62,9 @@ async def run():
 
     tournament = Tournament(name="New Tournament")
     await tournament.save()
+    c = Event._meta.fields_map
+    c2 = Tournament._meta.fields_map
+    c3 = Address._meta.fields_map
     await Event(name="Without participants", tournament_id=tournament.id).save()
     event = Event(name="Test", tournament_id=tournament.id)
     await event.save()

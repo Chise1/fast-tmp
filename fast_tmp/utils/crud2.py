@@ -3,13 +3,53 @@ from typing import List, Optional, Tuple, Type
 from fastapi import APIRouter, Depends
 from pydantic.main import BaseModel
 from starlette import status
-from tortoise import Model
+from tortoise import (
+    BackwardFKRelation,
+    BackwardOneToOneRelation,
+    ForeignKeyFieldInstance,
+    ManyToManyFieldInstance,
+    Model,
+    OneToOneFieldInstance,
+    fields,
+)
 from tortoise.contrib.pydantic import pydantic_model_creator
 from tortoise.query_utils import Q
+from tortoise.queryset import QuerySet
 
 from fast_tmp.depends.auth import get_user_has_perms
 from fast_tmp.utils.crud_tools import add_filter
 from fast_tmp.utils.pydantic_creator import pydantic_offsetlimit_creator
+
+
+def add_fetch_field_search(
+    queryset: QuerySet, include_fields: Tuple[str, ...], exclude_fields: Tuple[str, ...]
+):
+    """
+    获取列表的时候对额外字段也进行获取
+    """
+    fields_map = queryset.model._meta.fields_map
+    select_fields = []
+    fetch_fields = []
+    for field_name, field in fields_map.items():
+        if isinstance(field, (ForeignKeyFieldInstance, OneToOneFieldInstance)):  # 外键,一对一
+            if (include_fields and field_name in include_fields) or (
+                exclude_fields and field_name not in exclude_fields
+            ):
+                select_fields.append(field_name)
+        elif isinstance(
+            field, (BackwardFKRelation, BackwardOneToOneRelation, ManyToManyFieldInstance)
+        ):  # 反向外键,反向一对一,多对多
+            if (include_fields and field_name in include_fields) or (
+                exclude_fields and field_name not in exclude_fields
+            ):
+                fetch_fields.append(field_name)
+        else:  # 一般键
+            pass
+        if select_fields:
+            queryset = queryset.select_related(*select_fields)
+        if fetch_fields:
+            queryset = queryset.prefetch_related(*fetch_fields)
+        return queryset
 
 
 async def check_filter_kwargs(kwargs, query, schema):
@@ -82,6 +122,7 @@ def create_list_route(
                     for i in x[1:]:
                         q = q | i
                     query = query.filter(q)
+            query = add_fetch_field_search(query, fields, exclude_fields)
             return await check_filter_kwargs(kwargs, query, schema)
 
     else:
@@ -90,6 +131,7 @@ def create_list_route(
             **kwargs,
         ):
             query = model.all()
+            query = add_fetch_field_search(query, fields, exclude_fields)
             return await check_filter_kwargs(kwargs, query, schema)
 
     add_filter(model_list, filters)
@@ -147,6 +189,7 @@ def create_list_route_with_page(
                         q = q | i
                     query = query.filter(q)
                     count = count.filter(q)
+            query = add_fetch_field_search(query, fields, exclude_fields)
             return await check_filter_kwargs_with_page(count, kwargs, query, schema, paging_schema)
 
     else:
@@ -158,6 +201,7 @@ def create_list_route_with_page(
         ):
             count = model.all()
             query = model.all().limit(limit).offset(offset)
+            query = add_fetch_field_search(query, fields, exclude_fields)
             return await check_filter_kwargs_with_page(count, kwargs, query, schema, paging_schema)
 
     add_filter(model_list, filters)
