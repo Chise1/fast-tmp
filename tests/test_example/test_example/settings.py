@@ -1,4 +1,5 @@
 import os
+
 import dotenv
 
 dotenv.load_dotenv()
@@ -11,16 +12,15 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEBUG = os.getenv("DEBUG") == "True"
 
 TORTOISE_ORM = {
-    'connections': {
-        'default': "sqlite://:memory:",
-
+    "connections": {
+        "default": "sqlite://:memory:",
     },
-    'apps': {
-        'fast_tmp': {
-            'models': ['fast_tmp.models', 'aerich.models'],  # 注册app.models
-            'default_connection': 'default',
+    "apps": {
+        "fast_tmp": {
+            "models": ["fast_tmp.models", "aerich.models"],  # 注册app.models
+            "default_connection": "default",
         }
-    }
+    },
 }
 EXTRA_SCRIPT = []  # 自定义执行脚本
 # redis配置

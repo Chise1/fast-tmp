@@ -10,7 +10,6 @@ from tortoise import (
     ManyToManyFieldInstance,
     Model,
     OneToOneFieldInstance,
-    fields,
 )
 from tortoise.contrib.pydantic import pydantic_model_creator
 from tortoise.query_utils import Q
@@ -21,9 +20,7 @@ from fast_tmp.utils.crud_tools import add_filter
 from fast_tmp.utils.pydantic_creator import pydantic_offsetlimit_creator
 
 
-def add_fetch_field_search(
-    queryset: QuerySet, include_fields: Tuple[str, ...], exclude_fields: Tuple[str, ...]
-):
+def add_fetch_field_search(queryset: QuerySet, include_fields: Tuple[str, ...]):
     """
     获取列表的时候对额外字段也进行获取
     """
@@ -32,16 +29,12 @@ def add_fetch_field_search(
     fetch_fields = []
     for field_name, field in fields_map.items():
         if isinstance(field, (ForeignKeyFieldInstance, OneToOneFieldInstance)):  # 外键,一对一
-            if (include_fields and field_name in include_fields) or (
-                exclude_fields and field_name not in exclude_fields
-            ):
+            if (include_fields and field_name in include_fields) or not include_fields:
                 select_fields.append(field_name)
         elif isinstance(
             field, (BackwardFKRelation, BackwardOneToOneRelation, ManyToManyFieldInstance)
         ):  # 反向外键,反向一对一,多对多
-            if (include_fields and field_name in include_fields) or (
-                exclude_fields and field_name not in exclude_fields
-            ):
+            if (include_fields and field_name in include_fields) or not include_fields:
                 fetch_fields.append(field_name)
         else:  # 一般键
             pass
@@ -86,7 +79,6 @@ def create_list_route(
     path: str,
     model: Type[Model],
     fields: Tuple[str, ...] = (),
-    exclude_fields: Tuple[str, ...] = (),
     computed_fields: Tuple[str, ...] = (),
     codenames: Optional[Tuple[str, ...]] = None,
     searchs: Optional[Tuple[str, ...]] = None,
@@ -105,7 +97,6 @@ def create_list_route(
             model,
             name=f"CREATORList{model.__name__}{path.replace('/', '_')}{random_str}",
             include=fields,
-            exclude=exclude_fields,
             computed=computed_fields,
         )
     if searchs:
@@ -122,7 +113,10 @@ def create_list_route(
                     for i in x[1:]:
                         q = q | i
                     query = query.filter(q)
-            query = add_fetch_field_search(query, fields, exclude_fields)
+            query = add_fetch_field_search(
+                query,
+                fields,
+            )
             return await check_filter_kwargs(kwargs, query, schema)
 
     else:
@@ -131,7 +125,7 @@ def create_list_route(
             **kwargs,
         ):
             query = model.all()
-            query = add_fetch_field_search(query, fields, exclude_fields)
+            query = add_fetch_field_search(query, fields)
             return await check_filter_kwargs(kwargs, query, schema)
 
     add_filter(model_list, filters)
@@ -148,7 +142,6 @@ def create_list_route_with_page(
     path: str,
     model: Type[Model],
     fields: Tuple[str, ...] = (),
-    exclude_fields: Tuple[str, ...] = (),
     computed_fields: Tuple[str, ...] = (),
     codenames: Optional[Tuple[str, ...]] = None,
     searchs: Optional[Tuple[str, ...]] = None,
@@ -167,7 +160,6 @@ def create_list_route_with_page(
             model,
             name=f"CREATORList{model.__name__}{path.replace('/', '_')}Page{random_str}",
             include=fields,
-            exclude=exclude_fields,
             computed=computed_fields,
         )
     paging_schema = pydantic_offsetlimit_creator(schema)
@@ -189,7 +181,7 @@ def create_list_route_with_page(
                         q = q | i
                     query = query.filter(q)
                     count = count.filter(q)
-            query = add_fetch_field_search(query, fields, exclude_fields)
+            query = add_fetch_field_search(query, fields)
             return await check_filter_kwargs_with_page(count, kwargs, query, schema, paging_schema)
 
     else:
@@ -201,7 +193,7 @@ def create_list_route_with_page(
         ):
             count = model.all()
             query = model.all().limit(limit).offset(offset)
-            query = add_fetch_field_search(query, fields, exclude_fields)
+            query = add_fetch_field_search(query, fields)
             return await check_filter_kwargs_with_page(count, kwargs, query, schema, paging_schema)
 
     add_filter(model_list, filters)
@@ -218,7 +210,6 @@ def create_retrieve_route(
     path: str,
     model: Type[Model],
     fields: Tuple[str, ...] = (),
-    exclude_fields: Tuple[str, ...] = (),
     computed_fields: Tuple[str, ...] = (),
     codenames: Optional[Tuple[str, ...]] = None,
     res_pydantic_model: Optional[Type[BaseModel]] = None,
@@ -232,7 +223,6 @@ def create_retrieve_route(
             model,
             name=f"CREATORRetrieve{model.__name__}{path.replace('/', '_')}ID{random_str}",
             include=fields,
-            exclude=exclude_fields,
             computed=computed_fields,
         )
 
@@ -278,7 +268,6 @@ def create_post_route(
     path: str,
     model: Type[Model],
     fields: Tuple[str, ...] = (),
-    exclude_fields: Tuple[str, ...] = (),
     computed_fields: Tuple[str, ...] = (),
     codenames: Optional[Tuple[str, ...]] = None,
     res_pydantic_model: Optional[Type[BaseModel]] = None,
@@ -292,7 +281,6 @@ def create_post_route(
             model,
             name=f"CREATORPost{model.__name__}{path.replace('/', '_')}{random_str}",
             include=fields,
-            exclude=exclude_fields,
             computed=computed_fields,
             exclude_readonly=True,
         )
@@ -315,7 +303,6 @@ def create_put_route(
     path: str,
     model: Type[Model],
     fields: Tuple[str, ...] = (),
-    exclude_fields: Tuple[str, ...] = (),
     computed_fields: Tuple[str, ...] = (),
     codenames: Optional[Tuple[str, ...]] = None,
     res_pydantic_model: Optional[Type[BaseModel]] = None,
@@ -329,7 +316,6 @@ def create_put_route(
             model,
             name=f"CREATORPut{model.__name__}{path.replace('/', '_')}{random_str}",
             include=fields,
-            exclude=exclude_fields,
             computed=computed_fields,
             exclude_readonly=True,
         )

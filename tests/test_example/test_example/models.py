@@ -61,17 +61,14 @@ class Event(Model):
     event_id = fields.BigIntField(pk=True)
     #: The name
     name = fields.TextField()
-    tournament: fields.ForeignKeyRelation[
-        "Tournament"] = fields.ForeignKeyField(
+    tournament: fields.ForeignKeyRelation["Tournament"] = fields.ForeignKeyField(
         "models.Tournament", related_name="events"
     )
-    reporter: fields.ForeignKeyNullableRelation[
-        Reporter] = fields.ForeignKeyField(
+    reporter: fields.ForeignKeyNullableRelation[Reporter] = fields.ForeignKeyField(
         "models.Reporter", null=True
     )
     participants: fields.ManyToManyRelation["Team"] = fields.ManyToManyField(
-        "models.Team", related_name="events", through="event_team",
-        backward_key="idEvent"
+        "models.Team", related_name="events", through="event_team", backward_key="idEvent"
     )
     modified = fields.DatetimeField(auto_now=True)
     token = fields.TextField(default=generate_token)
@@ -98,8 +95,7 @@ class Address(Model):
     street = fields.CharField(max_length=128)
 
     event: fields.OneToOneRelation[Event] = fields.OneToOneField(
-        "models.Event", on_delete=fields.CASCADE, related_name="address",
-        pk=True
+        "models.Event", on_delete=fields.CASCADE, related_name="address", pk=True
     )
 
 
@@ -107,6 +103,7 @@ class Team(Model):
     """
     Team that is a playing
     """
+
     id = fields.IntField(pk=True)
     name = fields.TextField()
 

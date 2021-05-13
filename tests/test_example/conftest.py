@@ -1,7 +1,6 @@
 import os
 
 import pytest
-
 from tortoise.contrib.test import finalizer, initializer
 
 
@@ -9,7 +8,7 @@ from tortoise.contrib.test import finalizer, initializer
 def initialize_tests(request):
     db_url = os.environ.get("TORTOISE_TEST_DB", "sqlite://:memory:")
     initializer(
-        ["fast_tmp.models","test_example.models"],
+        ["fast_tmp.models", "test_example.models"],
         db_url=db_url,
         app_label="fast_tmp",
     )
