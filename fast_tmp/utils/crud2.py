@@ -38,11 +38,11 @@ def add_fetch_field_search(queryset: QuerySet, include_fields: Tuple[str, ...]):
                 fetch_fields.append(field_name)
         else:  # 一般键
             pass
-        if select_fields:
-            queryset = queryset.select_related(*select_fields)
-        if fetch_fields:
-            queryset = queryset.prefetch_related(*fetch_fields)
-        return queryset
+    if select_fields:
+        queryset = queryset.select_related(*select_fields)
+    if fetch_fields:
+        queryset = queryset.prefetch_related(*fetch_fields)
+    return queryset
 
 
 async def check_filter_kwargs(kwargs, query, schema):
@@ -85,6 +85,8 @@ def create_list_route(
     filters: Optional[Tuple[str, ...]] = None,
     res_pydantic_model: Optional[Type[BaseModel]] = None,
     random_str: str = "",
+    allow_cycles: bool = True,
+    depth: int = 1,
     **kw,
 ):
     """
@@ -98,6 +100,8 @@ def create_list_route(
             name=f"CREATORList{model.__name__}{path.replace('/', '_')}{random_str}",
             include=fields,
             computed=computed_fields,
+            allow_cycles=allow_cycles,
+            depth=depth,
         )
     if searchs:
 

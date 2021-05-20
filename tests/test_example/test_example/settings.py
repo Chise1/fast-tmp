@@ -17,7 +17,7 @@ TORTOISE_ORM = {
     },
     "apps": {
         "fast_tmp": {
-            "models": ["fast_tmp.models", "aerich.models"],  # 注册app.models
+            "models": ["test_example.models", "fast_tmp.models", "aerich.models"],  # 注册app.models
             "default_connection": "default",
         }
     },
