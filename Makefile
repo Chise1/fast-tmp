@@ -36,3 +36,6 @@ test_sqlite:
 
 test: deps test_sqlite
 	coverage report
+
+publish: check
+	poetry publish

@@ -11,12 +11,12 @@ from tortoise import (
     Model,
     OneToOneFieldInstance,
 )
-from tortoise.contrib.pydantic import pydantic_model_creator
 from tortoise.query_utils import Q
 from tortoise.queryset import QuerySet
 
 from fast_tmp.depends.auth import get_user_has_perms
 from fast_tmp.utils.crud_tools import add_filter
+from fast_tmp.utils.pydantic import pydantic_model_creator
 from fast_tmp.utils.pydantic_creator import pydantic_offsetlimit_creator
 
 

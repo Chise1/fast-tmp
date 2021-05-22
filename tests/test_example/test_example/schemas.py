@@ -1,8 +1,7 @@
 # 这里主要保存根据model生成的schema
-from pydantic import BaseModel
-from tortoise.contrib.pydantic import pydantic_model_creator
+from fast_tmp.utils.pydantic import pydantic_model_creator
 
-from .models import Author, Book
+from .models import Book
 
 x1 = pydantic_model_creator(Book, name="x1", include=("name", "author_id", "author", "author.id"))
 x2 = pydantic_model_creator(

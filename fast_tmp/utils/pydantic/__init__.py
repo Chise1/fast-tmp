@@ -1,3 +1,2 @@
-from tortoise.contrib.pydantic.base import PydanticListModel, PydanticModel  # noqa
-from tortoise.contrib.pydantic.creator import pydantic_model_creator  # noqa
-from tortoise.contrib.pydantic.creator import pydantic_queryset_creator
+from fast_tmp.utils.pydantic.creator import pydantic_model_creator  # noqa
+from fast_tmp.utils.pydantic.creator import pydantic_queryset_creator  # type: ignore

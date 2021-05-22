@@ -1,15 +1,14 @@
-import inspect
-from typing import Callable, Optional, Tuple, Type
+from typing import Optional, Tuple, Type
 
 from fastapi import APIRouter, Depends
 from pydantic.main import BaseModel
 from starlette import status
 from tortoise import Model
-from tortoise.contrib.pydantic import pydantic_model_creator
 from tortoise.query_utils import Q
 
 from fast_tmp.depends.auth import get_user_has_perms
 from fast_tmp.utils.crud_tools import add_filter
+from fast_tmp.utils.pydantic import pydantic_model_creator
 from fast_tmp.utils.pydantic_creator import pydantic_offsetlimit_creator
 
 

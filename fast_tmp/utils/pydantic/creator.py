@@ -11,7 +11,6 @@ from tortoise.contrib.pydantic.utils import get_annotations
 if TYPE_CHECKING:  # pragma: nocoverage
     from tortoise.models import Model
 
-
 _MODEL_INDEX: Dict[str, Type[PydanticModel]] = {}
 
 
@@ -150,6 +149,8 @@ def pydantic_model_creator(
             * order of computed functions (as provided).
     :param exclude_readonly: Build a subset model that excludes any readonly fields
     :param meta_override: A PydanticMeta class to override model's values.
+    :param depth: submodel can be exclude_readonly.
+
     """
 
     # Fully qualified class name
@@ -215,6 +216,7 @@ def pydantic_model_creator(
     annotations = get_annotations(cls)
 
     # Properties and their annotations` store
+    # noinspection PyTypeChecker
     pconfig: Type[pydantic.main.BaseConfig] = type(
         "Config",
         (PydanticModel.Config,),
@@ -470,7 +472,7 @@ def pydantic_queryset_creator(
     # Copy the Model docstring over
     model.__doc__ = _cleandoc(cls)
     # The title of the model to hide the hash postfix
-    setattr(model.__config__, "title", name or f"{getattr(submodel.__config__,'title')}_list")
+    setattr(model.__config__, "title", name or f"{getattr(submodel.__config__, 'title')}_list")
     # Store the base class & submodel
     setattr(model.__config__, "submodel", submodel)
 
