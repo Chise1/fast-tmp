@@ -99,9 +99,8 @@ def get_user_has_perms(perms: Optional[Tuple[Any, ...]]):
             return user
         else:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect username or password",
-                headers={"WWW-Authenticate": "Bearer"},
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="User has no permissions.",
             )
 
     return user_has_perms
