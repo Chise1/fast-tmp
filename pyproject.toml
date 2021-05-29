@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "fast-tmp"
-version = "0.1.12"
+version = "0.1.22"
 description = ""
 authors = ["Chise1 <chise123@live.com>"]
 include = ["LICENSE", "README.md"]
@@ -18,7 +18,7 @@ typer = "^0.3.2"
 
 [tool.poetry.dev-dependencies]
 python-dotenv = "^0.15.0"
-tortoise-orm = "^0.17.2"
+tortoise-orm = "^0.17.3"
 pydantic = "^1.8.1"
 fastapi = "^0.63.0"
 flake8 = "*"

@@ -7,12 +7,12 @@ from fastapi.openapi.docs import (
 from fastapi.staticfiles import StaticFiles
 
 
-def add_swagger_url(app: FastAPI):
+def offline_swagger(app: FastAPI):
     """
-    离线环境下swagger页面的静态资源导入
+    离线环境下使用swagger,需要的静态文件可以执行 fast-tmp staticfile
     """
-    app.docs_url = None
-    app.redoc_url = None
+    assert app.redoc_url is None
+    assert app.docs_url is None
     app.mount("/static", StaticFiles(directory="static"), name="static")
 
     @app.get("/docs", include_in_schema=False)

@@ -1,4 +1,6 @@
 import importlib
+import os
+import sys
 from typing import Any, Dict, List, Optional, Union
 
 from pydantic import AnyHttpUrl, BaseSettings, HttpUrl, validator
@@ -58,6 +60,12 @@ class Settings(BaseSettings):
     def __init__(self):
         super(Settings, self).__init__()
         try:
+            workdir = os.getcwd()  # 把工作路径加入到代码执行里面
+            for path in sys.path:
+                if path == workdir:
+                    break
+            else:
+                sys.path.append(workdir)
             mod = importlib.import_module(self.SETTINGS_MODULE)
         except Exception as e:
             raise ImportError(f"导入settings报错:{e}")

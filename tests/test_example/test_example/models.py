@@ -18,13 +18,13 @@ class Author(Model):
 
 class Book(Model):
     name = fields.CharField(max_length=255)
-    author = fields.ForeignKeyField("models.Author", related_name="books")
+    author = fields.ForeignKeyField("fast_tmp.Author", related_name="books")
     rating = fields.FloatField()
 
 
 class BookNoConstraint(Model):
     name = fields.CharField(max_length=255)
-    author = fields.ForeignKeyField("models.Author", db_constraint=False)
+    author = fields.ForeignKeyField("fast_tmp.Author", db_constraint=False)
     rating = fields.FloatField()
 
 
@@ -62,13 +62,13 @@ class Event(Model):
     #: The name
     name = fields.TextField()
     tournament: fields.ForeignKeyRelation["Tournament"] = fields.ForeignKeyField(
-        "models.Tournament", related_name="events"
+        "fast_tmp.Tournament", related_name="events"
     )
     reporter: fields.ForeignKeyNullableRelation[Reporter] = fields.ForeignKeyField(
-        "models.Reporter", null=True
+        "fast_tmp.Reporter", null=True
     )
     participants: fields.ManyToManyRelation["Team"] = fields.ManyToManyField(
-        "models.Team", related_name="events", through="event_team", backward_key="idEvent"
+        "fast_tmp.Team", related_name="events", through="event_team", backward_key="idEvent"
     )
     modified = fields.DatetimeField(auto_now=True)
     token = fields.TextField(default=generate_token)
@@ -86,8 +86,8 @@ class Node(Model):
 
 
 class Tree(Model):
-    parent = fields.ForeignKeyField("models.Node", related_name="parent_trees")
-    child = fields.ForeignKeyField("models.Node", related_name="children_trees")
+    parent = fields.ForeignKeyField("fast_tmp.Node", related_name="parent_trees")
+    child = fields.ForeignKeyField("fast_tmp.Node", related_name="children_trees")
 
 
 class Address(Model):
@@ -95,7 +95,7 @@ class Address(Model):
     street = fields.CharField(max_length=128)
 
     event: fields.OneToOneRelation[Event] = fields.OneToOneField(
-        "models.Event", on_delete=fields.CASCADE, related_name="address", pk=True
+        "fast_tmp.Event", on_delete=fields.CASCADE, related_name="address", pk=True
     )
 
 
@@ -112,6 +112,7 @@ class Team(Model):
 
     class Meta:
         ordering = ["id"]
+        unique_together = ("name",)
 
     def __str__(self):
         return self.name
