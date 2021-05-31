@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "fast-tmp"
-version = "0.2.0"
+version = "0.1.23"
 description = ""
 authors = ["Chise1 <chise123@live.com>"]
 include = ["LICENSE", "README.md"]
