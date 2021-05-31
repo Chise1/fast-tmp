@@ -10,8 +10,7 @@ python = "^3.7"
 fastapi = "^0.63.0"
 uvicorn = {extras = ["standard"], version = "^0.13.4"}
 python-dotenv = "^0.15.0"
-fast-tmp = "^0.1.8"
-tortoise-orm = {extras = ["accel"], version = "^0.17.1"}
+fast-tmp = { version = "^0.1.23", extras = ['pj','accel'] }
 aerich = "^0.5.2"
 python-jose = "^3.2.0"
 python-multipart = "^0.0.5"
