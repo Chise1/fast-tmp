@@ -1,6 +1,6 @@
 from typing import List, Optional, Type
 
-from tortoise import Model, ManyToManyFieldInstance, BackwardFKRelation, ForeignKeyFieldInstance
+from tortoise import BackwardFKRelation, ForeignKeyFieldInstance, ManyToManyFieldInstance, Model
 from tortoise.fields import (
     BigIntField,
     BooleanField,
@@ -8,13 +8,14 @@ from tortoise.fields import (
     DateField,
     DatetimeField,
     DecimalField,
+    Field,
     FloatField,
     IntField,
     JSONField,
     SmallIntField,
     TextField,
     TimeDeltaField,
-    UUIDField, Field,
+    UUIDField,
 )
 from tortoise.fields.data import CharEnumFieldInstance, IntEnumFieldInstance
 
@@ -50,7 +51,7 @@ def _get_base_attr(field_type: Field, **kwargs) -> dict:
         required=field_type.required,
         mode=ItemModel.normal,
         size=FormWidgetSize.md,
-        value=field_type._get_default_value(),#fixme:检查tortoise-orm的获取默认值
+        value=field_type._get_default_value(),  # fixme:检查tortoise-orm的获取默认值
     )
     res.update(kwargs)
     return res
@@ -74,10 +75,9 @@ def get_columns_from_model(
         if isinstance(field_type, (IntEnumFieldInstance, CharEnumFieldInstance)):
             res.append(
                 Mapping(
-                    name=field, label=field,
-                    map={
-                        k: v for k, v in field_type.enum_type.choices.items()
-                    }
+                    name=field,
+                    label=field,
+                    map={k: v for k, v in field_type.enum_type.choices.items()},
                 )
             )
             # fixme:处理开关字段
@@ -85,11 +85,7 @@ def get_columns_from_model(
         elif isinstance(field_type, ManyToManyFieldInstance):
             continue
         else:
-            res.append(
-                Column(
-                    name=field, label=field
-                )
-            )
+            res.append(Column(name=field, label=field))
     return res
 
 
@@ -195,7 +191,7 @@ def get_controls_from_model(
                         label="开关",
                         trueValue=True,
                         falseValue=False,
-                        value=True  # fixme：测试是否具有默认值
+                        value=True,  # fixme：测试是否具有默认值
                     )
                 )
             else:
@@ -203,16 +199,14 @@ def get_controls_from_model(
                 res.append(
                     SelectItem(
                         options=[
-                            SelectOption(label=label, value=value)
-                            for value, label in enum_type
+                            SelectOption(label=label, value=value) for value, label in enum_type
                         ],
-                        **_get_base_attr(field_type, default={
-                            "label": "True",
-                            "value": True
-                        } if field_type.default else {
-                            "label": "False",
-                            "value": False
-                        }, ),
+                        **_get_base_attr(
+                            field_type,
+                            default={"label": "True", "value": True}
+                            if field_type.default
+                            else {"label": "False", "value": False},
+                        ),
                     ),
                 )
         elif isinstance(field_type, FloatField):
@@ -254,11 +248,7 @@ def get_controls_from_model(
                 )
             )
         elif isinstance(field_type, UUIDField):
-            res.append(
-                UUIDItem(
-                    **_get_base_attr(field_type), length=None
-                )
-            )
+            res.append(UUIDItem(**_get_base_attr(field_type), length=None))
         elif isinstance(field_type, ManyToManyFieldInstance):  # 多对多字段
             if field_type.generated:
                 res.append(
@@ -275,7 +265,7 @@ def get_controls_from_model(
                 res.append(
                     SelectItem(
                         **_get_base_attr(field_type, required=False),
-                        source=f'get:/{field_type.model_field_name}-selects',
+                        source=f"get:/{field_type.model_field_name}-selects",
                     )
                 )
         elif isinstance(field_type, ForeignKeyFieldInstance):
@@ -283,7 +273,7 @@ def get_controls_from_model(
                 res.append(
                     SelectItem(
                         **_get_base_attr(field_type, required=False),
-                        source=f'get:/{field_type.model_field_name}-selects',
+                        source=f"get:/{field_type.model_field_name}-selects",
                     )
                 )
         else:

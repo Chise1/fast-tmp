@@ -1,4 +1,3 @@
-
 from fast_tmp.admin.schema.abstract_schema import BaseAmisModel
 
 

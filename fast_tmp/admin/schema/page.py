@@ -12,7 +12,7 @@ class Page(BaseAmisModel):
     remark: Optional[str]
     aside: Optional[Union[BaseAmisModel, List[BaseAmisModel]]]
     toolbar: Optional[Union[BaseAmisModel, List[BaseAmisModel]]]
-    body:List[BaseAmisModel] = []
+    body: List[BaseAmisModel] = []
     className: Optional[str]
     cssVars: Optional[str]
     initApi: Optional[str]  # 获取初始数据

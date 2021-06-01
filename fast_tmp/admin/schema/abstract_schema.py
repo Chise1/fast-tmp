@@ -6,6 +6,10 @@ from fast_tmp.admin.schema.enums import ActionTypeEnum, ButtonLevelEnum, ButtonS
 
 
 class BaseAmisModel(BaseModel):
+    """
+    所有amis类的父类
+    """
+
     type: TypeEnum
 
 
@@ -13,6 +17,10 @@ AmisModel = TypeVar("AmisModel", bound=BaseAmisModel)
 
 
 class _Action(BaseAmisModel):
+    """
+    操作按钮
+    """
+
     type = TypeEnum.action
     label: str
     actionType: ActionTypeEnum
@@ -23,6 +31,10 @@ class _Action(BaseAmisModel):
 
 
 class Message(BaseModel):
+    """
+    消息框
+    """
+
     fetchSucss: Optional[str]
     fetchFailed: Optional[str]
     saveSuccess: Optional[str]

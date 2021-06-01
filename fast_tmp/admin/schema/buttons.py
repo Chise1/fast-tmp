@@ -19,4 +19,4 @@ from fast_tmp.admin.schema.frame import Drawer
 class Operation(BaseModel):
     type = TypeEnum.operation
     label = "操作"
-    buttons: List[_Action]=[]
+    buttons: List[_Action] = []

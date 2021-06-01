@@ -21,12 +21,12 @@ class ControlEnum(str, Enum):
     date = "date"
     datetime = "datetime"
     uuid = "uuid"
-    rich_text = 'rich-text'
-    time = 'time'
+    rich_text = "rich-text"
+    time = "time"
     mapping = "mapping"
-    transfer = 'transfer'
-    checkboxes = 'checkboxes'
-    picker = 'picker'
+    transfer = "transfer"
+    checkboxes = "checkboxes"
+    picker = "picker"
 
 
 class ItemModel(str, Enum):

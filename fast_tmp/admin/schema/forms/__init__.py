@@ -1,6 +1,8 @@
 from typing import Dict, List, Optional, Union
+
 from pydantic import BaseModel
-from fast_tmp.admin.schema.abstract_schema import BaseAmisModel, ApiUrl
+
+from fast_tmp.admin.schema.abstract_schema import ApiUrl, BaseAmisModel
 from fast_tmp.admin.schema.enums import TypeEnum
 from fast_tmp.admin.schema.forms.enums import ControlEnum, FormWidgetSize, ItemModel
 
@@ -10,6 +12,7 @@ class Column(BaseModel):
     """
     用于列表等的显示
     """
+
     type: ControlEnum = ControlEnum.text  # 把这个和schema获取的参数进行融合，保证schema获取的值可以使用
     name: str
     label: str
@@ -19,6 +22,7 @@ class Mapping(Column):
     """
     专门用来作为枚举显示用的
     """
+
     type = ControlEnum.mapping
     map: Dict[Union[int, str], str]  # map的值可以是html片段
 

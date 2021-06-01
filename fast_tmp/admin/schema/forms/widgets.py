@@ -4,7 +4,6 @@ from pydantic import HttpUrl
 from pydantic.main import BaseModel
 
 # from fast_tmp.admin.schema.abstract_schema import Action
-from fast_tmp.admin.schema.abstract_schema import _Action, ApiUrl
 from fast_tmp.admin.schema.forms import AbstractControl, Control  # , Limit
 from fast_tmp.admin.schema.forms.enums import ControlEnum
 
@@ -102,7 +101,7 @@ class DatetimeItem(Control):
     format: str = "YYYY-MM-DD HH:mm:ss"  # 'X'为时间戳格式,参考文档：
     # https://baidu.gitee.io/amis/zh-CN/docs/components/form/datetime
     inputFormat: str = "YYYY-MM-DD HH:mm:ss"  # 'X'为时间戳格式
-    shortcuts: List[str] = ([])  # "yesterday" ,"today", "tomorrow",now,{n}hoursago : n 小时前，例
+    shortcuts: List[str] = []  # "yesterday" ,"today", "tomorrow",now,{n}hoursago : n 小时前，例
     # 如：1daysago，下面用法相同,{n}hourslater : n 小时前，例如：1daysago
     utc: bool = False
     clearable: bool = True
@@ -113,9 +112,7 @@ class DatetimeItem(Control):
 class DateItem(Control):
     type = ControlEnum.date
     value: Optional[str]
-    format: str = (
-        "YYYY-MM-DD"  # 格式请参考文档：https://baidu.gitee.io/amis/zh-CN/docs/components/form/date
-    )  # 'X'为时间戳格式
+    format: str = "YYYY-MM-DD"  # 格式请参考文档：https://baidu.gitee.io/amis/zh-CN/docs/components/form/date  # 'X'为时间戳格式
     inputFormat: str = "YYYY-MM-DD"  # 'X'为时间戳格式
     shortcuts: List[str] = []  # "yesterday" ,"today", "tomorrow"
     utc: bool = False
@@ -130,7 +127,7 @@ class SwitchItem(Control):
     option: Optional[str]
     trueValue: Optional[int]
     falseValue: Optional[int]
-    value:Optional[bool]
+    value: Optional[bool]
 
 
 class RichTextItem(Control):
@@ -169,11 +166,12 @@ class UUIDItem(Control):
 
 class CheckboxesItem(Control):
     """
-     复选框
+    复选框
     """
+
     type = ControlEnum.checkboxes
     optional: Optional[Union[List[Dict[str, str]]]]  # 选项组
-    source: Union[str, ApiUrl]  # 动态选项组
+    source: str  # 动态选项组
     delimeter: bool = False  # 拼接符
     labelField: str = "label"  # 选项标签字段
     valueField: str = "value"  # 选项值字符
@@ -188,6 +186,7 @@ class DynaticCheckboxesItem(CheckboxesItem):
     """
     可变值复选框
     """
+
     creatable: bool = False  # 新增选项
     createBtnLabel: Optional[str]  # 新增选项
     addControls: Optional[List[str]]  # 自定义新增单项
@@ -227,7 +226,7 @@ class PickerItem(Control):
     # 列表选取，在功能上和 Select 类似，但它能显示更复杂的信息。默认和 Select 很像，但请看后面的 pickerSchema 设置。
     type = ControlEnum.picker
     options: Optional[List[Dict[str, str]]]  # 动态选项组
-    source: Optional[Union[str, ApiUrl]]
+    source: Optional[str]
     multiple: bool = False
     delimeter: bool = False  # 拼接符
     labelField: str = "label"  # 选项标签字段
@@ -238,6 +237,8 @@ class PickerItem(Control):
     modalMode: Optional[str]  # 配置弹出方式，默认为dialog，也可以配置drawer
     pickerSchema: Optional[Dict]  # 即用 List 类型的渲染，来展示列表信息。更多配置参考 CRUD
     embed: Optional[bool]  # 是否使用内嵌模式
+
+
 # class ButtonToolbarItem(Control):
 #     """
 #     按钮组

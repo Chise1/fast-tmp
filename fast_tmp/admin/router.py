@@ -1,6 +1,6 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, Path, Body
+from fastapi import APIRouter, Body, Depends, Path
 from jinja2 import TemplateNotFound
 from starlette.requests import Request
 from starlette.responses import RedirectResponse
@@ -10,9 +10,6 @@ from tortoise.fields import ManyToManyRelation
 from tortoise.transactions import in_transaction
 
 from .depends import get_model, get_model_resource, get_resources
-from fastapi_admin.resources import Model as ModelResource
-from fastapi_admin.responses import redirect
-from fastapi_admin.template import render_values, templates
 
 router = APIRouter()
 
@@ -24,8 +21,7 @@ async def list_view(
     resources=Depends(get_resources),
     model_resource: ModelResource = Depends(get_model_resource),
     resource: str = Path(...),
-    filters:List[str]=Body(...,description="过滤器"),
-
+    filters: List[str] = Body(..., description="过滤器"),
     page_size: int = 10,
     page_num: int = 1,
 ):
