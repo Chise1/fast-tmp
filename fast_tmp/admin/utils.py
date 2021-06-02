@@ -1,4 +1,4 @@
-from typing import List, Optional, Type
+from typing import List, Optional, Tuple, Type
 
 from tortoise import BackwardFKRelation, ForeignKeyFieldInstance, ManyToManyFieldInstance, Model
 from tortoise.fields import (
@@ -59,12 +59,12 @@ def _get_base_attr(field_type: Field, **kwargs) -> dict:
 
 def get_columns_from_model(
     model: Type[Model],
-    include: List[str] = None,
-    exclude: List[str] = None,
+    include: Tuple[str, ...] = (),
+    exclude: Tuple[str, ...] = (),
 ) -> List[Column]:
     """
     从pydantic_queryset_creator创建的schema获取字段
-    注意：多对多字段是无法显示的
+    todo：增加多对多字段显示
     """
     fields = model._meta.fields_map
 
@@ -91,14 +91,14 @@ def get_columns_from_model(
 
 def get_controls_from_model(
     model: Type[Model],
-    include: List[str] = None,
-    exclude: List[str] = None,
-    extra_fields: Optional[List[Column]] = None,
+    include: Tuple[str, ...] = (),
+    exclude: Tuple[str, ...] = (),
+    extra_fields: Optional[Tuple[Column, ...]] = None,
     exclude_readonly: bool = False,
 ) -> List[Column]:
     """
     从pydantic_queryset_creator创建的schema获取字段
-    extra_field:额外的自定义字段
+    extra_fields:额外的自定义字段
     """
     fields = model._meta.fields_map
     res = []

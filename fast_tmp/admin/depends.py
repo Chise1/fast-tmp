@@ -1,9 +1,6 @@
 from typing import List, Optional, Type
 
 from fastapi import Depends, HTTPException
-from fastapi.params import Path
-from fastapi_admin.exceptions import InvalidResource
-from fastapi_admin.resources import Dropdown, Link, Model, Resource
 from starlette.requests import Request
 from starlette.status import HTTP_404_NOT_FOUND
 from tortoise import Tortoise
