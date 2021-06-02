@@ -1,4 +1,4 @@
-from typing import List, Optional, Type
+from typing import Optional
 
 from fastapi import Depends, HTTPException
 from starlette.requests import Request
@@ -16,7 +16,7 @@ def get_model(resource: Optional[str]):
 
 
 async def get_model_resource(request: Request, model=Depends(get_model)):
-    model_resource = request.app.get_model_resource(model)  # type:Model
+    model_resource = request.app.get_model_resource(model)
     if not model_resource:
         raise HTTPException(status_code=HTTP_404_NOT_FOUND)
     actions = await model_resource.get_actions(request)
@@ -28,38 +28,3 @@ async def get_model_resource(request: Request, model=Depends(get_model)):
     setattr(model_resource, "bulk_actions", bulk_actions)
     setattr(model_resource, "compute_fields", compute_fields)
     return model_resource
-
-
-def _get_resources(resources: List[Type[Resource]]):
-    ret = []
-    for resource in resources:
-        item = {
-            "icon": resource.icon,
-            "label": resource.label,
-        }
-        if issubclass(resource, Link):
-            item["type"] = "link"
-            item["url"] = resource.url
-            item["target"] = resource.target
-        elif issubclass(resource, Model):
-            item["type"] = "model"
-            item["model"] = resource.model.__name__.lower()
-        elif issubclass(resource, Dropdown):
-            item["type"] = "dropdown"
-            item["resources"] = _get_resources(resource.resources)
-        else:
-            raise InvalidResource("Should be subclass of Resource")
-        ret.append(item)
-    return ret
-
-
-def get_resources(request: Request) -> List[dict]:
-    resources = request.app.resources
-    return _get_resources(resources)
-
-
-def get_current_admin(request: Request):
-    admin = request.state.admin
-    if not admin:
-        raise HTTPException(status_code=HTTP_404_NOT_FOUND)
-    return admin

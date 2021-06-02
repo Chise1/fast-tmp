@@ -13,6 +13,12 @@ from fast_tmp.admin.schema.page import App, AppPage, AppPageGroup
 class AbstractApp:
     app: App
     page_groups: Dict[str, AppPageGroup]
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super().__new__(cls)
+        return cls._instance
 
     def __init__(
         self,
@@ -38,6 +44,14 @@ class AbstractApp:
 
     def add_page_group(self, group: AppPageGroup):
         self.page_groups[group.label] = group
+
+    def get_page(self, model_name) -> AppPage:
+        for group_name, page_group in self.page_groups.items():
+            for page in page_group.children:
+                if page.label == model_name:
+                    return page
+        else:
+            raise ModuleNotFoundError(f"Can't found {model_name}")  # fixme:完善报错信息为http类型
 
 
 from fast_tmp.admin.utils import get_columns_from_model, get_controls_from_model

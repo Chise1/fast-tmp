@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Tuple, Union
 
 from fast_tmp.admin.schema.abstract_schema import BaseAmisModel, _Action
 from fast_tmp.admin.schema.buttons import Operation

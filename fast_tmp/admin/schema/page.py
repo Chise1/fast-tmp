@@ -1,10 +1,12 @@
-from typing import List, Optional, Union
+from typing import List, Optional, Tuple, Union
 
 from pydantic import BaseModel
 
 from fast_tmp.admin.schema.abstract_schema import BaseAmisModel
 
+from .crud import CRUD
 from .enums import TypeEnum
+from .forms import Column
 
 
 class Page(BaseAmisModel):
@@ -19,6 +21,10 @@ class Page(BaseAmisModel):
     body: List[BaseAmisModel] = []
     initApi: Optional[str]  # 获取初始数据
     initFetch: bool = False  # 是否进行初始数据获取
+
+    _list_fields: Tuple[str, ...] = ()
+    _update_fields: Tuple[str, ...] = ()
+    _create_fields: Tuple[str, ...] = ()
 
 
 class HBox(BaseAmisModel):
@@ -35,7 +41,7 @@ class AppPage(BaseModel):
     label: str
     icon: str
     url: str
-    schema: List[Page]
+    schema: Page
     schemaApi: Optional[str] = None
     link: Optional[str] = None
     redirect: Optional[str] = None
