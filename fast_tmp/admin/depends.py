@@ -6,13 +6,13 @@ from starlette.status import HTTP_404_NOT_FOUND
 from tortoise import Tortoise
 
 
-def get_model(resource: Optional[str]):
-    if not resource:
-        return
+def get_model(resource: str):
     for app, models in Tortoise.apps.items():
         model = models.get(resource)
         if model:
             return model
+    else:
+        raise Exception("not found module")
 
 
 async def get_model_resource(request: Request, model=Depends(get_model)):
