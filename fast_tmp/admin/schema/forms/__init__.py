@@ -2,7 +2,7 @@ from typing import Dict, List, Optional, Union
 
 from pydantic import BaseModel
 
-from fast_tmp.admin.schema.abstract_schema import ApiUrl, BaseAmisModel
+from fast_tmp.admin.schema.abstract_schema import BaseAmisModel
 from fast_tmp.admin.schema.enums import TypeEnum
 from fast_tmp.admin.schema.forms.enums import ControlEnum, FormWidgetSize, ItemModel
 
@@ -37,7 +37,7 @@ class Form(BaseAmisModel):
     title: Optional[str]
     submitText: Optional[str]
     wrapWithPanel: Optional[bool]
-    api: Union[str, ApiUrl]
+    api: str
     initApi: Optional[str]
     # interval: int = 3000??
     primaryField: Optional[str]  # 设置主键"id"
