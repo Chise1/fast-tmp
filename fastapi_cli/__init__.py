@@ -67,10 +67,13 @@ def staticfile():
 
 
 # 导入自定义脚本执行方式
-if settings:
-    if settings.EXTRA_SETTINGS.get("EXTRA_SCRIPT"):
-        for i in settings.EXTRA_SETTINGS.get("EXTRA_SCRIPT"):
-            mod = importlib.import_module(i)
+if settings and settings.EXTRA_SETTINGS.get("EXTRA_SCRIPT"):
+    for i in settings.EXTRA_SETTINGS.get("EXTRA_SCRIPT"):
+        path_list = i.split(".")
+        mod = importlib.import_module(".".join(path_list[0:-1]))
+        for k, v in mod.__dict__.items():
+            if k == path_list[-1]:
+                app.command()(v)
 
 
 def main():

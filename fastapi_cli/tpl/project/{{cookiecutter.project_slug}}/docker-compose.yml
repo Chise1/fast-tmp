@@ -1,10 +1,15 @@
 version: '3'
 services:
-  {{cookiecutter.project_slug}}:
+  app:
     build: .
     env_file:
       - .env
+    environment:
+      MODULE_NAME: {{cookiecutter.project_slug}}/app.py
+      VARIABLE_NAME: "app"
+      APP_MODULE: {{cookiecutter.project_slug}}.app:app
+      PORT: 8000
     ports:
       - '8000:8000'
     image: {{cookiecutter.project_slug}}
-    command: uvicorn {{cookiecutter.project_slug}}.app:app --port 8000 --host 0.0.0.0
+    command: "/start.sh"

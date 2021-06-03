@@ -1,33 +1,77 @@
-import inspect
-from typing import Callable, List, Optional, Tuple, Type
+from typing import List, Optional, Tuple, Type
 
 from fastapi import APIRouter, Depends
 from pydantic.main import BaseModel
 from starlette import status
-from tortoise import Model
-from tortoise.contrib.pydantic import pydantic_model_creator
+from tortoise import (
+    BackwardFKRelation,
+    BackwardOneToOneRelation,
+    ForeignKeyFieldInstance,
+    ManyToManyFieldInstance,
+    Model,
+    OneToOneFieldInstance,
+)
 from tortoise.query_utils import Q
+from tortoise.queryset import QuerySet
 
 from fast_tmp.depends.auth import get_user_has_perms
+from fast_tmp.utils.crud_tools import add_filter
+from fast_tmp.utils.pydantic import pydantic_model_creator
 from fast_tmp.utils.pydantic_creator import pydantic_offsetlimit_creator
 
 
-def add_filter(func: Callable, filters: Optional[Tuple[str, ...]] = None):
-    signature = inspect.signature(func)
-    res = []
-    for k, v in signature.parameters.items():
-        if k == "kwargs":
-            continue
-        res.append(v)
-    if filters:
-        for filter_ in filters:
-            res.append(
-                inspect.Parameter(
-                    filter_, kind=inspect.Parameter.KEYWORD_ONLY, annotation=str, default="__null__"
-                )
-            )
-    # noinspection Mypy,PyArgumentList
-    func.__signature__ = inspect.Signature(parameters=res, __validate_parameters__=False)
+def add_fetch_field_search(queryset: QuerySet, include_fields: Tuple[str, ...]):
+    """
+    获取列表的时候对额外字段也进行获取
+    """
+    fields_map = queryset.model._meta.fields_map
+    select_fields = []
+    fetch_fields = []
+    for field_name, field in fields_map.items():
+        if isinstance(field, (ForeignKeyFieldInstance, OneToOneFieldInstance)):  # 外键,一对一
+            if (include_fields and field_name in include_fields) or not include_fields:
+                select_fields.append(field_name)
+        elif isinstance(
+            field, (BackwardFKRelation, BackwardOneToOneRelation, ManyToManyFieldInstance)
+        ):  # 反向外键,反向一对一,多对多
+            if (include_fields and field_name in include_fields) or not include_fields:
+                fetch_fields.append(field_name)
+        else:  # 一般键
+            pass
+    if select_fields:
+        queryset = queryset.select_related(*select_fields)
+    if fetch_fields:
+        queryset = queryset.prefetch_related(*fetch_fields)
+    return queryset
+
+
+async def check_filter_kwargs(kwargs, query, schema):
+    if kwargs:
+        s = {}
+        for k, v in kwargs.items():
+            if not v == "__null__":
+                s[k] = v
+            else:
+                pass
+        if s:
+            query = query.filter(**s)
+    data = await query
+    return [schema.from_orm(i) for i in data]
+
+
+async def check_filter_kwargs_with_page(count, kwargs, query, schema, paging_schema):
+    if kwargs:
+        s = {}
+        for k, v in kwargs.items():
+            if not v == "__null__":
+                s[k] = v
+            else:
+                pass
+        if s:
+            query = query.filter(**s)
+            count = count.filter(**s)
+    data = await query
+    return paging_schema(total=await count.count(), data=[schema.from_orm(i) for i in data])
 
 
 def create_list_route(
@@ -35,13 +79,15 @@ def create_list_route(
     path: str,
     model: Type[Model],
     fields: Tuple[str, ...] = (),
-    exclude_fields: Tuple[str, ...] = (),
     computed_fields: Tuple[str, ...] = (),
     codenames: Optional[Tuple[str, ...]] = None,
     searchs: Optional[Tuple[str, ...]] = None,
     filters: Optional[Tuple[str, ...]] = None,
     res_pydantic_model: Optional[Type[BaseModel]] = None,
     random_str: str = "",
+    allow_cycles: bool = True,
+    depth: int = 1,
+    **kw,
 ):
     """
     创建list的路由
@@ -53,8 +99,9 @@ def create_list_route(
             model,
             name=f"CREATORList{model.__name__}{path.replace('/', '_')}{random_str}",
             include=fields,
-            exclude=exclude_fields,
             computed=computed_fields,
+            allow_cycles=allow_cycles,
+            depth=depth,
         )
     if searchs:
 
@@ -70,17 +117,11 @@ def create_list_route(
                     for i in x[1:]:
                         q = q | i
                     query = query.filter(q)
-            if kwargs:
-                s = {}
-                for k, v in kwargs.items():
-                    if not v == "__null__":
-                        s[k] = v
-                    else:
-                        pass
-                if s:
-                    query = query.filter(**s)
-            data = await query
-            return [schema.from_orm(i) for i in data]
+            query = add_fetch_field_search(
+                query,
+                fields,
+            )
+            return await check_filter_kwargs(kwargs, query, schema)
 
     else:
 
@@ -88,21 +129,15 @@ def create_list_route(
             **kwargs,
         ):
             query = model.all()
-            if kwargs:
-                s = {}
-                for k, v in kwargs.items():
-                    if not v == "__null__":
-                        s[k] = v
-                    else:
-                        pass
-                if s:
-                    query = query.filter(**s)
-            data = await query
-            return [schema.from_orm(i) for i in data]
+            query = add_fetch_field_search(query, fields)
+            return await check_filter_kwargs(kwargs, query, schema)
 
     add_filter(model_list, filters)
     route.get(
-        path, dependencies=[Depends(get_user_has_perms(codenames))], response_model=List[schema]
+        path,
+        dependencies=[Depends(get_user_has_perms(codenames))],
+        response_model=List[schema],
+        **kw,
     )(model_list)
 
 
@@ -111,13 +146,13 @@ def create_list_route_with_page(
     path: str,
     model: Type[Model],
     fields: Tuple[str, ...] = (),
-    exclude_fields: Tuple[str, ...] = (),
     computed_fields: Tuple[str, ...] = (),
     codenames: Optional[Tuple[str, ...]] = None,
     searchs: Optional[Tuple[str, ...]] = None,
     filters: Optional[Tuple[str, ...]] = None,
     res_pydantic_model: Optional[Type[BaseModel]] = None,
     random_str: str = "",
+    **kw,
 ):
     """
     创建list的路由
@@ -129,7 +164,6 @@ def create_list_route_with_page(
             model,
             name=f"CREATORList{model.__name__}{path.replace('/', '_')}Page{random_str}",
             include=fields,
-            exclude=exclude_fields,
             computed=computed_fields,
         )
     paging_schema = pydantic_offsetlimit_creator(schema)
@@ -151,19 +185,8 @@ def create_list_route_with_page(
                         q = q | i
                     query = query.filter(q)
                     count = count.filter(q)
-            if kwargs:
-                s = {}
-                for k, v in kwargs.items():
-                    if not v == "__null__":
-                        s[k] = v
-                    else:
-                        pass
-                if s:
-                    query = query.filter(**s)
-                    count = count.filter(**s)
-
-            data = await query
-            return paging_schema(total=await count.count(), data=[schema.from_orm(i) for i in data])
+            query = add_fetch_field_search(query, fields)
+            return await check_filter_kwargs_with_page(count, kwargs, query, schema, paging_schema)
 
     else:
 
@@ -174,23 +197,15 @@ def create_list_route_with_page(
         ):
             count = model.all()
             query = model.all().limit(limit).offset(offset)
-            if kwargs:
-                s = {}
-                for k, v in kwargs.items():
-                    if not v == "__null__":
-                        s[k] = v
-                    else:
-                        pass
-                if s:
-                    query = query.filter(**s)
-                    count = count.filter(**s)
-
-            data = await query
-            return paging_schema(total=await count.count(), data=[schema.from_orm(i) for i in data])
+            query = add_fetch_field_search(query, fields)
+            return await check_filter_kwargs_with_page(count, kwargs, query, schema, paging_schema)
 
     add_filter(model_list, filters)
     route.get(
-        path, dependencies=[Depends(get_user_has_perms(codenames))], response_model=paging_schema
+        path,
+        dependencies=[Depends(get_user_has_perms(codenames))],
+        response_model=paging_schema,
+        **kw,
     )(model_list)
 
 
@@ -199,11 +214,11 @@ def create_retrieve_route(
     path: str,
     model: Type[Model],
     fields: Tuple[str, ...] = (),
-    exclude_fields: Tuple[str, ...] = (),
     computed_fields: Tuple[str, ...] = (),
     codenames: Optional[Tuple[str, ...]] = None,
     res_pydantic_model: Optional[Type[BaseModel]] = None,
     random_str: str = "",
+    **kw,
 ):
     if res_pydantic_model:
         schema = res_pydantic_model
@@ -212,7 +227,6 @@ def create_retrieve_route(
             model,
             name=f"CREATORRetrieve{model.__name__}{path.replace('/', '_')}ID{random_str}",
             include=fields,
-            exclude=exclude_fields,
             computed=computed_fields,
         )
 
@@ -222,7 +236,11 @@ def create_retrieve_route(
         instance = await model.get(pk=id)
         return schema.from_orm(instance).dict()
 
-    route.get(path + "/{id}", dependencies=[Depends(get_user_has_perms(codenames))])(model_retrieve)
+    route.get(
+        path + "/{id}",
+        dependencies=[Depends(get_user_has_perms(codenames))],
+        **kw,
+    )(model_retrieve)
 
 
 def create_delete_route(
@@ -230,6 +248,7 @@ def create_delete_route(
     path: str,
     model: Type[Model],
     codenames: Optional[Tuple[str, ...]] = None,
+    **kw,
 ):
     """
     删除路由生成器
@@ -244,6 +263,7 @@ def create_delete_route(
         path + "/{id}",
         dependencies=[Depends(get_user_has_perms(codenames))],
         status_code=status.HTTP_200_OK,
+        **kw,
     )(model_delete)
 
 
@@ -252,11 +272,11 @@ def create_post_route(
     path: str,
     model: Type[Model],
     fields: Tuple[str, ...] = (),
-    exclude_fields: Tuple[str, ...] = (),
     computed_fields: Tuple[str, ...] = (),
     codenames: Optional[Tuple[str, ...]] = None,
     res_pydantic_model: Optional[Type[BaseModel]] = None,
     random_str: str = "",
+    **kw,
 ):
     if res_pydantic_model:
         schema = res_pydantic_model
@@ -265,7 +285,6 @@ def create_post_route(
             model,
             name=f"CREATORPost{model.__name__}{path.replace('/', '_')}{random_str}",
             include=fields,
-            exclude=exclude_fields,
             computed=computed_fields,
             exclude_readonly=True,
         )
@@ -275,7 +294,11 @@ def create_post_route(
     ):
         await model.create(**info.dict())
 
-    route.post(path, dependencies=[Depends(get_user_has_perms(codenames))])(model_post)
+    route.post(
+        path,
+        dependencies=[Depends(get_user_has_perms(codenames))],
+        **kw,
+    )(model_post)
 
 
 # fixme:等待测试
@@ -284,11 +307,11 @@ def create_put_route(
     path: str,
     model: Type[Model],
     fields: Tuple[str, ...] = (),
-    exclude_fields: Tuple[str, ...] = (),
     computed_fields: Tuple[str, ...] = (),
     codenames: Optional[Tuple[str, ...]] = None,
     res_pydantic_model: Optional[Type[BaseModel]] = None,
     random_str: str = "",
+    **kw,
 ):
     if res_pydantic_model:
         schema = res_pydantic_model
@@ -297,7 +320,6 @@ def create_put_route(
             model,
             name=f"CREATORPut{model.__name__}{path.replace('/', '_')}{random_str}",
             include=fields,
-            exclude=exclude_fields,
             computed=computed_fields,
             exclude_readonly=True,
         )
@@ -311,4 +333,5 @@ def create_put_route(
     route.put(
         path + "/{id}",
         dependencies=[Depends(get_user_has_perms(codenames))],
+        **kw,
     )(model_put)
