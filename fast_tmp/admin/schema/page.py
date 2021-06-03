@@ -1,12 +1,10 @@
 from typing import List, Optional, Tuple, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from fast_tmp.admin.schema.abstract_schema import BaseAmisModel
 
-from .crud import CRUD
 from .enums import TypeEnum
-from .forms import Column
 
 
 class Page(BaseAmisModel):
@@ -41,13 +39,19 @@ class AppPage(BaseModel):
     label: str
     icon: str
     url: str
-    schema: Page
-    schemaApi: Optional[str] = None
+    schema_: Page = Field(..., alias="schema")
+    # schemaApi: Optional[str] = None
     link: Optional[str] = None
     redirect: Optional[str] = None
     rewrite: Optional[str] = None
     isDefaultPage: Optional[str] = None
+
     # visible:Optional[bool]=None
+    def dict(self, *args, **kwargs):
+        res: dict = super().dict(*args, **kwargs)
+        schema = res.pop("schema_")
+        res["schema"] = schema
+        return res
 
 
 class AppPageGroup(BaseModel):
@@ -55,13 +59,13 @@ class AppPageGroup(BaseModel):
     children: List[AppPage]
 
 
-class App(BaseAmisModel):
-    type = TypeEnum.app
-    api: Optional[str]  # 页面配置接口，如果你想远程拉取页面配置请配置。返回配置路径 json>data>pages，具体格式请参考 pages 属性。
-    brandName: str  # 应用名称
-    logo: Optional[str]  # 图片地址或svg
-    header: Optional[BaseModel]  # 顶部区域
-    asideBefore: Optional[BaseModel]  # 页面菜单上前面区域
-    asideAfter: Optional[BaseModel]  # 页面菜单下前面区域
-    footer: Optional[BaseModel]  # 页面
-    pages: List[AppPageGroup]  # 具体页面数组，地一层为label集合，真正的页面在第二层开始
+# class App(BaseAmisModel):
+#     type = TypeEnum.app
+#     api: Optional[str]  # 页面配置接口，如果你想远程拉取页面配置请配置。返回配置路径 json>data>pages，具体格式请参考 pages 属性。
+#     brandName: str  # 应用名称
+#     logo: Optional[str]  # 图片地址或svg
+#     header: Optional[BaseModel]  # 顶部区域
+#     asideBefore: Optional[BaseModel]  # 页面菜单上前面区域
+#     asideAfter: Optional[BaseModel]  # 页面菜单下前面区域
+#     footer: Optional[BaseModel]  # 页面
+#     pages: List[AppPageGroup]  # 具体页面数组，地一层为label集合，真正的页面在第二层开始

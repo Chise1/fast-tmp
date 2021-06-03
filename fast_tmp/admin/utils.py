@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import List, Optional, Tuple, Type
 
 from tortoise import BackwardFKRelation, ForeignKeyFieldInstance, ManyToManyFieldInstance, Model
@@ -211,8 +212,9 @@ def get_controls_from_model(
                 )
         elif isinstance(field_type, FloatField):
             validation = {}
-            validation["minimum"] = field_type.constraints.get("ge")
-            validation["maximum"] = field_type.constraints.get("le")
+            if field_type.constraints.get("ge") and field_type.constraints.get("le"):
+                validation["minimum"] = field_type.constraints.get("ge")
+                validation["maximum"] = field_type.constraints.get("le")
             res.append(
                 NumberItem(
                     min=field_type.constraints.get("ge"),

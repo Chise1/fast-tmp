@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import Any, List
 
 from fastapi import APIRouter, Depends, Path
 from pydantic import BaseModel
@@ -6,9 +6,11 @@ from starlette.requests import Request
 from tortoise import Model
 from tortoise.transactions import in_transaction
 
-from .creator import AbstractApp
+from fast_tmp.conf import settings
+
+from ..utils.common import import_module
+from .creator import AbstractApp, AbstractCRUD
 from .depends import get_model
-from .schema.page import Page
 
 router = APIRouter()
 
@@ -21,31 +23,34 @@ class ListDataWithPage(BaseModel):  # 带分页的数据
 class BaseRes(BaseModel):
     status: int = 0
     msg: str = ""
-    data: Union[dict, BaseModel] = {}
+    data: Any = {}
 
 
 def get_abstract_app():
     return AbstractApp._instance
 
 
-def get_app_page(resource: str, app: AbstractApp = Depends(get_abstract_app)):
-    return app.get_page(resource).schema
+def get_app_page(resource: str, app: AbstractApp = Depends(get_abstract_app)) -> AbstractCRUD:
+    return app.get_AbstractCRUD(resource)
 
 
 @router.get("/{resource}/list", response_model=BaseRes)
 async def list_view(
     request: Request,
-    page: Page = Depends(get_app_page),
+    abstract_crud: AbstractCRUD = Depends(get_app_page),
     model: Model = Depends(get_model),
-    page_size: int = 10,
-    page_num: int = 1,
+    perPage: int = 10,
+    page: int = 1,
 ):
     qs = model.all()
-    params = request.query_params
-    qs = qs.filter(**params)
+    params = dict(request.query_params)
+    params.pop("page")
+    params.pop("perPage")
+    if params:
+        qs = qs.filter(**params)
     total = await qs.count()
-    qs = qs.limit(page_size).offset((page_num - 1) * page_size)
-    values = await qs.values(*page._list_fields)
+    qs = qs.limit(perPage).offset((page - 1) * perPage)
+    values = await qs.values(*abstract_crud.list_include)
     return BaseRes(
         data=ListDataWithPage(
             total=total,
@@ -71,19 +76,18 @@ async def update(
 async def update_view(
     request: Request,
     pk: int = Path(...),
-    page: Page = Depends(get_app_page),
+    page: AbstractCRUD = Depends(get_app_page),
     model: Model = Depends(get_model),
 ):
-    update_fields = page._update_fields
-    data = await model.filter(pk=pk).first().values(
-        *update_fields)  # fixme:是字典还是列表？
+    update_fields = page.up_include
+    data = await model.filter(pk=pk).first().values(*update_fields)  # fixme:是字典还是列表？
     return BaseRes(data=data)
 
 
 @router.post("/{resource}/create")
 async def create(
     request: Request,
-    page: Page = Depends(get_app_page),
+    page: AbstractCRUD = Depends(get_app_page),
     model: Model = Depends(get_model),
 ):
     data = await request.json()
@@ -102,7 +106,22 @@ class DIDS(BaseModel):
 
 
 @router.post("/{resource}/deleteMany/")
-async def bulk_delete(request: Request, ids: DIDS,
-                      model: Model = Depends(get_model)):
+async def bulk_delete(request: Request, ids: DIDS, model: Model = Depends(get_model)):
     await model.filter(pk__in=ids.ids).delete()
     return BaseRes()
+
+
+@router.get("/{resource}/schema")
+async def get_schema(
+    request: Request,
+    resource: str,
+    page: AbstractCRUD = Depends(get_app_page),
+    model: Model = Depends(get_model),
+):
+    return page.get_Page().dict(exclude_none=True)
+
+
+@router.get("/site")
+async def get_data():
+    module = import_module(settings.EXTRA_SETTINGS["ADMIN_SITE_CLASS"])
+    return BaseRes(data={"pages": module.dict()})

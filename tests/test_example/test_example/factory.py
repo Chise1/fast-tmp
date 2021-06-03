@@ -3,6 +3,7 @@ from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
 
 # from starlette.middleware.sessions import SessionMiddleware
+from starlette.staticfiles import StaticFiles
 from tortoise.contrib.fastapi import register_tortoise
 
 from fast_tmp.conf import settings  # 放第一个不要变
@@ -25,11 +26,15 @@ def init_app(main_app: Starlette):
 
 def create_app() -> FastAPI:
     app = FastAPI(title="test_example", debug=settings.DEBUG)
+    app.mount("/static", StaticFiles(directory="static"), name="static")
     # 注册app的位置
     register_app(app)
     from test_example.apps.api.v1 import router
 
+    from fast_tmp.admin.server import admin
+
     app.include_router(router)
+    app.mount("/admin", admin)
     if settings.BACKEND_CORS_ORIGINS:
         app.add_middleware(
             CORSMiddleware,
@@ -52,6 +57,6 @@ def create_app() -> FastAPI:
     # app.middleware("http")(cas_middleware)
     # 在cookie存储session
     # app.add_middleware(SessionMiddleware, secret_key=settings.CAS_SESSION_SECRET)
-    register_tortoise(app, config=settings.TORTOISE_ORM)
+    register_tortoise(app, config=settings.TORTOISE_ORM, generate_schemas=True)
     init_app(app)
     return app
