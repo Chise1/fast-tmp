@@ -12,4 +12,5 @@ services:
     ports:
       - '8000:8000'
     image: {{cookiecutter.project_slug}}
-    command: "/start.sh"
+    volumes:
+      - .:/app/

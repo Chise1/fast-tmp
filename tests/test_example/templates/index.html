@@ -28,14 +28,59 @@
             margin: 0;
             padding: 0;
         }
+
+        #login {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            margin: -150px 0 0 -150px;
+            width: 300px;
+            height: 300px;
+        }
+
+        #login h1 {
+            color: #000000;
+            text-align: center;
+        }
+
+        #loginh1 {
+            font-size: 2em;
+            margin: 0.67em 0;
+        }
+
+        .logininput {
+            width: 278px;
+            height: 18px;
+            margin-bottom: 10px;
+            outline: none;
+            padding: 10px;
+            font-size: 13px;
+            color: #000000;
+        }
+
+        .but {
+            width: 300px;
+            min-height: 20px;
+            display: block;
+            background-color: #4a77d4;
+            border: 1px solid #3762bc;
+            color: #fff;
+            padding: 9px 14px;
+            font-size: 15px;
+            line-height: normal;
+            border-radius: 5px;
+            margin: 0;
+        }
     </style>
 </head>
 <body>
 <div id="login">
-    <h1>登录</h1>
-    <input type="text" required="required" placeholder="用户名" name="username"
+    <h1 id="loginh1">登录</h1>
+    <input class="logininput" type="text" required="required" placeholder="用户名"
+           name="username"
            id="username"></input>
-    <input type="password" required="required" placeholder="密码" name="password"
+    <input class="logininput" type="password" required="required"
+           placeholder="密码" name="password"
            id="password"></input>
     <button class="but" onclick="login()">登录</button>
 </div>
@@ -149,42 +194,42 @@
                         document.getElementById("login").hidden = false
                         document.getElementById("root").hidden = true
                     }
-                    console.log("asdfasd",response)
+                    console.log("asdfasd", response)
 
                     return response;
                 },
-                {#fetcher: ({url, method, data, config, headers}) => {#}
-                {#    config = config || {};#}
-                {#    config.headers = headers || {};#}
-                {#    config.headers["Authorization"] = "Bearer " + access_token#}
-                {#    if (config.cancelExecutor) {#}
-                {#        config.cancelToken = new axios.CancelToken(config.cancelExecutor);#}
-                {#    }#}
-                {#    if (data && data instanceof FormData) {#}
-                {#        // config.headers = config.headers || {};#}
-                {#        // config.headers['Content-Type'] = 'multipart/form-data';#}
-                {#    } else if (#}
-                {#        data &&#}
-                {#        typeof data !== 'string' &&#}
-                {#        !(data instanceof Blob) &&#}
-                {#        !(data instanceof ArrayBuffer)#}
-                {#    ) {#}
-                {#        data = JSON.stringify(data);#}
-                {#        config.headers['Content-Type'] = 'application/json';#}
-                {#    }#}
-                {##}
-                {#    if (method !== 'post' && method !== 'put' && method !== 'patch') {#}
-                {#        if (data) {#}
-                {#            if (method === 'delete') {#}
-                {#                config.data = data;#}
-                {#            } else {#}
-                {#                config.params = data;#}
-                {#            }#}
-                {#        }#}
-                {#        return axios[method](url, config);#}
-                {#    }#}
-                {#    return axios[method](url, data, config);#}
-                {# },#}
+                fetcher: ({url, method, data, config, headers}) => {
+                    config = config || {};
+                    config.headers = headers || {};
+                    config.headers["Authorization"] = "Bearer " + access_token
+                    if (config.cancelExecutor) {
+                        config.cancelToken = new axios.CancelToken(config.cancelExecutor);
+                    }
+                    if (data && data instanceof FormData) {
+                        // config.headers = config.headers || {};
+                        // config.headers['Content-Type'] = 'multipart/form-data';
+                    } else if (
+                        data &&
+                        typeof data !== 'string' &&
+                        !(data instanceof Blob) &&
+                        !(data instanceof ArrayBuffer)
+                    ) {
+                        data = JSON.stringify(data);
+                        config.headers['Content-Type'] = 'application/json';
+                    }
+
+                    if (method !== 'post' && method !== 'put' && method !== 'patch') {
+                        if (data) {
+                            if (method === 'delete') {
+                                config.data = data;
+                            } else {
+                                config.params = data;
+                            }
+                        }
+                        return axios[method](url, config);
+                    }
+                    return axios[method](url, data, config);
+                },
 
                 isCurrentUrl: (to, ctx) => {
                     if (!to) {
@@ -210,5 +255,6 @@
         );
     }
 </script>
+
 </body>
 </html>
