@@ -1,13 +1,16 @@
 from typing import Any, List
 
 from fastapi import APIRouter, Depends, Path
+from fastapi.exceptions import HTTPException
 from pydantic import BaseModel
 from starlette.requests import Request
 from tortoise import Model
 from tortoise.transactions import in_transaction
 
 from fast_tmp.conf import settings
+from fast_tmp.depends.auth import get_user
 
+from ..models import User
 from ..utils.common import import_module
 from .creator import AbstractApp, AbstractCRUD
 from .depends import get_model
@@ -121,7 +124,11 @@ async def get_schema(
     return page.get_Page().dict(exclude_none=True)
 
 
+async def t():
+    raise HTTPException(200, detail={"code": 401, "msg": "sdfsadf"})
+
+
 @router.get("/site")
-async def get_data():
+async def get_data(user: User = Depends(t)):
     module = import_module(settings.EXTRA_SETTINGS["ADMIN_SITE_CLASS"])
     return BaseRes(data={"pages": module.dict()})
