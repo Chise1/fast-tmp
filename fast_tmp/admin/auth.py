@@ -6,10 +6,10 @@ from jose import JWTError
 from starlette.responses import Response
 
 from fast_tmp.admin.res_model import AmisRes
+from fast_tmp.admin.responses import Admin401Error
 from fast_tmp.conf import settings
 from fast_tmp.depends.auth import authenticate_user, get_user
 from fast_tmp.models import User
-from fast_tmp.responses import amis_credentials_exception as credentials_exception
 from fast_tmp.responses import no_permission_exception
 from fast_tmp.utils.token import create_access_token, decode_access_token
 
@@ -37,7 +37,7 @@ def app_add_login_url(
         """
         user = await authenticate_user(username, password)
         if not user:
-            raise credentials_exception
+            return Admin401Error
         access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(
             data={"sub": user.username, "id": user.pk}, expires_delta=access_token_expires
@@ -48,17 +48,17 @@ def app_add_login_url(
 
 async def get_current_user(amisT: Optional[str] = Cookie(None)):
     if not amisT:
-        raise credentials_exception
+        return Admin401Error
     try:
         payload = decode_access_token(amisT)
         username: str = payload.get("sub")
         if username is None:
-            raise credentials_exception
+            return Admin401Error
     except JWTError:
-        raise credentials_exception
+        return Admin401Error
     user = await get_user(username=username)
     if user is None:
-        raise credentials_exception
+        return Admin401Error
     return user
 
 
@@ -74,7 +74,7 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
 
 async def get_superuser(current_user: User = Depends(get_current_active_user)):
     if not current_user.is_superuser:
-        raise credentials_exception
+        return Admin401Error
     return current_user
 
 

@@ -13,7 +13,7 @@ DEBUG = os.getenv("DEBUG") == "True"
 
 TORTOISE_ORM = {
     "connections": {
-        "default": "sqlite://:memory:",
+        "default": "sqlite://db.sqlite3",
     },
     "apps": {
         "fast_tmp": {

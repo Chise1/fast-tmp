@@ -87,18 +87,20 @@
     function login() {
         xmlhttp = new XMLHttpRequest();
         xmlhttp.onreadystatechange = function () {
+
             if (xmlhttp.readyState === 4) {
                 data = (new Function("return " + xmlhttp.responseText))()
+                console.log(data)
                 if (xmlhttp.status === 200) {
-                    if (data.detail.code !== 0) {
-                        window.alert(data.detail.msg)
+                    if (data.status !== 0) {
+                        window.alert(data.msg)
                     } else {
                         document.getElementById('login').hidden = true;
                         document.getElementById("root").hidden = false;
                         main()
                     }
                 } else {
-                    window.alert(data.detail.msg)
+                    window.alert(data.msg)
                 }
             }
         }
@@ -191,7 +193,8 @@
                     location.hash = to;
                 },
                 responseAdpater(api, response, query, request) {//增加一个登陆弹框
-                    if (response.detail.code === 401) {
+                    console.log(response)
+                    if (response.code === 401) {
                         document.getElementById("login").hidden = false
                         document.getElementById("root").hidden = true
                     }
