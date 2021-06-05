@@ -5,7 +5,7 @@ from tortoise import Model
 from fast_tmp.admin.schema.actions import AjaxAction, DialogAction
 from fast_tmp.admin.schema.crud import CRUD
 from fast_tmp.admin.schema.enums import ButtonLevelEnum
-from fast_tmp.admin.schema.forms import Form
+from fast_tmp.admin.schema.forms import Column, Control, Form
 from fast_tmp.admin.schema.frame import Dialog
 from fast_tmp.admin.schema.page import AppPage, AppPageGroup, Page
 from fast_tmp.admin.utils import get_columns_from_model, get_controls_from_model
@@ -64,10 +64,13 @@ class AbstractCRUD:
         prefix: str = "/admin",
         create_include: Tuple[str, ...] = (),
         create_exclude: Tuple[str, ...] = (),
+        create_extra_fields: Dict[str, Control] = None,
         up_include: Tuple[str, ...] = (),
         up_exclude: Tuple[str, ...] = (),
+        up_extra_fields: Dict[str, Control] = None,
         list_include: Tuple[str, ...] = (),
         list_exclude: Tuple[str, ...] = (),
+        list_extra_fields: Dict[str, Column] = None,
         methods: Tuple[str, ...] = ("List", "Retrieve", "Create", "Update", "Delete", "DeleteMany"),
     ):
         """
@@ -90,7 +93,10 @@ class AbstractCRUD:
                             name=f"新增{model.__name__}",
                             title=f"新增{model.__name__}",
                             controls=get_controls_from_model(
-                                model, include=create_include, exclude=create_exclude
+                                model,
+                                include=create_include,
+                                exclude=create_exclude,
+                                extra_fields=create_extra_fields,
                             ),
                             primaryField=model._meta.pk_attr,
                             api=f"post:{prefix}/{model.__name__}/create",
@@ -107,7 +113,10 @@ class AbstractCRUD:
                         body=Form(
                             name=f"修改{model.__name__}",
                             controls=get_controls_from_model(
-                                model, include=up_include, exclude=up_exclude
+                                model,
+                                include=up_include,
+                                exclude=up_exclude,
+                                extra_fields=up_extra_fields,
                             ),
                             api="put:" + prefix + "/" + model.__name__ + "/update/${id}",
                             initApi="get:" + prefix + "/" + model.__name__ + "/update/${id}",
@@ -124,7 +133,9 @@ class AbstractCRUD:
                 )
             )
         if "List" in methods:
-            columns = get_columns_from_model(model, include=list_include, exclude=list_exclude)
+            columns = get_columns_from_model(
+                model, include=list_include, exclude=list_exclude, extra_fields=list_extra_fields
+            )
             columns.extend(buttons)
             self.body.append(
                 CRUD(

@@ -5,12 +5,12 @@ from fastapi import Body, Cookie, Depends, FastAPI
 from jose import JWTError
 from starlette.responses import Response
 
+from fast_tmp.admin.res_model import AmisRes
 from fast_tmp.conf import settings
 from fast_tmp.depends.auth import authenticate_user, get_user
 from fast_tmp.models import User
 from fast_tmp.responses import amis_credentials_exception as credentials_exception
 from fast_tmp.responses import no_permission_exception
-from fast_tmp.admin.res_model import AmisRes
 from fast_tmp.utils.token import create_access_token, decode_access_token
 
 
@@ -46,11 +46,7 @@ def app_add_login_url(
         return AmisRes()
 
 
-async def get_current_user(
-    amisT: Optional[str] = Cookie(
-        None,
-    )
-):
+async def get_current_user(amisT: Optional[str] = Cookie(None)):
     if not amisT:
         raise credentials_exception
     try:

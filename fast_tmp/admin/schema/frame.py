@@ -15,8 +15,6 @@ class Dialog(BaseModel):
     body: Union[str, BaseModel]
 
 
-# todo:尚未完成：https://baidu.gitee.io/amis/docs/components/dialog?page=1
-
 # 抽屉
 class Drawer(BaseModel):
     title: str

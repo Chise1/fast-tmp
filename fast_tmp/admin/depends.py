@@ -1,5 +1,3 @@
-from typing import Optional
-
 from fastapi import Depends, HTTPException
 from starlette.requests import Request
 from starlette.status import HTTP_404_NOT_FOUND

@@ -8,9 +8,9 @@ from tortoise.transactions import in_transaction
 
 from fast_tmp.conf import settings
 
-from .auth import get_user_has_perms
 from ..models import User
 from ..utils.common import import_module
+from .auth import get_user_has_perms
 from .creator import AbstractApp, AbstractCRUD
 from .depends import get_model
 from .res_model import AmisRes
@@ -27,8 +27,7 @@ def get_abstract_app():
     return AbstractApp._instance
 
 
-def get_app_page(resource: str,
-                 app: AbstractApp = Depends(get_abstract_app)) -> AbstractCRUD:
+def get_app_page(resource: str, app: AbstractApp = Depends(get_abstract_app)) -> AbstractCRUD:
     return app.get_AbstractCRUD(resource)
 
 
@@ -81,8 +80,7 @@ async def update_view(
     user: User = Depends(get_user_has_perms()),
 ):
     update_fields = page.up_include
-    data = await model.filter(pk=pk).first().values(
-        *update_fields)  # fixme:是字典还是列表？
+    data = await model.filter(pk=pk).first().values(*update_fields)  # fixme:是字典还是列表？
     return AmisRes(data=data)
 
 
@@ -114,8 +112,7 @@ class DIDS(BaseModel):
 
 
 @router.post("/{resource}/deleteMany/")
-async def bulk_delete(request: Request, ids: DIDS,
-                      model: Model = Depends(get_model)):
+async def bulk_delete(request: Request, ids: DIDS, model: Model = Depends(get_model)):
     await model.filter(pk__in=ids.ids).delete()
     return AmisRes()
 

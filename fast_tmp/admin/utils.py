@@ -1,5 +1,4 @@
-from enum import Enum
-from typing import List, Optional, Tuple, Type
+from typing import Dict, List, Optional, Tuple, Type
 
 from tortoise import BackwardFKRelation, ForeignKeyFieldInstance, ManyToManyFieldInstance, Model
 from tortoise.fields import (
@@ -20,7 +19,8 @@ from tortoise.fields import (
 )
 from tortoise.fields.data import CharEnumFieldInstance, IntEnumFieldInstance
 
-from fast_tmp.admin.schema.forms import Column, Mapping
+from fast_tmp.admin.schema.abstract_schema import _Action
+from fast_tmp.admin.schema.forms import Column, Control, Mapping
 from fast_tmp.admin.schema.forms.enums import FormWidgetSize, ItemModel
 from fast_tmp.admin.schema.forms.widgets import (
     DateItem,
@@ -62,16 +62,20 @@ def get_columns_from_model(
     model: Type[Model],
     include: Tuple[str, ...] = (),
     exclude: Tuple[str, ...] = (),
+    extra_fields: Dict[str, _Action] = None,
 ) -> List[Column]:
     """
     从pydantic_queryset_creator创建的schema获取字段
-    todo：增加多对多字段显示
     """
-    fields = model._meta.fields_map
-
+    fields = model._meta.fields_map  # todo：增加多对多字段显示
+    if not extra_fields:
+        extra_fields = {}
     res = []
     for field, field_type in fields.items():
         if include and field not in include or exclude and field in exclude:
+            continue
+        if field in extra_fields.keys():
+            res.append(extra_fields[field])
             continue
         if isinstance(field_type, (IntEnumFieldInstance, CharEnumFieldInstance)):
             res.append(
@@ -94,19 +98,25 @@ def get_controls_from_model(
     model: Type[Model],
     include: Tuple[str, ...] = (),
     exclude: Tuple[str, ...] = (),
-    extra_fields: Optional[Tuple[Column, ...]] = None,
+    extra_controls: Optional[Tuple[Column, ...]] = None,
+    extra_fields: Dict[str, Control] = None,
     exclude_readonly: bool = False,
-) -> List[Column]:
+) -> List[Control]:
     """
     从pydantic_queryset_creator创建的schema获取字段
     extra_fields:额外的自定义字段
     """
+    if not extra_fields:
+        extra_fields = {}
     fields = model._meta.fields_map
     res = []
     for field, field_type in fields.items():
         if include and field not in include or (exclude and field in exclude):
             continue
         if exclude_readonly and field_type.pk:
+            continue
+        if field in extra_fields.keys():
+            res.append(extra_fields[field])
             continue
         if isinstance(field_type, (IntField, SmallIntField, BigIntField)):
             if isinstance(field_type, IntEnumFieldInstance):
@@ -228,8 +238,10 @@ def get_controls_from_model(
             )
         elif isinstance(field_type, DecimalField):
             validation = {}
-            validation["minimum"] = field_type.constraints.get("ge")
-            validation["maximum"] = field_type.constraints.get("le")
+            if field_type.constraints.get("ge") is not None:
+                validation["minimum"] = field_type.constraints.get("ge")
+            if field_type.constraints.get("le") is not None:
+                validation["maximum"] = field_type.constraints.get("le")
             res.append(
                 NumberItem(
                     min=field_type.constraints.get("ge"),
@@ -280,6 +292,6 @@ def get_controls_from_model(
                 )
         else:
             raise ValueError(f"{field}字段的字段类型尚不支持!")
-    if extra_fields:
-        res.extend(extra_fields)
+    if extra_controls:
+        res.extend(extra_controls)
     return res

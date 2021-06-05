@@ -10,11 +10,10 @@
     />
     <meta http-equiv="X-UA-Compatible" content="IE=Edge"/>
     <link rel="stylesheet" title="default"
-          href="/static/public/amis/sdk/sdk.css"/>
-    <link rel="stylesheet" href="/static/public/amis/sdk/helper.css"/>
-    <script src="/static/public/amis/sdk/sdk.js"></script>
-    <script src="/static/public/vue2.js"></script>
-    <script src="/static/public/axios.js"></script>
+          href="/static/amis/sdk/sdk.css"/>
+    <link rel="stylesheet" href="/static/amis/sdk/helper.css"/>
+    <script src="/static/amis/sdk/sdk.js"></script>
+    <script src="/static/amis/vue2.js"></script>
     <style>
         html,
         body,
@@ -83,33 +82,38 @@
                                            id="password"/>
     <button class="but" onclick="login()">登录</button>
 </div>
-<div id="root" class="app-wrapper" , hidden=true></div>
+<div id="root" class="app-wrapper" hidden></div>
 <script>
     function login() {
-        axios(
-            {
-                method: 'post',
-                url: "/admin/login",
-                data: {
-                    "username": document.getElementById("username").value,
-                    "password":
-                    document.getElementById("password").value
-                },
-                headers: {'Content-Type': 'application/json'}
+        xmlhttp = new XMLHttpRequest();
+        xmlhttp.onreadystatechange = function () {
+            if (xmlhttp.readyState === 4) {
+                data = (new Function("return " + xmlhttp.responseText))()
+                if (xmlhttp.status === 200) {
+                    if (data.detail.code !== 0) {
+                        window.alert(data.detail.msg)
+                    } else {
+                        document.getElementById('login').hidden = true;
+                        document.getElementById("root").hidden = false;
+                        main()
+                    }
+                } else {
+                    window.alert(data.detail.msg)
+                }
             }
-        ).then(function (response) {
-            data = response.data;
-            if (data.detail.code !== 0) {
-                window.alert(data.detail.msg)
-            } else {
-                document.getElementById('login').hidden = true;
-                document.getElementById("root").hidden = false;
-                main()
-            }
-            console.log(data)
-        }).catch(function (error) {
-            console.log(error);
-        });
+        }
+        xmlhttp.open(
+            "post", "/admin/login", true,
+        )
+        xmlhttp.setRequestHeader('Content-Type', 'application/json')
+        xmlhttp.send(
+            JSON.stringify({
+                "username": document.getElementById("username").value,
+                "password":
+                document.getElementById("password").value
+            })
+        )
+
     }
 
     function main() {
@@ -118,7 +122,7 @@
         const app = {
             type: "app",
             brandName: "Admin",
-            logo: "/static/public/logo.png",
+            logo: "/static/amis/logo.png",
             header: {
                 type: "tpl",
                 inline: false,
@@ -191,7 +195,6 @@
                         document.getElementById("login").hidden = false
                         document.getElementById("root").hidden = true
                     }
-                    console.log("asdfasd", response)
                     return response;
                 },
                 isCurrentUrl: (to, ctx) => {
