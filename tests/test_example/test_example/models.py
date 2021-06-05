@@ -25,8 +25,10 @@ class Book(Model):
     author = fields.ForeignKeyField("fast_tmp.Author", related_name="books")
     rating = fields.FloatField()
 
-    class Amis:
-        fk_label = {"author": "name"}  # fixme:加入到文档
+    class Amis:  # fixme:加入到文档
+        # 外键列表选择的时候显示的对应表字段值
+        fk_label = {"author": "name"}
+        name_label = {}  # 当查询了额外的字段的时候需要显示的字段的值，注意这个直接对应表头，即name:label
 
 
 class BookNoConstraint(Model):

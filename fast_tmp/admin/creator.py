@@ -80,7 +80,8 @@ class AbstractCRUD:
         self.model = model
         self.prefix = prefix
         self.name = model.__name__
-        self.list_include = list_exclude
+        self.list_include = list_include
+        self.list_exclude = list_exclude
         self.up_include = up_include
         buttons = []
         if "Create" in methods:

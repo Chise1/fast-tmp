@@ -2,6 +2,7 @@ from typing import Dict, List, Optional, Tuple, Type
 
 from tortoise import (
     BackwardFKRelation,
+    BackwardOneToOneRelation,
     ForeignKeyFieldInstance,
     ManyToManyFieldInstance,
     Model,
@@ -78,13 +79,22 @@ def get_columns_from_model(
     if not extra_fields:
         extra_fields = {}
     res = []
+    if hasattr(model, "Amis") and hasattr(model.Amis, "name_label"):
+        name_label: dict = model.Amis.name_label
+    else:
+        name_label = {}
     for field, field_type in fields.items():
         if include and field not in include or exclude and field in exclude:
             continue
+
         if field in extra_fields.keys():
             res.append(extra_fields[field])
             continue
-        if isinstance(field_type, (IntEnumFieldInstance, CharEnumFieldInstance)):
+        if field_type.reference is not None:  # 忽略外键
+            continue
+        if field in name_label.keys():
+            res.append(Column(name=field, label=name_label[field]))
+        elif isinstance(field_type, (IntEnumFieldInstance, CharEnumFieldInstance)):
             res.append(
                 Mapping(
                     name=field,
@@ -92,9 +102,7 @@ def get_columns_from_model(
                     map={k: v for k, v in field_type.enum_type.choices.items()},
                 )
             )
-            # fixme:处理开关字段
-        # elif isinstance(field_type,):#fixme:处理特殊字段，比如json字段，或者图片、开关等需要特殊显示的类型。
-        elif isinstance(field_type, ManyToManyFieldInstance):
+        elif isinstance(field_type, (ManyToManyFieldInstance, BackwardFKRelation)):
             continue
         else:
             res.append(Column(name=field, label=field))
@@ -107,7 +115,7 @@ def get_controls_from_model(
     exclude: Tuple[str, ...] = (),
     extra_controls: Optional[Tuple[Column, ...]] = None,
     extra_fields: Dict[str, Control] = None,
-    exclude_readonly: bool = False,
+    exclude_readonly: bool = True,
 ) -> List[Control]:
     """
     从pydantic_queryset_creator创建的schema获取字段
@@ -283,7 +291,7 @@ def get_controls_from_model(
                         joinValues=False,
                     )
                 )
-        elif isinstance(field_type, BackwardFKRelation):
+        elif isinstance(field_type, (BackwardFKRelation, BackwardOneToOneRelation)):
             pass
             # if field_type.generated:
             #     res.append(
@@ -295,7 +303,7 @@ def get_controls_from_model(
         elif isinstance(field_type, (ForeignKeyFieldInstance, OneToOneFieldInstance)):
             res.append(
                 SelectItem(
-                    **_get_base_attr(field_type, required=False),
+                    **_get_base_attr(field_type, required=False, name=field_type.source_field),
                     source=f"get:{settings.ADMIN_PREFIX}/{model.__name__}/select?field={field}",
                 )
             )
