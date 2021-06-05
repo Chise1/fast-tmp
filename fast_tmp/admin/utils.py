@@ -1,6 +1,12 @@
 from typing import Dict, List, Optional, Tuple, Type
 
-from tortoise import BackwardFKRelation, ForeignKeyFieldInstance, ManyToManyFieldInstance, Model
+from tortoise import (
+    BackwardFKRelation,
+    ForeignKeyFieldInstance,
+    ManyToManyFieldInstance,
+    Model,
+    OneToOneFieldInstance,
+)
 from tortoise.fields import (
     BigIntField,
     BooleanField,
@@ -33,6 +39,7 @@ from fast_tmp.admin.schema.forms.widgets import (
     TimeItem,
     UUIDItem,
 )
+from fast_tmp.conf import settings
 
 
 def _get_base_attr(field_type: Field, **kwargs) -> dict:
@@ -114,6 +121,8 @@ def get_controls_from_model(
         if include and field not in include or (exclude and field in exclude):
             continue
         if exclude_readonly and field_type.pk:
+            continue
+        if field_type.reference is not None:  # 忽略外键
             continue
         if field in extra_fields.keys():
             res.append(extra_fields[field])
@@ -275,21 +284,21 @@ def get_controls_from_model(
                     )
                 )
         elif isinstance(field_type, BackwardFKRelation):
-            if field_type.generated:
-                res.append(
-                    SelectItem(
-                        **_get_base_attr(field_type, required=False),
-                        source=f"get:/{field_type.model_field_name}-selects",
-                    )
+            pass
+            # if field_type.generated:
+            #     res.append(
+            #         SelectItem(
+            #             **_get_base_attr(field_type, required=False),
+            #             source=f"get:/{field_type.model_field_name}-selects",
+            #         )
+            #     )
+        elif isinstance(field_type, (ForeignKeyFieldInstance, OneToOneFieldInstance)):
+            res.append(
+                SelectItem(
+                    **_get_base_attr(field_type, required=False),
+                    source=f"get:{settings.ADMIN_PREFIX}/{model.__name__}/select?field={field}",
                 )
-        elif isinstance(field_type, ForeignKeyFieldInstance):
-            if field_type.generated:
-                res.append(
-                    SelectItem(
-                        **_get_base_attr(field_type, required=False),
-                        source=f"get:/{field_type.model_field_name}-selects",
-                    )
-                )
+            )
         else:
             raise ValueError(f"{field}字段的字段类型尚不支持!")
     if extra_controls:

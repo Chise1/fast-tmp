@@ -1,9 +1,9 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, Path
+from fastapi import APIRouter, Depends, Path, Query
 from pydantic import BaseModel
 from starlette.requests import Request
-from tortoise import Model
+from tortoise import ForeignKeyFieldInstance, Model
 from tortoise.transactions import in_transaction
 
 from fast_tmp.conf import settings
@@ -126,6 +126,25 @@ async def get_schema(
     user: User = Depends(get_user_has_perms()),
 ):
     return page.get_Page().dict(exclude_none=True)
+
+
+@router.get("/{resource}/select")
+async def get_schema(
+    request: Request,
+    field: str = Query(
+        ...,
+    ),
+    page: AbstractCRUD = Depends(get_app_page),
+    model: Model = Depends(get_model),
+    user: User = Depends(get_user_has_perms()),
+):
+    field_model = model._meta.fields_map[field].related_model
+    amis_c = getattr(model, "Amis", None)
+    x = await field_model.all()
+    if amis_c is not None and amis_c.fk_label.get(field):
+        return await field_model.all().values(value="id", label=amis_c.fk_label.get(field))
+    else:
+        return await field_model.all().values(label="id", value="id")
 
 
 @router.get("/site")

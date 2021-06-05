@@ -16,10 +16,17 @@ class Author(Model):
     name = fields.CharField(max_length=255)
 
 
+class AuthorT(Model):
+    author = fields.OneToOneField("fast_tmp.Author")
+
+
 class Book(Model):
     name = fields.CharField(max_length=255)
     author = fields.ForeignKeyField("fast_tmp.Author", related_name="books")
     rating = fields.FloatField()
+
+    class Amis:
+        fk_label = {"author": "name"}  # fixme:加入到文档
 
 
 class BookNoConstraint(Model):
