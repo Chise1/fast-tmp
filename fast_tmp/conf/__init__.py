@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     SETTINGS_MODULE: str
     DEBUG: bool = True
     LOGIN_URL: str = "/api-token-auth"
+    ADMIN_LOGIN_URL: str = "/login"
+    ADMIN_PREFIX: str = "/admin"
 
     @validator("DEBUG", pre=True)
     def get_debug(cls, v: str) -> bool:

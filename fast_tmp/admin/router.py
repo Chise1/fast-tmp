@@ -1,19 +1,19 @@
-from typing import Any, List
+from typing import List
 
 from fastapi import APIRouter, Depends, Path
-from fastapi.exceptions import HTTPException
 from pydantic import BaseModel
 from starlette.requests import Request
 from tortoise import Model
 from tortoise.transactions import in_transaction
 
 from fast_tmp.conf import settings
-from fast_tmp.depends.auth import get_user
 
+from .auth import get_user_has_perms
 from ..models import User
 from ..utils.common import import_module
 from .creator import AbstractApp, AbstractCRUD
 from .depends import get_model
+from .res_model import AmisRes
 
 router = APIRouter()
 
@@ -23,27 +23,23 @@ class ListDataWithPage(BaseModel):  # 带分页的数据
     total: int = 0
 
 
-class BaseRes(BaseModel):
-    status: int = 0
-    msg: str = ""
-    data: Any = {}
-
-
 def get_abstract_app():
     return AbstractApp._instance
 
 
-def get_app_page(resource: str, app: AbstractApp = Depends(get_abstract_app)) -> AbstractCRUD:
+def get_app_page(resource: str,
+                 app: AbstractApp = Depends(get_abstract_app)) -> AbstractCRUD:
     return app.get_AbstractCRUD(resource)
 
 
-@router.get("/{resource}/list", response_model=BaseRes)
+@router.get("/{resource}/list", response_model=AmisRes)
 async def list_view(
     request: Request,
     abstract_crud: AbstractCRUD = Depends(get_app_page),
     model: Model = Depends(get_model),
     perPage: int = 10,
     page: int = 1,
+    user: User = Depends(get_user_has_perms()),
 ):
     qs = model.all()
     params = dict(request.query_params)
@@ -54,7 +50,7 @@ async def list_view(
     total = await qs.count()
     qs = qs.limit(perPage).offset((page - 1) * perPage)
     values = await qs.values(*abstract_crud.list_include)
-    return BaseRes(
+    return AmisRes(
         data=ListDataWithPage(
             total=total,
             items=values,
@@ -67,12 +63,13 @@ async def update(
     request: Request,
     model: Model = Depends(get_model),
     pk: int = Path(...),
+    user: User = Depends(get_user_has_perms()),
 ):
     data = await request.json()
     async with in_transaction() as conn:
         obj = await model.filter(pk=pk).using_db(conn).select_for_update().get()
         await obj.update_from_dict(data).save(using_db=conn)
-    return BaseRes()
+    return AmisRes()
 
 
 @router.get("/{resource}/update/{pk}")
@@ -81,10 +78,12 @@ async def update_view(
     pk: int = Path(...),
     page: AbstractCRUD = Depends(get_app_page),
     model: Model = Depends(get_model),
+    user: User = Depends(get_user_has_perms()),
 ):
     update_fields = page.up_include
-    data = await model.filter(pk=pk).first().values(*update_fields)  # fixme:是字典还是列表？
-    return BaseRes(data=data)
+    data = await model.filter(pk=pk).first().values(
+        *update_fields)  # fixme:是字典还是列表？
+    return AmisRes(data=data)
 
 
 @router.post("/{resource}/create")
@@ -92,16 +91,22 @@ async def create(
     request: Request,
     page: AbstractCRUD = Depends(get_app_page),
     model: Model = Depends(get_model),
+    user: User = Depends(get_user_has_perms()),
 ):
     data = await request.json()
     await model.create(**data)
-    return BaseRes(data=data)
+    return AmisRes(data=data)
 
 
 @router.delete("/{resource}/delete/{pk}")
-async def delete(request: Request, pk: int, model: Model = Depends(get_model)):
+async def delete(
+    request: Request,
+    pk: int,
+    model: Model = Depends(get_model),
+    user: User = Depends(get_user_has_perms()),
+):
     await model.filter(pk=pk).delete()
-    return BaseRes()
+    return AmisRes()
 
 
 class DIDS(BaseModel):
@@ -109,9 +114,10 @@ class DIDS(BaseModel):
 
 
 @router.post("/{resource}/deleteMany/")
-async def bulk_delete(request: Request, ids: DIDS, model: Model = Depends(get_model)):
+async def bulk_delete(request: Request, ids: DIDS,
+                      model: Model = Depends(get_model)):
     await model.filter(pk__in=ids.ids).delete()
-    return BaseRes()
+    return AmisRes()
 
 
 @router.get("/{resource}/schema")
@@ -120,15 +126,13 @@ async def get_schema(
     resource: str,
     page: AbstractCRUD = Depends(get_app_page),
     model: Model = Depends(get_model),
+    user: User = Depends(get_user_has_perms()),
 ):
     return page.get_Page().dict(exclude_none=True)
 
 
-async def t():
-    raise HTTPException(200, detail={"code": 401, "msg": "sdfsadf"})
-
-
 @router.get("/site")
-async def get_data(user: User = Depends(t)):
+async def get_data(user: User = Depends(get_user_has_perms())):
+    # fixme:修改为基于权限的返回
     module = import_module(settings.EXTRA_SETTINGS["ADMIN_SITE_CLASS"])
-    return BaseRes(data={"pages": module.dict()})
+    return AmisRes(data={"pages": module.dict()})
