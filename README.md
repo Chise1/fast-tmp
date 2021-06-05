@@ -1,9 +1,7 @@
 # fast-tmp
 
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-
 [![Build Status](https://travis-ci.com/Chise1/fast-tmp.svg?branch=dev)](https://travis-ci.com/Chise1/fast-tmp)
-
 ![PyPI](https://img.shields.io/pypi/v/fast-tmp)
 ## 概述
 本项目主要是方便快速构建fastapi的后端开发环境，依赖于```cookiecutter```，并提供方便快捷的生成路由的方法。
