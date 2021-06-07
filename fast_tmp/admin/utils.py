@@ -330,7 +330,7 @@ def get_controls_from_model(
             )
         elif isinstance(field_type, UUIDField):
             res.append(UUIDItem(**_get_base_attr(field_type), length=None))
-        elif isinstance(field_type, ManyToManyFieldInstance):  # 多对多字段
+        elif isinstance(field_type, ManyToManyFieldInstance):
             res.append(
                 SelectItem(
                     **_get_base_attr(field_type, required=False),
@@ -340,16 +340,11 @@ def get_controls_from_model(
                     joinValues=False,
                 )
             )
-        elif isinstance(field_type, (BackwardFKRelation, BackwardOneToOneRelation)):
-            # pass
-            if field_type.generated:
-                res.append(
-                    SelectItem(
-                        **_get_base_attr(field_type, required=False),
-                        source=f"get:/{field_type.model_field_name}-selects",
-                    )
-                )
-        elif isinstance(field_type, (ForeignKeyFieldInstance, OneToOneFieldInstance)):
+        elif isinstance(field_type, BackwardFKRelation):
+            pass
+        elif isinstance(
+            field_type, (ForeignKeyFieldInstance, OneToOneFieldInstance, BackwardOneToOneRelation)
+        ):
             res.append(
                 SelectItem(
                     **_get_base_attr(field_type, name=field),

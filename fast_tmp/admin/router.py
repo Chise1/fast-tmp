@@ -68,11 +68,10 @@ def get_model_amis_relation_label(model: Type[Model]):
     return {}
 
 
-def exclude_reference(fields: Set, model, load_relation_fields: bool = True):
+def exclude_reference(fields: Set, model):
     """
     清理关系字段（即生成的authoer_id等实际字段）
-    检查并替换跨表查询字段
-    :key load_relation_fields: 是否把外键返回为amis对应的字段，而不是id
+    检查并替换跨表查询字段,(只针对外键）
     """
     relation_fields_rename = {}
     fields_value = set()
@@ -172,21 +171,44 @@ async def update(
     pk: int = Path(...),
     user: User = Depends(get_user_has_perms()),
 ):
+    fields, relation_fields = get_fields(
+        abstract_crud.up_include, abstract_crud.up_exclude, model, need_m2m=True
+    )
     data: dict = await request.json()
-    fields = get_fields(abstract_crud.up_include, abstract_crud.up_exclude, model)
     fields, relation_fields_rename = exclude_reference(fields, model)
-    write_data = {}
+    data_value = {}
+    relation_data = {}
     relation_fields_keys = relation_fields_rename.keys()
     for k, v in data.items():
         if k in fields:
-            write_data[k] = v
+            data_value[k] = v
         elif k in relation_fields_keys:
-            write_data[relation_fields_rename[k]] = v
+            data_value[relation_fields_rename[k]] = v
         else:
             pass
+    # 把里面的外键字段更换为对应的数据库字段
+    for k, v in data.items():
+        for field, field_type in model._meta.fields_map.items():
+            if k == field:
+                if isinstance(field_type, ForeignKeyFieldInstance):
+                    data_value.pop(k)
+                    data_value[field_type.source_field] = v
+                break
+
     async with in_transaction() as conn:
-        obj = await model.filter(pk=pk).using_db(conn).select_for_update().get()
-        await obj.update_from_dict(write_data).save(using_db=conn)
+        instance = await model.filter(pk=pk).using_db(conn).select_for_update().get()
+        await instance.update_from_dict(data_value).save(using_db=conn)
+        for k, v in relation_data.items():
+            for field, field_type in model._meta.fields_map.items():
+                if field == k:
+                    if isinstance(field_type, ManyToManyFieldInstance):
+                        field_model = model._meta.fields_map[field].related_model
+                        await getattr(instance, k).clear(using_db=conn)  # 清理旧的多对多字段
+                        await getattr(instance, k).add(
+                            *await field_model.filter(pk__in=v), using_db=conn
+                        )
+                    break
+
     return AmisRes()
 
 
@@ -201,7 +223,10 @@ async def update_view(
     qs = model.filter(pk=pk)
     fields = get_fields(abstract_crud.up_include, abstract_crud.up_exclude, model)
     qs = get_select_prefetch_fields(qs, fields, model)
-    fields, relation_fields_rename = exclude_reference(fields, model, load_relation_fields=False)
+    fields, relation_fields_rename = exclude_reference(
+        fields,
+        model,
+    )
     data = await qs.values(*fields, **relation_fields_rename)  # fixme:是字典还是列表？
     return AmisRes(data=data)
 
@@ -224,8 +249,6 @@ async def create(
             relation_data[k] = v
         else:
             data_value[k] = v
-    # fixme:增加事物
-
     # 把里面的外键字段更换为对应的数据库字段
     for k, v in data.items():
         for field, field_type in model._meta.fields_map.items():
@@ -240,18 +263,9 @@ async def create(
             for field, field_type in model._meta.fields_map.items():
                 if field == k:
                     if isinstance(field_type, ManyToManyFieldInstance):
-                        field_model = model._meta.fields_map[field].related_model  # fixme:需要确认
-                        await getattr(instance, k).add(
-                            *await field_model.filter(pk__in=v), using_db=conn
-                        )
-                    elif isinstance(field_type, BackwardFKRelation):  # todo:需要调试
                         field_model = model._meta.fields_map[field].related_model
-                        f_name = field_model._meta.fields_map.get(
-                            field_type.to_field
-                        )  # fixme:确认如何得到反向关系里面的外键字段
-                        await field_model.filter(pk__in=v).using_db(conn).update(
-                            **{f_name: instance.pk},
-                        )  # fixme:确认如何获取反向关系指向的instance字段
+                        subs = await field_model.filter(pk__in=v)
+                        await getattr(instance, k).add(*subs, using_db=conn)
                     break
     return AmisRes()
 
@@ -344,22 +358,41 @@ async def get_schema(
 async def get_backrealtion_values(
     request: Request,
     field: str = Query(...),
+    pk: str = Query(...),
     page: AbstractCRUD = Depends(get_app_page),
     model: Model = Depends(get_model),
     user: User = Depends(get_user_has_perms()),
 ):
     field_model = model._meta.fields_map[field].related_model
+    # if isinstance(model._meta.fields_map[field],ManyToManyFieldInstance):
     amis_c = getattr(model, "Amis", None)
     if (
         amis_c is not None
         and hasattr(amis_c, "relation_label")
         and amis_c.relation_label.get(field)
     ):
-        return await field_model.all().values(
-            field_model._meta.pk_attr, amis_c.relation_label.get(field)
+        # return await field_model.all().values(
+        #     field_model._meta.pk_attr, amis_c.relation_label.get(field)
+        # )
+        return (
+            await model.filter(pk=pk)
+            .prefetch_related(field)
+            .values(
+                **{
+                    field_model._meta.pk_attr: field + "__" + field_model._meta.pk_attr,
+                    amis_c.relation_label.get(field): field
+                    + "__"
+                    + amis_c.relation_label.get(field),
+                }
+            )
         )
+
     else:
-        return await field_model.all().values(field_model._meta.pk_attr)
+        return (
+            await model.filter(pk=pk)
+            .prefetch_related(field)
+            .values(**{field_model._meta.pk_attr: field + "__" + field_model._meta.pk_attr})
+        )
 
 
 @router.get("/site")
