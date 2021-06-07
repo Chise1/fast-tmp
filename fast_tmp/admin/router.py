@@ -39,7 +39,7 @@ def get_app_page(resource: str, app: AbstractApp = Depends(get_abstract_app)) ->
     return app.get_AbstractCRUD(resource)
 
 
-def get_fields(include_fields, exclude_fields, model):
+def get_fields(include_fields, exclude_fields, model, need_m2m: bool = False):
     """
     获取要读取的字段
     """
@@ -57,7 +57,9 @@ def get_fields(include_fields, exclude_fields, model):
     for field, field_type in model._meta.fields_map.items():
         if isinstance(field_type, (ManyToManyFieldInstance, BackwardFKRelation)):
             relation_fields.add(field)
-    return fields - relation_fields
+    if not need_m2m:
+        return fields - relation_fields
+    return fields, relation_fields
 
 
 def get_model_amis_relation_label(model: Type[Model]):
@@ -207,13 +209,51 @@ async def update_view(
 @router.post("/{resource}/create")
 async def create(
     request: Request,
-    page: AbstractCRUD = Depends(get_app_page),
+    abstract_crud: AbstractCRUD = Depends(get_app_page),
     model: Model = Depends(get_model),
     user: User = Depends(get_user_has_perms()),
 ):
-    data = await request.json()
-    await model.create(**data)
-    return AmisRes(data=data)
+    fields, relation_fields = get_fields(
+        abstract_crud.create_include, abstract_crud.create_exclude, model, need_m2m=True
+    )
+    data: dict = await request.json()
+    relation_data = {}
+    data_value = {}
+    for k, v in data.items():
+        if k in relation_fields:
+            relation_data[k] = v
+        else:
+            data_value[k] = v
+    # fixme:增加事物
+
+    # 把里面的外键字段更换为对应的数据库字段
+    for k, v in data.items():
+        for field, field_type in model._meta.fields_map.items():
+            if k == field:
+                if isinstance(field_type, ForeignKeyFieldInstance):
+                    data_value.pop(k)
+                    data_value[field_type.source_field] = v
+                break
+    async with in_transaction() as conn:
+        instance = await model.create(**data_value, using_db=conn)
+        for k, v in relation_data.items():
+            for field, field_type in model._meta.fields_map.items():
+                if field == k:
+                    if isinstance(field_type, ManyToManyFieldInstance):
+                        field_model = model._meta.fields_map[field].related_model  # fixme:需要确认
+                        await getattr(instance, k).add(
+                            *await field_model.filter(pk__in=v), using_db=conn
+                        ).using_db(conn)
+                    elif isinstance(field_type, BackwardFKRelation):  # todo:需要调试
+                        field_model = model._meta.fields_map[field].related_model
+                        f_name = field_model._meta.fields_map.get(
+                            field_type.to_field
+                        )  # fixme:确认如何得到反向关系里面的外键字段
+                        await field_model.filter(pk__in=v).using_db(conn).update(
+                            **{f_name: instance.pk},
+                        )  # fixme:确认如何获取反向关系指向的instance字段
+                    break
+    return AmisRes()
 
 
 @router.delete("/{resource}/delete/{pk}")
@@ -265,9 +305,13 @@ async def get_schema(
         and hasattr(amis_c, "relation_label")
         and amis_c.relation_label.get(field)
     ):
-        return await field_model.all().values(value="id", label=amis_c.relation_label.get(field))
+        return await field_model.all().values(
+            value=field_model._meta.pk_attr, label=amis_c.relation_label.get(field)
+        )
     else:
-        return await field_model.all().values(label="id", value="id")
+        return await field_model.all().values(
+            label=field_model._meta.pk_attr, value=field_model._meta.pk_attr
+        )
 
 
 @router.get("/{resource}/mapping")

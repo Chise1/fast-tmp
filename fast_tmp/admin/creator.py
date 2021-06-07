@@ -84,6 +84,8 @@ class AbstractCRUD:
         self.list_exclude = list_exclude
         self.up_include = up_include
         self.up_exclude = up_exclude
+        self.create_include = create_include
+        self.create_exclude = create_exclude
         buttons = []
         if "Create" in methods:
             self.body.append(

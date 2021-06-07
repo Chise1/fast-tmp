@@ -331,16 +331,15 @@ def get_controls_from_model(
         elif isinstance(field_type, UUIDField):
             res.append(UUIDItem(**_get_base_attr(field_type), length=None))
         elif isinstance(field_type, ManyToManyFieldInstance):  # 多对多字段
-            if field_type.generated:
-                res.append(
-                    SelectItem(
-                        **_get_base_attr(field_type, required=False),
-                        source=f"get:/{field_type.model_field_name}-selects",
-                        multiple=True,
-                        extractValue=True,
-                        joinValues=False,
-                    )
+            res.append(
+                SelectItem(
+                    **_get_base_attr(field_type, required=False),
+                    source=f"get:{settings.ADMIN_PREFIX}/{model.__name__}/select?field={field}",
+                    multiple=True,
+                    extractValue=True,
+                    joinValues=False,
                 )
+            )
         elif isinstance(field_type, (BackwardFKRelation, BackwardOneToOneRelation)):
             # pass
             if field_type.generated:
@@ -353,7 +352,7 @@ def get_controls_from_model(
         elif isinstance(field_type, (ForeignKeyFieldInstance, OneToOneFieldInstance)):
             res.append(
                 SelectItem(
-                    **_get_base_attr(field_type, required=False, name=field),
+                    **_get_base_attr(field_type, name=field),
                     source=f"get:{settings.ADMIN_PREFIX}/{model.__name__}/select?field={field}",
                 )
             )
