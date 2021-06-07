@@ -243,7 +243,7 @@ async def create(
                         field_model = model._meta.fields_map[field].related_model  # fixme:需要确认
                         await getattr(instance, k).add(
                             *await field_model.filter(pk__in=v), using_db=conn
-                        ).using_db(conn)
+                        )
                     elif isinstance(field_type, BackwardFKRelation):  # todo:需要调试
                         field_model = model._meta.fields_map[field].related_model
                         f_name = field_model._meta.fields_map.get(

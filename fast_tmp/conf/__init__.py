@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from pydantic import AnyHttpUrl, BaseSettings, HttpUrl, validator
 
+from fast_tmp.utils.common import import_module
 from fast_tmp.utils.db import init_model
 
 FASTAPI_VARIABLE = "FASTAPI_SETTINGS_MODULE"
@@ -94,6 +95,8 @@ class Settings(BaseSettings):
             warnings.warn("TORTOISE_ORM为空")
         else:
             init_model(self)
+        if settings.EXTRA_SETTINGS.get("ADMIN_SITE_CLASS"):
+            import_module(settings.EXTRA_SETTINGS["ADMIN_SITE_CLASS"])
 
 
 settings = Settings()

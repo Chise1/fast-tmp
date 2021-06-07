@@ -42,7 +42,7 @@ def app_add_login_url(
         access_token = create_access_token(
             data={"sub": user.username, "id": user.pk}, expires_delta=access_token_expires
         )
-        response.set_cookie(key="amisT", value=access_token)
+        response.set_cookie(key="amisT", value=access_token,expires=settings.ACCESS_TOKEN_EXPIRE_MINUTES*60)
         return AmisRes()
 
 

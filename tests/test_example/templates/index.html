@@ -69,7 +69,7 @@
         }
     </style>
 </head>
-<body>
+<body onload="checkCookie()">
 <div id="login">
     <h1 id="loginh1">登录</h1>
     <label for="username">账号</label><input class="logininput" type="text"
@@ -84,13 +84,35 @@
 </div>
 <div id="root" class="app-wrapper" hidden></div>
 <script>
+
+    function getCookie(cname) {
+        var name = cname + "=";
+        var ca = document.cookie.split(';');
+        for (var i = 0; i < ca.length; i++) {
+            var c = ca[i].trim();
+            if (c.indexOf(name) === 0) {
+                return c.substring(name.length, c.length);
+            }
+        }
+        return "";
+    }
+
+    function checkCookie() {
+        var token = getCookie("amisT");
+        if (token !== "") {
+            document.getElementById('login').hidden = true;
+            document.getElementById("root").hidden = false;
+            main()
+        }
+    }
+
     function login() {
+
         xmlhttp = new XMLHttpRequest();
         xmlhttp.onreadystatechange = function () {
 
             if (xmlhttp.readyState === 4) {
                 data = (new Function("return " + xmlhttp.responseText))()
-                console.log(data)
                 if (xmlhttp.status === 200) {
                     if (data.status !== 0) {
                         window.alert(data.msg)
@@ -115,7 +137,6 @@
                 document.getElementById("password").value
             })
         )
-
     }
 
     function main() {
@@ -193,7 +214,6 @@
                     location.hash = to;
                 },
                 responseAdpater(api, response, query, request) {//增加一个登陆弹框
-                    console.log(response)
                     if (response.code === 401) {
                         document.getElementById("login").hidden = false
                         document.getElementById("root").hidden = true
