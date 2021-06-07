@@ -27,8 +27,9 @@ class Book(Model):
 
     class Amis:  # fixme:加入到文档
         # 外键列表选择的时候显示的对应表字段值
-        fk_label = {"author": "name"}
+        relation_label = {"author": "name"}
         name_label = {}  # 当查询了额外的字段的时候需要显示的字段的值，注意这个直接对应表头，即name:label
+        # relation_field={""}
 
 
 class BookNoConstraint(Model):
@@ -47,6 +48,10 @@ class Tournament(Model):
 
     def __str__(self):
         return self.name
+
+    # class Amis:  # fixme:加入到文档
+    # 外键列表选择的时候显示的对应表字段值
+    # name_label = {}  # 当查询了额外的字段的时候需要显示的字段的值，注意这个直接对应表头，即name:label
 
 
 class Reporter(Model):

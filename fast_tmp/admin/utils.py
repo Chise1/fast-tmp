@@ -27,6 +27,8 @@ from tortoise.fields import (
 from tortoise.fields.data import CharEnumFieldInstance, IntEnumFieldInstance
 
 from fast_tmp.admin.schema.abstract_schema import _Action
+from fast_tmp.admin.schema.actions import DialogAction
+from fast_tmp.admin.schema.crud import CRUD
 from fast_tmp.admin.schema.forms import Column, Control, Mapping
 from fast_tmp.admin.schema.forms.enums import FormWidgetSize, ItemModel
 from fast_tmp.admin.schema.forms.widgets import (
@@ -40,6 +42,7 @@ from fast_tmp.admin.schema.forms.widgets import (
     TimeItem,
     UUIDItem,
 )
+from fast_tmp.admin.schema.frame import Dialog
 from fast_tmp.conf import settings
 
 
@@ -103,7 +106,54 @@ def get_columns_from_model(
                 )
             )
         elif isinstance(field_type, (ManyToManyFieldInstance, BackwardFKRelation)):
-            continue
+            related_model = model._meta.fields_map[field].related_model
+            cs = []
+            if hasattr(model, "Amis") and hasattr(model.Amis, "relation_label"):
+                for k, v in model.Amis.relation_label:
+                    if k == field:
+                        r_f: Field = getattr(related_model._meta, model.Amis.relation_label[field])
+                        cs = [
+                            Column(
+                                name=related_model._meta.pk_attr, label=related_model._meta.pk_attr
+                            ),
+                            Column(
+                                label=r_f.description or model.Amis.relation_label[field],
+                                name=model.Amis.relation_label[field],
+                            ),
+                        ]
+            if not cs:
+                cs = [Column(name=related_model._meta.pk_attr, label=related_model._meta.pk_attr)]
+            res.append(
+                DialogAction(
+                    label=field,
+                    dialog=Dialog(
+                        title=field + "列表",
+                        body=CRUD(
+                            api="get:"
+                            + f"{settings.ADMIN_PREFIX}/{model.__name__}/backrelation/"
+                            + "${"
+                            + model._meta.pk_attr
+                            + "}"
+                            + "?field="
+                            + field,
+                            columns=cs,
+                        ),
+                    ),
+                )
+            )
+        elif (
+            isinstance(field_type, (OneToOneFieldInstance, ForeignKeyFieldInstance))
+            and hasattr(model, "Amis")
+            and hasattr(model.Amis, "relation_label")
+            and model.Amis.relation_label.get(field)
+        ):
+            res.append(
+                Mapping(
+                    name=field,
+                    label=field,
+                    source=f"get:{settings.ADMIN_PREFIX}/{model.__name__}/mapping?field={field}",
+                )
+            )
         else:
             res.append(Column(name=field, label=field))
     return res
@@ -292,18 +342,18 @@ def get_controls_from_model(
                     )
                 )
         elif isinstance(field_type, (BackwardFKRelation, BackwardOneToOneRelation)):
-            pass
-            # if field_type.generated:
-            #     res.append(
-            #         SelectItem(
-            #             **_get_base_attr(field_type, required=False),
-            #             source=f"get:/{field_type.model_field_name}-selects",
-            #         )
-            #     )
+            # pass
+            if field_type.generated:
+                res.append(
+                    SelectItem(
+                        **_get_base_attr(field_type, required=False),
+                        source=f"get:/{field_type.model_field_name}-selects",
+                    )
+                )
         elif isinstance(field_type, (ForeignKeyFieldInstance, OneToOneFieldInstance)):
             res.append(
                 SelectItem(
-                    **_get_base_attr(field_type, required=False, name=field_type.source_field),
+                    **_get_base_attr(field_type, required=False, name=field),
                     source=f"get:{settings.ADMIN_PREFIX}/{model.__name__}/select?field={field}",
                 )
             )

@@ -24,7 +24,8 @@ class Mapping(Column):
     """
 
     type = ControlEnum.mapping
-    map: Dict[Union[int, str], str]  # map的值可以是html片段
+    map: Optional[Dict[Union[int, str], str]]  # map的值可以是html片段
+    source: Optional[str]
 
 
 class AbstractControl(Column):

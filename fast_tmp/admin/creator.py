@@ -83,6 +83,7 @@ class AbstractCRUD:
         self.list_include = list_include
         self.list_exclude = list_exclude
         self.up_include = up_include
+        self.up_exclude = up_exclude
         buttons = []
         if "Create" in methods:
             self.body.append(
@@ -121,6 +122,7 @@ class AbstractCRUD:
                             ),
                             api="put:" + prefix + "/" + model.__name__ + "/update/${id}",
                             initApi="get:" + prefix + "/" + model.__name__ + "/update/${id}",
+                            primaryField=model._meta.pk_attr,
                         ),
                     ),
                 )
