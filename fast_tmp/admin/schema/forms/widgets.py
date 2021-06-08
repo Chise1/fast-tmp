@@ -612,7 +612,6 @@ class PickerItem(Control):
 #     type = "page"
 #     body: Optional[Dict[str, Any]]
 #
-# # fixme:type有问题
 # # class YearItem(Control):
 # #     # Year年
 # #     type = "page"

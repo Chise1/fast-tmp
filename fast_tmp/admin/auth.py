@@ -23,15 +23,7 @@ def app_add_login_url(
     assert settings.ADMIN_LOGIN_URL, "ADMIN_LOGIN_URL can't be None!"
 
     @app.post(settings.ADMIN_LOGIN_URL)
-    async def login(
-        response: Response,
-        username: str = Body(
-            ...,
-        ),
-        password: str = Body(
-            ...,
-        ),
-    ):
+    async def login(response: Response, username: str = Body(...), password: str = Body(...)):
         """
         admin登录页面
         """
