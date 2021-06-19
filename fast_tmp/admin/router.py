@@ -16,9 +16,9 @@ from tortoise.transactions import in_transaction
 
 from fast_tmp.conf import settings
 
-from ..models import User
+from ..models import Permission, User
 from ..utils.common import import_module
-from .auth import get_user_has_perms
+from .auth import get_current_active_user, get_user_has_perms
 from .creator import AbstractApp, AbstractCRUD
 from .depends import get_model
 from .res_model import AmisRes
@@ -291,15 +291,17 @@ async def bulk_delete(request: Request, ids: DIDS, model: Model = Depends(get_mo
     return AmisRes()
 
 
-@router.get("/{resource}/schema")
-async def get_schema(
-    request: Request,
-    resource: str,
-    page: AbstractCRUD = Depends(get_app_page),
-    model: Model = Depends(get_model),
-    user: User = Depends(get_user_has_perms()),
-):
-    return page.get_Page().dict(exclude_none=True)
+#
+#
+# @router.get("/{resource}/schema")
+# async def get_schema(
+#     request: Request,
+#     resource: str,
+#     page: AbstractCRUD = Depends(get_app_page),
+#     model: Model = Depends(get_model),
+#     user: User = Depends(get_user_has_perms()),
+# ):
+#     return page.get_Page().dict(exclude_none=True)
 
 
 @router.get("/{resource}/select")
@@ -395,8 +397,14 @@ async def get_backrealtion_values(
         )
 
 
+module: AbstractApp = import_module(settings.EXTRA_SETTINGS["ADMIN_SITE_CLASS"])
+
+
 @router.get("/site")
-async def get_data(user: User = Depends(get_user_has_perms())):
+async def get_data(user: User = Depends(get_current_active_user)):
     # fixme:修改为基于权限的返回
-    module = import_module(settings.EXTRA_SETTINGS["ADMIN_SITE_CLASS"])
-    return AmisRes(data={"pages": module.dict()})
+    if not user.is_superuser:
+        user_perms = await user.perms
+    else:
+        user_perms = await Permission.all()
+    return AmisRes(data={"pages": module.dict(user_perms)})

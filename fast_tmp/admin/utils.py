@@ -264,7 +264,6 @@ def get_controls_from_model(
             if field_type.default is False:
                 res.append(
                     SwitchItem(
-                        type="switch",
                         name=field_type.model_field_name,
                         label="开关",
                         trueValue=True,

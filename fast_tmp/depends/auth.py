@@ -80,16 +80,23 @@ async def get_superuser(current_user: User = Depends(get_current_active_user)):
     return current_user
 
 
+_depend_cache = {}
+
+
 def get_user_has_perms(perms: Optional[Tuple[Any, ...]]):
     """
     判定用户是否具有相关权限
     """
+    depend_name = [str(perm) for perm in perms]
+    if not _depend_cache.get(depend_name):
 
-    async def user_has_perms(user: User = Depends(get_current_active_user)):
+        async def user_has_perms(user: User = Depends(get_current_active_user)):
 
-        if not perms or await user.has_perms(perms):
-            return user
-        else:
-            raise no_permission_exception
+            if not perms or await user.has_perms(perms):
+                return user
+            else:
+                raise no_permission_exception
 
-    return user_has_perms
+        _depend_cache[depend_name] = user_has_perms
+
+    return _depend_cache[depend_name]

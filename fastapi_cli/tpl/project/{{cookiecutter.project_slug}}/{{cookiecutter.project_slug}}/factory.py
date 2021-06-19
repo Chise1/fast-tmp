@@ -13,6 +13,8 @@ settings._init_model()
 def init_app(main_app: Starlette):
     @main_app.on_event("startup")
     async def startup() -> None:
+        from .site import admin_app
+        await admin_app.check_permission()
         pass
         # await AsyncRedisUtil.init(**settings.REDIS)
 
