@@ -1,14 +1,12 @@
 from typing import Dict, Optional, Tuple, Type
 
-from tortoise import Model
-
 from fast_tmp.admin.schema.actions import AjaxAction, DialogAction
 from fast_tmp.admin.schema.crud import CRUD
 from fast_tmp.admin.schema.enums import ButtonLevelEnum
 from fast_tmp.admin.schema.forms import Form
 from fast_tmp.admin.schema.frame import Dialog
 from fast_tmp.admin.schema.page import AppPage, AppPageGroup, Page
-from fast_tmp.admin.utils import get_columns_from_model, get_controls_from_model
+# from fast_tmp.admin.utils import get_columns_from_model, get_controls_from_model
 
 
 class AbstractApp:
@@ -60,7 +58,7 @@ class AbstractApp:
 class AbstractCRUD:
     def __init__(
         self,
-        model: Type[Model],
+        model: type,
         prefix: str = "/admin",
         create_include: Tuple[str, ...] = (),
         create_exclude: Tuple[str, ...] = (),
@@ -80,58 +78,58 @@ class AbstractCRUD:
         self.list_include = list_exclude
         self.up_include = up_include
         buttons = []
-        if "Create" in methods:
-            self.body.append(
-                DialogAction(
-                    label="新增",
-                    dialog=Dialog(
-                        title="新增",
-                        body=Form(
-                            name=f"新增{model.__name__}",
-                            title=f"新增{model.__name__}",
-                            controls=get_controls_from_model(
-                                model, include=create_include, exclude=create_exclude
-                            ),
-                            primaryField=model._meta.pk_attr,
-                            api=f"post:{prefix}/{model.__name__}/create",
-                        ),
-                    ),
-                )
-            )
-        if "Update" in methods:
-            buttons.append(
-                DialogAction(
-                    label="修改",
-                    dialog=Dialog(
-                        title="修改",
-                        body=Form(
-                            name=f"修改{model.__name__}",
-                            controls=get_controls_from_model(
-                                model, include=up_include, exclude=up_exclude
-                            ),
-                            api="put:" + prefix + "/" + model.__name__ + "/update/${id}",
-                            initApi="get:" + prefix + "/" + model.__name__ + "/update/${id}",
-                        ),
-                    ),
-                )
-            )
-        if "Delete" in methods:
-            buttons.append(
-                AjaxAction(
-                    api="delete:" + prefix + "/" + model.__name__ + "/delete/${id}",
-                    label="删除",
-                    level=ButtonLevelEnum.danger,
-                )
-            )
-        if "List" in methods:
-            columns = get_columns_from_model(model, include=list_include, exclude=list_exclude)
-            columns.extend(buttons)
-            self.body.append(
-                CRUD(
-                    api="get:" + prefix + "/" + model.__name__ + "/list",
-                    columns=columns,
-                )
-            )
+        # if "Create" in methods:
+        #     self.body.append(
+        #         DialogAction(
+        #             label="新增",
+        #             dialog=Dialog(
+        #                 title="新增",
+        #                 body=Form(
+        #                     name=f"新增{model.__name__}",
+        #                     title=f"新增{model.__name__}",
+        #                     controls=get_controls_from_model(
+        #                         model, include=create_include, exclude=create_exclude
+        #                     ),
+        #                     primaryField=model._meta.pk_attr,
+        #                     api=f"post:{prefix}/{model.__name__}/create",
+        #                 ),
+        #             ),
+        #         )
+        #     )
+        # if "Update" in methods:
+        #     buttons.append(
+        #         DialogAction(
+        #             label="修改",
+        #             dialog=Dialog(
+        #                 title="修改",
+        #                 body=Form(
+        #                     name=f"修改{model.__name__}",
+        #                     controls=get_controls_from_model(
+        #                         model, include=up_include, exclude=up_exclude
+        #                     ),
+        #                     api="put:" + prefix + "/" + model.__name__ + "/update/${id}",
+        #                     initApi="get:" + prefix + "/" + model.__name__ + "/update/${id}",
+        #                 ),
+        #             ),
+        #         )
+        #     )
+        # if "Delete" in methods:
+        #     buttons.append(
+        #         AjaxAction(
+        #             api="delete:" + prefix + "/" + model.__name__ + "/delete/${id}",
+        #             label="删除",
+        #             level=ButtonLevelEnum.danger,
+        #         )
+        #     )
+        # if "List" in methods:
+        #     columns = get_columns_from_model(model, include=list_include, exclude=list_exclude)
+        #     columns.extend(buttons)
+        #     self.body.append(
+        #         CRUD(
+        #             api="get:" + prefix + "/" + model.__name__ + "/list",
+        #             columns=columns,
+        #         )
+        #     )
         if "DeleteMany" in methods:
             # fixme:尚未实现
             pass

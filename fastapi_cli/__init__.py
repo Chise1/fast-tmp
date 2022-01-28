@@ -1,4 +1,4 @@
-import asyncio
+import datetime
 import importlib
 import os
 import typer
@@ -17,22 +17,23 @@ except Exception as e:
     settings = None
 
 
-async def create_superuser(username: str, password: str):
-    from tortoise import Tortoise
-    await Tortoise.init(config=settings.TORTOISE_ORM)
-    from fast_tmp.models import User
-    user = User(username=username, is_superuser=True)
-    user.set_password(password)
-    await user.save()
-
-
 @app.command()
 def createsuperuser(username: str, password: str):
     """
     创建超级用户
     """
-
-    asyncio.run(create_superuser(username, password))
+    import os
+    project_slug = os.path.split(os.getcwd())[1]
+    os.environ.setdefault('FASTAPI_SETTINGS_MODULE', project_slug + ".settings")
+    from fast_tmp.models import User
+    from fast_tmp.db import engine
+    from sqlalchemy.orm import Session
+    with Session(engine) as session:
+        user = User(
+            username=username, is_superuser=True)
+        user.set_password(password)
+        session.add(user)
+        session.commit()
     print(f"创建{username}成功")
 
 
@@ -74,6 +75,21 @@ if settings and settings.EXTRA_SETTINGS.get("EXTRA_SCRIPT"):
         for k, v in mod.__dict__.items():
             if k == path_list[-1]:
                 app.command()(v)
+
+
+@app.command()
+def access_token(username: str):
+    """
+    创建一个测试token
+    """
+    from fast_tmp.utils.token import create_access_token
+
+    print(create_access_token(
+        data={"sub": username},
+        expires_delta=datetime.timedelta(
+            hours=30
+        )
+    ))
 
 
 def main():

@@ -3,8 +3,6 @@ from typing import Any, List
 from fastapi import APIRouter, Depends, Path
 from pydantic import BaseModel
 from starlette.requests import Request
-from tortoise import Model
-from tortoise.transactions import in_transaction
 
 from fast_tmp.conf import settings
 
@@ -38,7 +36,7 @@ def get_app_page(resource: str, app: AbstractApp = Depends(get_abstract_app)) ->
 async def list_view(
     request: Request,
     abstract_crud: AbstractCRUD = Depends(get_app_page),
-    model: Model = Depends(get_model),
+    model = Depends(get_model),
     perPage: int = 10,
     page: int = 1,
 ):
@@ -62,13 +60,12 @@ async def list_view(
 @router.put("/{resource}/update/{pk}")
 async def update(
     request: Request,
-    model: Model = Depends(get_model),
+    model = Depends(get_model),
     pk: int = Path(...),
 ):
     data = await request.json()
-    async with in_transaction() as conn:
-        obj = await model.filter(pk=pk).using_db(conn).select_for_update().get()
-        await obj.update_from_dict(data).save(using_db=conn)
+    obj = await model.filter(pk=pk).using_db(conn).select_for_update().get()
+    await obj.update_from_dict(data).save(using_db=conn)
     return BaseRes()
 
 
@@ -77,7 +74,7 @@ async def update_view(
     request: Request,
     pk: int = Path(...),
     page: AbstractCRUD = Depends(get_app_page),
-    model: Model = Depends(get_model),
+    model = Depends(get_model),
 ):
     update_fields = page.up_include
     data = await model.filter(pk=pk).first().values(*update_fields)  # fixme:是字典还是列表？
@@ -88,7 +85,7 @@ async def update_view(
 async def create(
     request: Request,
     page: AbstractCRUD = Depends(get_app_page),
-    model: Model = Depends(get_model),
+    model = Depends(get_model),
 ):
     data = await request.json()
     await model.create(**data)
@@ -96,7 +93,7 @@ async def create(
 
 
 @router.delete("/{resource}/delete/{pk}")
-async def delete(request: Request, pk: int, model: Model = Depends(get_model)):
+async def delete(request: Request, pk: int, model = Depends(get_model)):
     await model.filter(pk=pk).delete()
     return BaseRes()
 
@@ -106,7 +103,7 @@ class DIDS(BaseModel):
 
 
 @router.post("/{resource}/deleteMany/")
-async def bulk_delete(request: Request, ids: DIDS, model: Model = Depends(get_model)):
+async def bulk_delete(request: Request, ids: DIDS, model = Depends(get_model)):
     await model.filter(pk__in=ids.ids).delete()
     return BaseRes()
 
@@ -116,7 +113,7 @@ async def get_schema(
     request: Request,
     resource: str,
     page: AbstractCRUD = Depends(get_app_page),
-    model: Model = Depends(get_model),
+    model = Depends(get_model),
 ):
     return page.get_Page().dict(exclude_none=True)
 
