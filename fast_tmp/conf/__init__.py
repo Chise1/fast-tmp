@@ -5,8 +5,6 @@ from typing import Any, Dict, List, Optional, Union
 
 from pydantic import AnyHttpUrl, BaseSettings, HttpUrl, validator
 
-FASTAPI_VARIABLE = "FASTAPI_SETTINGS_MODULE"
-
 
 class Settings(BaseSettings):
     SECRET_KEY: str

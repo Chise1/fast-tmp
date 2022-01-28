@@ -17,7 +17,7 @@ from fast_tmp.db import get_db_session
 from fast_tmp.admin.depends import authenticate_user, decode_access_token_from_data
 from fast_tmp.conf import settings
 from fast_tmp.utils.token import create_access_token
-from ..models import User
+from fast_tmp.admin.models import User
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=settings.LOGIN_URL)
 base_path = os.path.dirname(__file__)

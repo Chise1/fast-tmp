@@ -1,10 +1,11 @@
-from typing import Any, List
+from typing import Any, List, Optional
 
 from fastapi import APIRouter, Depends, Path
 from pydantic import BaseModel
 from starlette.requests import Request
 
 from fast_tmp.conf import settings
+from ..model_site import get_model_site, ModelAdmin, model_list
 
 from ..utils.common import import_module
 from .creator import AbstractApp, AbstractCRUD
@@ -32,14 +33,16 @@ def get_app_page(resource: str, app: AbstractApp = Depends(get_abstract_app)) ->
     return app.get_AbstractCRUD(resource)
 
 
-@router.get("/{resource}/list", response_model=BaseRes)
+@router.get("/{resource}/list")
 async def list_view(
-    request: Request,
-    abstract_crud: AbstractCRUD = Depends(get_app_page),
-    model = Depends(get_model),
-    perPage: int = 10,
-    page: int = 1,
+        request: Request,
+        abstract_crud: AbstractCRUD = Depends(get_app_page),
+        model_site: Optional[ModelAdmin] = Depends(get_model_site),
+        perPage: int = 10,
+        page: int = 1,
 ):
+    if not model_site:
+        return BaseRes()
     qs = model.all()
     params = dict(request.query_params)
     params.pop("page")
@@ -59,9 +62,9 @@ async def list_view(
 
 @router.put("/{resource}/update/{pk}")
 async def update(
-    request: Request,
-    model = Depends(get_model),
-    pk: int = Path(...),
+        request: Request,
+        model_site: Optional[ModelAdmin] = Depends(get_model_site),
+        pk: int = Path(...),
 ):
     data = await request.json()
     obj = await model.filter(pk=pk).using_db(conn).select_for_update().get()
@@ -71,10 +74,10 @@ async def update(
 
 @router.get("/{resource}/update/{pk}")
 async def update_view(
-    request: Request,
-    pk: int = Path(...),
-    page: AbstractCRUD = Depends(get_app_page),
-    model = Depends(get_model),
+        request: Request,
+        pk: int = Path(...),
+        page: AbstractCRUD = Depends(get_app_page),
+        model_site: Optional[ModelAdmin] = Depends(get_model_site),
 ):
     update_fields = page.up_include
     data = await model.filter(pk=pk).first().values(*update_fields)  # fixme:是字典还是列表？
@@ -83,9 +86,9 @@ async def update_view(
 
 @router.post("/{resource}/create")
 async def create(
-    request: Request,
-    page: AbstractCRUD = Depends(get_app_page),
-    model = Depends(get_model),
+        request: Request,
+        page: AbstractCRUD = Depends(get_app_page),
+        model_site: Optional[ModelAdmin] = Depends(get_model_site),
 ):
     data = await request.json()
     await model.create(**data)
@@ -93,7 +96,7 @@ async def create(
 
 
 @router.delete("/{resource}/delete/{pk}")
-async def delete(request: Request, pk: int, model = Depends(get_model)):
+async def delete(request: Request, pk: int, model=Depends(get_model)):
     await model.filter(pk=pk).delete()
     return BaseRes()
 
@@ -103,22 +106,32 @@ class DIDS(BaseModel):
 
 
 @router.post("/{resource}/deleteMany/")
-async def bulk_delete(request: Request, ids: DIDS, model = Depends(get_model)):
+async def bulk_delete(request: Request, ids: DIDS,
+                      model_site: Optional[ModelAdmin] = Depends(get_model_site),
+
+                      ):
     await model.filter(pk__in=ids.ids).delete()
     return BaseRes()
 
 
 @router.get("/{resource}/schema")
 async def get_schema(
-    request: Request,
-    resource: str,
-    page: AbstractCRUD = Depends(get_app_page),
-    model = Depends(get_model),
+        request: Request,
+        resource: str,
+        page: AbstractCRUD = Depends(get_app_page),
+        model_site: Optional[ModelAdmin] = Depends(get_model_site),
 ):
     return page.get_Page().dict(exclude_none=True)
 
 
 @router.get("/site")
 async def get_data():
-    module = import_module(settings.EXTRA_SETTINGS["ADMIN_SITE_CLASS"])
-    return BaseRes(data={"pages": module.dict()})
+    pages=[]
+    for name,model in model_list.items():
+        pages.append(
+            {"label":name,
+             "api":"/admin/"+name+"/schema"}
+        )
+    return BaseRes(data={"pages": {
+        "pages":pages
+    }})

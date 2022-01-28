@@ -9,11 +9,12 @@ from starlette.status import HTTP_404_NOT_FOUND
 
 from fast_tmp.db import get_db_session
 from fast_tmp.exceptions import credentials_exception, password_exception
-from fast_tmp.models import User
+from fast_tmp.admin.models import User
 from fast_tmp.utils.token import decode_access_token
 
 
 def get_model(resource: str):
+
     return None
     # for app, models in Tortoise.apps.items():
     #     model = models.get(resource)
