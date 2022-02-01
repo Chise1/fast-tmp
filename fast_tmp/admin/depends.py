@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import Depends, HTTPException, Cookie
+from fastapi import Cookie, Depends, HTTPException
 from jose import JWTError
 from sqlalchemy import select
 from sqlmodel import Session
@@ -8,13 +8,11 @@ from starlette.requests import Request
 from starlette.status import HTTP_404_NOT_FOUND
 
 from fast_tmp.db import get_db_session
-from fast_tmp.exceptions import credentials_exception, password_exception
 from fast_tmp.models import User
 from fast_tmp.utils.token import decode_access_token
 
 
 def get_model(resource: str):
-
     return None
     # for app, models in Tortoise.apps.items():
     #     model = models.get(resource)
@@ -39,8 +37,9 @@ async def get_model_resource(request: Request, model=Depends(get_model)):
     return model_resource
 
 
-def decode_access_token_from_data(access_token: Optional[str] = Cookie(None),
-                                  session: Session = Depends(get_db_session)) -> Optional[User]:
+def decode_access_token_from_data(
+    access_token: Optional[str] = Cookie(None), session: Session = Depends(get_db_session)
+) -> Optional[User]:
     if access_token is not None:
         try:
             payload = decode_access_token(access_token)
@@ -55,7 +54,9 @@ def decode_access_token_from_data(access_token: Optional[str] = Cookie(None),
 
 
 def get_user(username: str, session: Session) -> User:
-    res = session.execute(select(User).where(User.username == username, User.is_active == True))
+    res = session.execute(
+        select(User).where(User.username == username, User.is_active == True)  # noqa
+    )
     return res.scalar_one_or_none()
 
 

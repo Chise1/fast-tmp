@@ -63,8 +63,8 @@ class User(AbstractModel):
             return True
         results = session.execute(
             select(Group.id)
-                .join(Group.users.and_(User.id == self.id))
-                .join(Group.permissions.and_(Permission.code == perm))
+            .join(Group.users.and_(User.id == self.id))
+            .join(Group.permissions.and_(Permission.code == perm))
         ).all()
         if len(results) > 0:
             return True
@@ -79,8 +79,8 @@ class User(AbstractModel):
             return True
         results = session.execute(
             select(Group.id)
-                .join(Group.users.and_(User.id == self.id))
-                .join(Group.permissions.and_(Permission.code.in_(perms)))
+            .join(Group.users.and_(User.id == self.id))
+            .join(Group.permissions.and_(Permission.code.in_(perms)))
         ).all()
         if len(results) > 0:
             return True
@@ -93,12 +93,12 @@ class User(AbstractModel):
         groups = (
             session.execute(
                 select(Group)
-                    .options(joinedload(Group.permissions))
-                    .join(Group.users)
-                    .filter(User.id == self.id)
+                .options(joinedload(Group.permissions))
+                .join(Group.users)
+                .filter(User.id == self.id)
             )
-                .scalars()
-                .all()
+            .scalars()
+            .all()
         )
         permissions = []
         for group in groups:
@@ -138,4 +138,3 @@ class Permission(Base):
 
     def __str__(self):
         return self.name + "-" + self.code
-

@@ -2,13 +2,12 @@ from typing import Any, List
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
-from sqlalchemy import select, func, delete, update
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.orm import Session
 from starlette.requests import Request
 
-from fast_tmp.site import get_model_site, ModelAdmin
+from fast_tmp.site import ModelAdmin, get_model_site
 
-from .creator import AbstractApp, AbstractCRUD
 from ..db import get_db_session
 from ..site.utils import get_pk
 
@@ -33,22 +32,16 @@ class BaseRes(BaseModel):
     data: Any = {}
 
 
-def get_abstract_app():
-    return AbstractApp._instance
-
-
-def get_app_page(resource: str, app: AbstractApp = Depends(get_abstract_app)) -> AbstractCRUD:
-    return app.get_AbstractCRUD(resource)
-
-
 @router.get("/{resource}/list")
 def list_view(
-        page_model: ModelAdmin = Depends(get_model_site),
-        perPage: int = 10,
-        page: int = 1,
-        session: Session = Depends(get_db_session)
+    page_model: ModelAdmin = Depends(get_model_site),
+    perPage: int = 10,
+    page: int = 1,
+    session: Session = Depends(get_db_session),
 ):
-    datas = session.execute(select(page_model.list_display).limit(perPage).offset((page - 1) * perPage))
+    datas = session.execute(
+        select(page_model.list_display).limit(perPage).offset((page - 1) * perPage)
+    )
     items = []
     for data in datas:
         items.append(dict(data))
@@ -66,10 +59,10 @@ def list_view(
 
 @router.put("/{resource}/update")
 def update_data(
-        request: Request,
-        page_model: ModelAdmin = Depends(get_model_site),
-        session: Session = Depends(get_db_session),
-        data: dict = Depends(get_data)
+    request: Request,
+    page_model: ModelAdmin = Depends(get_model_site),
+    session: Session = Depends(get_db_session),
+    data: dict = Depends(get_data),
 ):
     params = dict(request.query_params)
     pks = get_pk(page_model.model)
@@ -77,16 +70,18 @@ def update_data(
     for k, v in params.items():
         if pks.get(k) is not None:
             w.append(pks[k] == v)
-    session.execute(update(page_model.model).where(*w).values(**data))  # todo need check field is truely
+    session.execute(
+        update(page_model.model).where(*w).values(**data)
+    )  # todo need check field is truely
     session.commit()
     return BaseRes()
 
 
 @router.get("/{resource}/update")
 def update_view(
-        request: Request,
-        page_model: ModelAdmin = Depends(get_model_site),
-        session: Session = Depends(get_db_session),
+    request: Request,
+    page_model: ModelAdmin = Depends(get_model_site),
+    session: Session = Depends(get_db_session),
 ):
     params = dict(request.query_params)
     pks = get_pk(page_model.model)
@@ -101,9 +96,9 @@ def update_view(
 
 @router.post("/{resource}/create")
 def create(
-        data: dict = Depends(get_data),
-        page_model: ModelAdmin = Depends(get_model_site),
-        session: Session = Depends(get_db_session),
+    data: dict = Depends(get_data),
+    page_model: ModelAdmin = Depends(get_model_site),
+    session: Session = Depends(get_db_session),
 ):
     model = page_model.model
     instance = model(**data)
@@ -114,9 +109,9 @@ def create(
 
 @router.delete("/{resource}/delete")
 def delete_one(
-        request: Request,
-        page_model: ModelAdmin = Depends(get_model_site),
-        session: Session = Depends(get_db_session),
+    request: Request,
+    page_model: ModelAdmin = Depends(get_model_site),
+    session: Session = Depends(get_db_session),
 ):
     params = dict(request.query_params)
     pks = get_pk(page_model.model)
@@ -147,8 +142,6 @@ class DIDS(BaseModel):
 
 @router.get("/{resource}/schema")
 def get_schema(
-        page: ModelAdmin = Depends(get_model_site),
+    page: ModelAdmin = Depends(get_model_site),
 ):
-    return BaseRes(
-        data=page.get_app_page()
-    )
+    return BaseRes(data=page.get_app_page())

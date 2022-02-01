@@ -1,19 +1,20 @@
-from typing import Dict, Tuple, Type, Union, Optional, Any
+from typing import Any, Dict, Optional, Tuple, Type, Union
 
 from pydantic import BaseModel
 from sqlalchemy import Column
 
-from fast_tmp.admin.schema.actions import DialogAction, AjaxAction
+from fast_tmp.admin.schema.actions import AjaxAction, DialogAction
 from fast_tmp.admin.schema.buttons import Operation
 from fast_tmp.admin.schema.crud import CRUD
 from fast_tmp.admin.schema.enums import ButtonLevelEnum
 from fast_tmp.admin.schema.forms import Form
 from fast_tmp.admin.schema.frame import Dialog
 from fast_tmp.admin.schema.page import Page
-from .utils import get_controls_from_model, get_columns_from_model, get_pk
+
+from .utils import get_columns_from_model, get_controls_from_model, get_pk
 
 
-class ModelAdmin():
+class ModelAdmin:
     model: Any  # model
     __name: Optional[str] = None
     # list
@@ -44,7 +45,7 @@ class ModelAdmin():
 
     @classmethod
     def name(cls):
-        if cls.__name == None:
+        if cls.__name is None:
             cls.__name = cls.model.__name__
         return cls.__name
 
@@ -61,7 +62,7 @@ class ModelAdmin():
                         body=get_controls_from_model(cls.create_fields),
                         api=f"post:{cls.prefix}/{cls.name()}/create",
                     ),
-                )
+                ),
             )
         return cls.__create_dialog
 
@@ -86,7 +87,7 @@ class ModelAdmin():
             type="button",
             level=ButtonLevelEnum.danger,
             confirmText="确认要删除？",
-            api="delete:" + cls.name() + "/delete?" + cls.pks()
+            api="delete:" + cls.name() + "/delete?" + cls.pks(),
         )
 
     @classmethod
@@ -97,9 +98,7 @@ class ModelAdmin():
                 title="修改",
                 body=Form(
                     name=f"修改{cls.name()}",
-                    body=get_controls_from_model(
-                        cls.update_fields
-                    ),
+                    body=get_controls_from_model(cls.update_fields),
                     api="put:" + cls.name() + "/update?" + cls.pks(),
                     initApi="get:" + cls.name() + "/update?" + cls.pks(),
                 ),
@@ -112,15 +111,12 @@ class ModelAdmin():
         del_path = []
         for pk in primary_keys:
             del_path.append(f"{pk}=${pk}")
-        return Operation(
-            buttons=[
-                cls.get_del_one_button(),
-                cls.get_update_one_button()
-            ]
-        )
+        return Operation(buttons=[cls.get_del_one_button(), cls.get_update_one_button()])
 
     @classmethod
-    def get_crud(cls, ):
+    def get_crud(
+        cls,
+    ):
         body = []
         body.append(cls.get_create_dialogation_button())
         columns = []

@@ -1,22 +1,18 @@
 import warnings
-from typing import Tuple, List, Dict
+from typing import Dict, List, Tuple
 
-from sqlalchemy import Column, Integer, String, inspect, Enum, BigInteger, SmallInteger
-from fast_tmp.admin.schema.forms import FormWidgetSize, ItemModel
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import BigInteger, Column, Enum, Integer, SmallInteger, inspect
 from sqlalchemy.orm import Mapper
 
-from fast_tmp.admin.schema.forms.widgets import NumberItem, TextItem
 from fast_tmp.admin.schema.forms import Column as FormColumn
+from fast_tmp.admin.schema.forms import FormWidgetSize, ItemModel
+from fast_tmp.admin.schema.forms.widgets import NumberItem, TextItem
 
 
-
-def get_pk(model)->Dict[str,Column]:
+def get_pk(model) -> Dict[str, Column]:
     mapper: Mapper = inspect(model)
     primary_keys: Tuple[Column, ...] = mapper.primary_key
-    return {
-        pk.name: pk for pk in primary_keys
-    }
+    return {pk.name: pk for pk in primary_keys}
 
 
 def _get_base_attr(field_type: Column, **kwargs) -> dict:
@@ -36,13 +32,14 @@ def _get_base_attr(field_type: Column, **kwargs) -> dict:
         required=not field_type.nullable,
         mode=ItemModel.normal,
         size=FormWidgetSize.full,
-        value=field_type.default() if callable(field_type.default) else field_type.default)
+        value=field_type.default() if callable(field_type.default) else field_type.default,
+    )
     res.update(kwargs)
     return res
 
 
 def get_controls_from_model(
-        include: Tuple[Column, ...] = (),
+    include: Tuple[Column, ...] = (),
 ) -> List[FormColumn]:
     """
     从pydantic_queryset_creator创建的schema获取字段
@@ -79,15 +76,13 @@ def get_controls_from_model(
                     "maxLength": field.type.length,
                 }
                 item.validations = validations
-            res.append(
-                item
-            )
+            res.append(item)
             warnings.warn("Not found form type")
     return res
 
 
 def get_columns_from_model(
-        include: Tuple[Column, ...] = (),
+    include: Tuple[Column, ...] = (),
 ) -> List[Column]:
     """
     从pydantic_queryset_creator创建的schema获取字段

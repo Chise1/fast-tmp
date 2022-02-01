@@ -4,7 +4,7 @@ from pydantic import HttpUrl
 from pydantic.main import BaseModel
 
 # from fast_tmp.admin.schema.abstract_schema import Action
-from fast_tmp.admin.schema.forms import AbstractControl, Control  # , Limit
+from fast_tmp.admin.schema.forms import Control  # , Limit
 from fast_tmp.admin.schema.forms.enums import ControlEnum
 
 

@@ -36,7 +36,7 @@ class Settings(BaseSettings):
     SENTRY_DSN: Optional[HttpUrl] = None
     SENTRY_ENVIROMENT: str = "development"
 
-    @validator("SENTRY_DSN", pre=True,allow_reuse=True)
+    @validator("SENTRY_DSN", pre=True, allow_reuse=True)
     def sentry_dsn_can_be_blank(cls, v: str) -> Optional[str]:
         if v and len(v) > 0:
             return v
