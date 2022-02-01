@@ -1,7 +1,6 @@
 from typing import Optional
 
 from fastapi import Cookie, Depends, HTTPException
-from jose import JWTError
 from sqlalchemy import select
 from sqlmodel import Session
 from starlette.requests import Request
@@ -48,16 +47,18 @@ def decode_access_token_from_data(
                 user: User = get_user(username, session)
                 if user:
                     return user
-        except JWTError:
+        except Exception:  # noqa
             pass
     return None
 
 
 def get_user(username: str, session: Session) -> User:
     res = session.execute(
-        select(User).where(User.username == username, User.is_active == True)  # noqa
+        select(User)  # type: ignore
+        .where(User.username == username)
+        .where(User.is_active == True)  # noqa
     )
-    return res.scalar_one_or_none()
+    return res.scalar_one_or_none()  # type: ignore
 
 
 def authenticate_user(username: str, password: str, session: Session) -> Optional[User]:
