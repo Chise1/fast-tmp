@@ -48,9 +48,8 @@ class AppPage(BaseModel):
 
     # visible:Optional[bool]=None
     def dict(self, *args, **kwargs):
+        kwargs['exclude_none']=True
         res: dict = super().dict(*args, **kwargs)
-        schema = res.pop("schema_")
-        res["schema"] = schema
         return res
 
 

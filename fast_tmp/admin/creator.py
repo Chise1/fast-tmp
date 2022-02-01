@@ -1,3 +1,4 @@
+# 暂时废弃，也许以后有用
 from typing import Dict, Optional, Tuple, Type
 
 from fast_tmp.admin.schema.actions import AjaxAction, DialogAction
@@ -6,6 +7,8 @@ from fast_tmp.admin.schema.enums import ButtonLevelEnum
 from fast_tmp.admin.schema.forms import Form
 from fast_tmp.admin.schema.frame import Dialog
 from fast_tmp.admin.schema.page import AppPage, AppPageGroup, Page
+
+
 # from fast_tmp.admin.utils import get_columns_from_model, get_controls_from_model
 
 
@@ -19,10 +22,10 @@ class AbstractApp:
         return cls._instance
 
     def __init__(
-        self,
-        name: str,
-        logo: Optional[str],
-        prefix: str = "",
+            self,
+            name: str,
+            logo: Optional[str],
+            prefix: str = "",
     ):
         self.page_groups = {"default": AppPageGroup(label="default", children=[])}
         self.abstract_cruds = {}
@@ -57,16 +60,16 @@ class AbstractApp:
 
 class AbstractCRUD:
     def __init__(
-        self,
-        model: type,
-        prefix: str = "/admin",
-        create_include: Tuple[str, ...] = (),
-        create_exclude: Tuple[str, ...] = (),
-        up_include: Tuple[str, ...] = (),
-        up_exclude: Tuple[str, ...] = (),
-        list_include: Tuple[str, ...] = (),
-        list_exclude: Tuple[str, ...] = (),
-        methods: Tuple[str, ...] = ("List", "Retrieve", "Create", "Update", "Delete", "DeleteMany"),
+            self,
+            model: type,
+            prefix: str = "/admin",
+            create_include: Tuple[str, ...] = (),
+            create_exclude: Tuple[str, ...] = (),
+            up_include: Tuple[str, ...] = (),
+            up_exclude: Tuple[str, ...] = (),
+            list_include: Tuple[str, ...] = (),
+            list_exclude: Tuple[str, ...] = (),
+            methods: Tuple[str, ...] = ("List", "Retrieve", "Create", "Update", "Delete", "DeleteMany"),
     ):
         """
         抽象crud-json生成

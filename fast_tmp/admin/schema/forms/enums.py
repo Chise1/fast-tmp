@@ -14,6 +14,7 @@ class FormWidgetSize(
 
 class ControlEnum(str, Enum):
     text = "text"
+    input_text = "input-text"
     switch = "switch"  # 开关
     select = "select"
     number = "number"

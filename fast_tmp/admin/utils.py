@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import List, Optional, Tuple, Type
 
+from sqlalchemy import Integer
 from tortoise import BackwardFKRelation, ForeignKeyFieldInstance, ManyToManyFieldInstance, Model
 from tortoise.fields import (
     BigIntField,
@@ -91,11 +92,7 @@ def get_columns_from_model(
 
 
 def get_controls_from_model(
-    model: Type[Model],
-    include: Tuple[str, ...] = (),
-    exclude: Tuple[str, ...] = (),
-    extra_fields: Optional[Tuple[Column, ...]] = None,
-    exclude_readonly: bool = False,
+    include: Tuple[Column, ...] = (),
 ) -> List[Column]:
     """
     从pydantic_queryset_creator创建的schema获取字段

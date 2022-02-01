@@ -41,7 +41,7 @@ class Form(BaseAmisModel):
     initApi: Optional[str]
     # interval: int = 3000??
     primaryField: Optional[str]  # 设置主键"id"
-    controls: List[AbstractControl]
+    body: List[AbstractControl]
 
 
 class Control(AbstractControl):

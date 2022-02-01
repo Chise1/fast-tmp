@@ -12,15 +12,16 @@
     <link
             rel="stylesheet"
             title="default"
-            href="{{static(path='static/public/js/sdk.css')}}"
+            href="{{static(path='static/amis/sdk/sdk.css')}}"
     />
     <link
             rel="stylesheet"
-            href="{{static(path='static/public/js/helper.css')}}"
+            href="{{static(path='static/amis/sdk/helper.css')}}"
     />
-    <script src="{{static(path='static/public/js/sdk.js')}}"></script>
-    <script src="{{static(path='static/public/js/vue2.js')}}"></script>
-    <script src="{{  static(path='static/public/js/history.js') }}"></script>
+    <script src="{{static(path='static/amis/sdk/sdk.js')}}"></script>
+    <!--    不知道vue2有哪儿用到了，没启用好像也能正常运行-->
+    <script src="https://unpkg.com/vue@2"></script>
+    <script src="{{  static(path='static/amis/sdk/history.js') }}"></script>
     <style>
         html,
         body,

@@ -137,7 +137,7 @@ class RichTextItem(Control):
 
 
 class TextItem(Control):
-    type = ControlEnum.text
+    type = ControlEnum.input_text
     body: Optional[Dict[str, Any]]
     trimContents: Optional[bool]  # 是否去除首尾空白文本。
     # clearable: Optional[bool]  # 是否可清除

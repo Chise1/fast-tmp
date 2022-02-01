@@ -6,33 +6,36 @@ from fastapi.templating import Jinja2Templates
 from starlette.responses import RedirectResponse
 from starlette.staticfiles import StaticFiles
 
-from .router import router
+from .endpoint import router, BaseRes
 from datetime import timedelta
 
 from fastapi import Depends, FastAPI
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordBearer
 from sqlmodel import Session
 
 from fast_tmp.db import get_db_session
 from fast_tmp.admin.depends import authenticate_user, decode_access_token_from_data
 from fast_tmp.conf import settings
 from fast_tmp.utils.token import create_access_token
-from fast_tmp.admin.models import User
+from fast_tmp.models import User
+from fast_tmp.site import model_list, register_model_site
+from fast_tmp.models.site import UserAdmin
+from ..jinja_extension.tags import register_tags
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=settings.LOGIN_URL)
 base_path = os.path.dirname(__file__)
 templates = Jinja2Templates(directory=base_path + "/templates")
-
+register_tags(templates)
 admin = FastAPI(title="后台")
 
-admin.mount("/statics", app=StaticFiles(directory=base_path + "/statics"), name="statics")
+admin.mount("/static", app=StaticFiles(directory=base_path + "/static"), name="static")
 
-# todo:增删改查，retrieve,destoryMany,
+register_model_site(UserAdmin)
 admin.include_router(router)
 
 
-@admin.route("/index", name="index", methods=["GET", "POST"])
-async def page(request: Request, user: Optional[User] = Depends(decode_access_token_from_data)):
+@admin.route("/", name="index", methods=["GET", "POST"])
+def index(request: Request, user: Optional[User] = Depends(decode_access_token_from_data)):
     if not user:
         return RedirectResponse(
             "admin:login"
@@ -41,13 +44,14 @@ async def page(request: Request, user: Optional[User] = Depends(decode_access_to
         "index.html",
         {
             "request": request,
+            "title":admin.title
         },
     )
 
 
 @admin.post("/login")
-async def login(request: Request, username: str = Form(...), password: str = Form(...),
-                session: Session = Depends(get_db_session)):
+def login(request: Request, username: str = Form(...), password: str = Form(...),
+          session: Session = Depends(get_db_session)):
     context = {
         "request": request,
         "errinfo": "",
@@ -80,7 +84,7 @@ async def login(request: Request, username: str = Form(...), password: str = For
 
 
 @admin.get("/login", name="login")
-async def login_html(request: Request):
+def login_html(request: Request):
     context = {
         "request": request,
         "errinfo": "",
@@ -88,3 +92,30 @@ async def login_html(request: Request):
         "password_err": False,
     }
     return templates.TemplateResponse("login.html", context)
+
+
+@admin.get("/site")
+def get_site():
+    # todo 需要加主页
+    pages = []
+    for name, model in model_list.items():
+        # pages.append(
+        #     {
+        #         "label": "Home",
+        #         "url": "/admin",
+        #         "redirect": "/admin/" + name
+        #     },
+        # )
+        pages.append(
+            {"label": "Auth",
+             "children": [
+                 {
+                     "label": name,
+                     "url": name,
+                     "schemaApi": name + "/schema"
+                 }
+             ],
+             })
+    return BaseRes(data={
+        "pages": pages
+    })
