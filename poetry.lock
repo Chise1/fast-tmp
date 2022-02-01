@@ -1217,7 +1217,7 @@ reference = "aliyun"
 name = "sqlalchemy-stubs"
 version = "0.4"
 description = "SQLAlchemy stubs and mypy plugin"
-category = "main"
+category = "dev"
 optional = false
 python-versions = "*"
 
@@ -1430,7 +1430,7 @@ reference = "aliyun"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "0b646cd1777cebf27cde065cde671a5b03bc6c3568b54cf3909c512c45c567ff"
+content-hash = "a9d7ccb7cfaf115fe757029e8cda7bcc12e2def12dc53dd04821379fb7540ded"
 
 [metadata.files]
 aiofiles = [
