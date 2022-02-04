@@ -35,7 +35,9 @@ test_sqlite:
 	$(py_warn) pytest tests/ --cov-report= $(pytest_opts)
 
 test: deps test_sqlite
-	coverage report
+	coverage report --show-missing --skip-covered --fail-under=95
+	coverage xml
+	coverage html
 
 publish: check
 	poetry publish

@@ -39,4 +39,8 @@ jobs:
         make check
     - name: Test with pytest
       run: |
-        make test_sqlite
+        make test
+    - name: "Upload Coverage"
+      uses: codecov/codecov-action@v2
+      with:
+        files: coverage.xml
