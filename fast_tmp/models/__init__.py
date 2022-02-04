@@ -1,6 +1,7 @@
 from typing import List
 
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Table, select
+from sqlalchemy import (Boolean, Column, ForeignKey, Integer, String, Table,
+                        select)
 from sqlalchemy.orm import Session, joinedload, relationship
 from sqlalchemy.orm.decl_api import declarative_base
 
