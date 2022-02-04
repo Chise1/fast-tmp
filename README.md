@@ -22,10 +22,10 @@ fastapi是一款非常优秀的web框架，long2ice基于异步数据库访问�
 
 ## 页面展示
 
-![登陆](./_static/img/login.png)
-![主页](./_static/img/home.png)
-![userinfo](./_static/img/userinfo.png)
-![create](./_static/img/create.png)
+![登陆](./docs/static/img/login.png)
+![主页](./docs/static/img/home.png)
+![userinfo](./docs/static/img/userinfo.png)
+![create](./docs/static/img/create.png)
 
 ## 入门
 
