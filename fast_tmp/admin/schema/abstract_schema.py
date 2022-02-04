@@ -2,8 +2,7 @@ from typing import Optional, TypeVar
 
 from pydantic.main import BaseModel
 
-from fast_tmp.admin.schema.enums import (ActionTypeEnum, ButtonLevelEnum,
-                                         ButtonSize, TypeEnum)
+from fast_tmp.admin.schema.enums import ActionTypeEnum, ButtonLevelEnum, ButtonSize, TypeEnum
 
 
 class BaseAmisModel(BaseModel):

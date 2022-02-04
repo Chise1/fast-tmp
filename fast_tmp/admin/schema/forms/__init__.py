@@ -4,8 +4,7 @@ from pydantic import BaseModel
 
 from fast_tmp.admin.schema.abstract_schema import BaseAmisModel
 from fast_tmp.admin.schema.enums import TypeEnum
-from fast_tmp.admin.schema.forms.enums import (ControlEnum, FormWidgetSize,
-                                               ItemModel)
+from fast_tmp.admin.schema.forms.enums import ControlEnum, FormWidgetSize, ItemModel
 
 
 # fixme:未来考虑更多的fields类型字段支持

@@ -1,17 +1,34 @@
 from datetime import datetime
 from typing import Dict, List, Optional, Text, Tuple
 
-from sqlalchemy import (BOOLEAN, DECIMAL, INTEGER, BigInteger, Boolean, Column,
-                        DateTime, Enum, Float, Integer, Numeric, SmallInteger,
-                        inspect)
+from sqlalchemy import (
+    BOOLEAN,
+    DECIMAL,
+    INTEGER,
+    BigInteger,
+    Boolean,
+    Column,
+    DateTime,
+    Enum,
+    Float,
+    Integer,
+    Numeric,
+    SmallInteger,
+    inspect,
+)
 from sqlalchemy.orm import Mapper
 
 from fast_tmp.admin.schema.forms import Column as AmisColumn
 from fast_tmp.admin.schema.forms import Column as FormColumn
 from fast_tmp.admin.schema.forms import Control, FormWidgetSize, ItemModel
-from fast_tmp.admin.schema.forms.widgets import (DatetimeItem, NativeNumber,
-                                                 NumberItem, SwitchItem,
-                                                 TextareaItem, TextItem)
+from fast_tmp.admin.schema.forms.widgets import (
+    DatetimeItem,
+    NativeNumber,
+    NumberItem,
+    SwitchItem,
+    TextareaItem,
+    TextItem,
+)
 
 
 def get_pk(model) -> Dict[str, Column]:
