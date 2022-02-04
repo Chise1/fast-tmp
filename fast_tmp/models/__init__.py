@@ -6,7 +6,7 @@ from sqlalchemy.orm.decl_api import declarative_base
 
 from fast_tmp.utils.password import make_password, verify_password
 
-Base = declarative_base()  # type: Any
+Base: Any = declarative_base()
 
 group_permission = Table(
     "auth_group_permission",
