@@ -41,3 +41,6 @@ test: deps test_sqlite
 
 publish: check
 	poetry publish
+
+docs:
+	mkdocs build

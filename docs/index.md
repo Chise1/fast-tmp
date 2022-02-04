@@ -1,6 +1,6 @@
 # fast-tmp
 
-[![Python package](https://github.com/Chise1/fast-tmp/actions/workflows/python-package.yml/badge.svg)](https://github.com/Chise1/fast-tmp/actions/workflows/python-package.yml)
+[![Python package](https://github.com/Chise1/fast-tmp/actions/workflows/test.yml/badge.svg)](https://github.com/Chise1/fast-tmp/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/Chise1/fast-tmp/branch/main/graph/badge.svg?token=7CZE532R0H)](https://codecov.io/gh/Chise1/fast-tmp)
 [![Documentation Status](https://readthedocs.org/projects/fast-tmp/badge/?version=latest)](https://fast-tmp.readthedocs.io/zh_TW/latest/?badge=latest)
 ![GitHub](https://img.shields.io/github/license/Chise1/fast-tmp)
@@ -22,10 +22,10 @@ fastapi是一款非常优秀的web框架，long2ice基于异步数据库访问�
 
 ## 页面展示
 
-![登陆](./_static/img/login.png)
-![主页](./_static/img/home.png)
-![userinfo](./_static/img/userinfo.png)
-![create](./_static/img/create.png)
+![登陆](./static/img/login.png)
+![主页](./static/img/home.png)
+![userinfo](./static/img/userinfo.png)
+![create](./static/img/create.png)
 
 ## 入门
 

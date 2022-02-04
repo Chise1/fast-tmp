@@ -1,0 +1,5 @@
+site_name: fast-tmp
+site_url: https://fast-tmp.readthedocs.io
+nav:
+  - Home: index.md
+  - About: about.md
