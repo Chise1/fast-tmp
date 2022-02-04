@@ -13,7 +13,7 @@ from example.admin import UserInfoAdmin
 register_model_site({"Example":[UserInfoAdmin]})
 app: FastAPI = create_app()
 app.mount("/admin", admin, name="admin", )
-# Base.metadata.create_all(engine)
+Base.metadata.create_all(engine)
 
 if __name__ == '__main__':
     import uvicorn
