@@ -1,5 +1,6 @@
 site_name: fast-tmp
-site_url: https://fast-tmp.readthedocs.io
+site_url: https://github.com/Chise1/fast-tmp
 nav:
-  - Home: index.md
-  - About: about.md
+  - 主页: index.md
+  - 设置: setting.md
+theme: readthedocs
