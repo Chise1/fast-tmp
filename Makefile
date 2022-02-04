@@ -1,7 +1,7 @@
-checkfiles = fast_tmp/ tests/ conftest.py
+checkfiles = fast_tmp/
 black_opts = -l 100 -t py38
 py_warn = PYTHONDEVMODE=1
-test_settings = SETTINGS_MODULE=tests.settings
+pytest_opts = -n auto --cov=fast_tmp --tb=native -q
 
 help:
 	@echo "fastapi-cli development makefile"
@@ -27,12 +27,12 @@ style: deps
 check: deps
 	black --check $(black_opts) $(checkfiles) || (echo "Please run 'make style' to auto-fix style issues" && false)
 	flake8 $(checkfiles)
-	bandit -x test -r $(checkfiles)
+	#bandit -x test -r $(checkfiles)
 	mypy $(checkfiles)
 
 
 test_sqlite:
-	$(py_warn) FASTAPI_SETTINGS_MODULE=tests.settings TORTOISE_TEST_DB=sqlite://:memory: pytest --cov-report=
+	$(py_warn) pytest tests/ --cov-report= $(pytest_opts)
 
 test: deps test_sqlite
 	coverage report
