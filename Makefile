@@ -2,7 +2,6 @@ checkfiles = fast_tmp/
 black_opts = -l 100 -t py38
 py_warn = PYTHONDEVMODE=1
 pytest_opts = -n auto --cov=fast_tmp --tb=native -q
-export virtualenvs.create=True
 
 help:
 	@echo "fastapi-cli development makefile"
