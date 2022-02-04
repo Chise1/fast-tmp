@@ -1,4 +1,4 @@
-from typing import List
+from typing import Any, List
 
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Table, select
 from sqlalchemy.orm import Session, joinedload, relationship
@@ -6,7 +6,7 @@ from sqlalchemy.orm.decl_api import declarative_base
 
 from fast_tmp.utils.password import make_password, verify_password
 
-Base = declarative_base()  # type: ignore
+Base = declarative_base()  # type: Any
 
 group_permission = Table(
     "auth_group_permission",
