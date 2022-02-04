@@ -1,3 +1,4 @@
+[![Python package](https://github.com/Chise1/fast-tmp/actions/workflows/python-package.yml/badge.svg)](https://github.com/Chise1/fast-tmp/actions/workflows/python-package.yml)
 # fast-tmp
 
 项目模板
