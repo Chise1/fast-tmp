@@ -1,4 +1,6 @@
 [![Python package](https://github.com/Chise1/fast-tmp/actions/workflows/python-package.yml/badge.svg)](https://github.com/Chise1/fast-tmp/actions/workflows/python-package.yml)
+[![codecov](https://codecov.io/gh/Chise1/fast-tmp/branch/main/graph/badge.svg?token=7CZE532R0H)](https://codecov.io/gh/Chise1/fast-tmp)
+
 # fast-tmp
 
 项目模板
