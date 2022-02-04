@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     AUTH_APP_NAME: str = "fast_tmp"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
     BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = []
-    FASTAPI_SETTINGS_MODULE: str
+    FASTAPI_SETTINGS_MODULE: Optional[str]
     DATABASE_URL: str
     DEBUG: bool = True
     LOGIN_URL: str = "/api-token-auth"
@@ -55,24 +55,26 @@ class Settings(BaseSettings):
 
     def __init__(self):
         super(Settings, self).__init__()
-        try:
-            workdir = os.getcwd()  # 把工作路径加入到代码执行里面
-            for path in sys.path:
-                if path == workdir:
-                    break
-            else:
-                sys.path.append(workdir)
-            mod = importlib.import_module(self.FASTAPI_SETTINGS_MODULE)
-        except Exception as e:
-            raise ImportError(f"导入settings报错:{e}")
 
-        for setting in dir(mod):
-            if setting.isupper():
-                setting_value = getattr(mod, setting)
-                if hasattr(self, setting):
-                    setattr(self, setting, setting_value)
-                else:
-                    self.EXTRA_SETTINGS[setting] = setting_value
+        workdir = os.getcwd()  # 把工作路径加入到代码执行里面
+        for path in sys.path:
+            if path == workdir:
+                break
+        else:
+            sys.path.append(workdir)
+        if self.FASTAPI_SETTINGS_MODULE:
+            try:
+                mod = importlib.import_module(self.FASTAPI_SETTINGS_MODULE)
+                for setting in dir(mod):
+                    if setting.isupper():
+                        setting_value = getattr(mod, setting)
+                        if hasattr(self, setting):
+                            setattr(self, setting, setting_value)
+                        else:
+                            self.EXTRA_SETTINGS[setting] = setting_value
+            except Exception as e:
+                raise ImportError(f"导入settings报错:{e}")
+
         if self.SENTRY_DSN:
             import sentry_sdk
 

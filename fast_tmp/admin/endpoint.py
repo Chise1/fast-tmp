@@ -1,15 +1,18 @@
-from typing import Any, List
+from typing import Any, List, Optional
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.orm import Session
 from starlette.requests import Request
+from starlette.responses import RedirectResponse
 
 from fast_tmp.site import ModelAdmin, get_model_site
 
 from ..db import get_db_session
-from ..site.utils import get_pk
+from ..models import User
+from ..site.utils import clean_data_to_model, get_pk
+from .depends import decode_access_token_from_data
 
 router = APIRouter()
 
@@ -34,11 +37,16 @@ class BaseRes(BaseModel):
 
 @router.get("/{resource}/list")
 def list_view(
+    request: Request,
     page_model: ModelAdmin = Depends(get_model_site),
     perPage: int = 10,
     page: int = 1,
     session: Session = Depends(get_db_session),
+    user: Optional[User] = Depends(decode_access_token_from_data),
 ):
+    if not user:
+        return RedirectResponse(request.url_for("admin:login"))
+
     datas = session.execute(
         select(page_model.list_display).limit(perPage).offset((page - 1) * perPage)
     )
@@ -63,7 +71,11 @@ def update_data(
     page_model: ModelAdmin = Depends(get_model_site),
     session: Session = Depends(get_db_session),
     data: dict = Depends(get_data),
+    user: Optional[User] = Depends(decode_access_token_from_data),
 ):
+    if not user:
+        return RedirectResponse(request.url_for("admin:login"))
+    data = clean_data_to_model(page_model.update_fields, data)
     params = dict(request.query_params)
     pks = get_pk(page_model.model)
     w = []
@@ -82,7 +94,11 @@ def update_view(
     request: Request,
     page_model: ModelAdmin = Depends(get_model_site),
     session: Session = Depends(get_db_session),
+    user: Optional[User] = Depends(decode_access_token_from_data),
 ):
+    if not user:
+        return RedirectResponse(request.url_for("admin:login"))
+
     params = dict(request.query_params)
     pks = get_pk(page_model.model)
     w = []
@@ -96,11 +112,17 @@ def update_view(
 
 @router.post("/{resource}/create")
 def create(
+    request: Request,
     data: dict = Depends(get_data),
     page_model: ModelAdmin = Depends(get_model_site),
     session: Session = Depends(get_db_session),
+    user: Optional[User] = Depends(decode_access_token_from_data),
 ):
+    if not user:
+        return RedirectResponse(request.url_for("admin:login"))
+
     model = page_model.model
+    data = clean_data_to_model(page_model.create_fields, data)
     instance = model(**data)
     session.add(instance)
     session.commit()
@@ -112,7 +134,11 @@ def delete_one(
     request: Request,
     page_model: ModelAdmin = Depends(get_model_site),
     session: Session = Depends(get_db_session),
+    user: Optional[User] = Depends(decode_access_token_from_data),
 ):
+    if not user:
+        return RedirectResponse(request.url_for("admin:login"))
+
     params = dict(request.query_params)
     pks = get_pk(page_model.model)
     w = []
@@ -142,6 +168,11 @@ class DIDS(BaseModel):
 
 @router.get("/{resource}/schema")
 def get_schema(
+    request: Request,
     page: ModelAdmin = Depends(get_model_site),
+    user: Optional[User] = Depends(decode_access_token_from_data),
 ):
+    if not user:
+        return RedirectResponse(request.url_for("admin:login"))
+
     return BaseRes(data=page.get_app_page())

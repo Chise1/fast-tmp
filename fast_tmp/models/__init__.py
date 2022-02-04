@@ -1,28 +1,25 @@
-from typing import Container, List
+from typing import List
 
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Table, select
-from sqlalchemy.orm import Session, declarative_base, joinedload, relationship
+from sqlalchemy.orm import Session, joinedload, relationship
+from sqlalchemy.orm.decl_api import declarative_base
 
 from fast_tmp.utils.password import make_password, verify_password
 
 Base = declarative_base()
 
 group_permission = Table(
-    "group_permission",
+    "auth_group_permission",
     Base.metadata,
-    Column("group_id", Integer, ForeignKey("group.id")),
-    Column("permission_code", String(128), ForeignKey("permission.code")),
+    Column("group_id", Integer, ForeignKey("auth_group.id")),
+    Column("permission_code", String(128), ForeignKey("auth_permission.code")),
 )
 
 group_user = Table(
-    "group_user",
+    "auth_group_user",
     Base.metadata,
-    Column("group_id", Integer, ForeignKey("group.id")),
-    Column(
-        "user_id",
-        Integer,
-        ForeignKey("user.id"),
-    ),
+    Column("group_id", Integer, ForeignKey("auth_group.id")),
+    Column("auth_user_id", Integer, ForeignKey("auth_user.id")),
 )
 
 
@@ -32,11 +29,12 @@ class AbstractModel(Base):
 
 
 class User(AbstractModel):
-    __tablename__ = "user"
+    __tablename__ = "auth_user"
 
     username = Column(String(128), unique=True)
     password = Column(String(128), nullable=True)
     is_superuser = Column(Boolean(), default=False)
+    is_manager = Column(Boolean(), default=False)  # could login admin
     is_active = Column(Boolean(), default=True)
 
     def set_password(self, raw_password: str):
@@ -50,12 +48,14 @@ class User(AbstractModel):
     def verify_password(self, raw_password: str) -> bool:
         """
         验证密码
-        :param raw_password:
-        :return:
         """
         return verify_password(raw_password, self.password)
 
-    def has_perm(self, session: Session, perm: str) -> bool:
+    def has_perm(
+        self,
+        perm: str,
+        session: Session,
+    ) -> bool:
         """
         判定用户是否有权限
         """
@@ -70,21 +70,26 @@ class User(AbstractModel):
             return True
         return False
 
-    # todo:需要测试
-    def has_perms(self, session: Session, perms: Container[str]) -> bool:
-        """
-        根据permission的codename进行判定
-        """
-        if self.is_superuser:
-            return True
-        results = session.execute(
-            select(Group.id)
-            .join(Group.users.and_(User.id == self.id))
-            .join(Group.permissions.and_(Permission.code.in_(perms)))
-        ).all()
-        if len(results) > 0:
-            return True
-        return False
+    # todo:need test
+    # def has_perms(self, session: Session, perms: Set[str]) -> bool:
+    #     """
+    #     根据permission的codename进行判定
+    #     """
+    #     if self.is_superuser:
+    #         return True
+    #     results = session.execute(
+    #         select(Permission.code)
+    #         .join(Group.permissions.and_(Permission.code.in_(perms)))
+    #         .join(Group.users.and_(User.id == self.id))
+    #     )
+    #     # results = session.execute(
+    #     #     select(Group.id)
+    #     #         .join(Group.users.and_(User.id == self.id))
+    #     #         .join(Group.permissions.and_(Permission.code.in_(perms)))
+    #     # ).all()
+    #     if len(results) == len(perms):
+    #         return True
+    #     return False
 
     def perms(self, session: Session) -> List[str]:
         """
@@ -110,13 +115,24 @@ class User(AbstractModel):
         return self.username
 
 
+class Permission(Base):
+    __tablename__ = "auth_permission"
+    code = Column(String(128), primary_key=True)
+    name = Column(String(128))
+
+    def __str__(self):
+        return self.name + "-" + self.code
+
+
 class Group(AbstractModel):
-    __tablename__ = "group"
+    __tablename__ = "auth_group"
     name = Column(String(32))
-    permissions: "Permission" = relationship(
-        "Permission", secondary="group_permission", backref="groups", cascade="all,delete"
+    permissions: List[Permission] = relationship(
+        "Permission", secondary="auth_group_permission", backref="groups", cascade="all,delete"
     )
-    users = relationship("User", secondary="group_user", backref="groups", cascade="all,delete")
+    users: List[User] = relationship(
+        "User", secondary="auth_group_user", backref="groups", cascade="all,delete"
+    )
 
     def get_perms(self, db_session: Session) -> List[str]:
         permissions = db_session.execute(
@@ -124,17 +140,8 @@ class Group(AbstractModel):
         ).fetchall()
         return [permission[1] for permission in permissions]
 
-    def get_users(self, session: Session) -> List[User]:
-        results = session.execute(
-            select(Group).options(joinedload(Group.users)).where(Group.id == self.id)
-        )
-        return results.scalars().first().users
-
-
-class Permission(Base):
-    __tablename__ = "permission"
-    code = Column(String(128), primary_key=True)
-    name = Column(String(128))
-
-    def __str__(self):
-        return self.name + "-" + self.code
+    # def get_users(self, session: Session) -> List[User]:
+    #     results = session.execute(
+    #         select(Group).options(joinedload(Group.users)).where(Group.id == self.id)
+    #     )
+    #     return results.scalars().first().users

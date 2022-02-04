@@ -14,13 +14,15 @@ class FormWidgetSize(
 
 class ControlEnum(str, Enum):
     text = "text"
+    textarea = "textarea"
     input_text = "input-text"
     switch = "switch"  # 开关
     select = "select"
-    number = "number"
+    number = "input-number"
+    native_number = "native-number"  # exploer natave number
     array = "array"
     date = "date"
-    datetime = "datetime"
+    datetime = "input-datetime"
     uuid = "uuid"
     rich_text = "rich-text"
     time = "time"

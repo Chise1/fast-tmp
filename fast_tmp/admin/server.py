@@ -5,7 +5,7 @@ from typing import Optional
 from fastapi import Depends, FastAPI, Form, Request
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.templating import Jinja2Templates
-from sqlmodel import Session
+from sqlalchemy.orm import Session
 from starlette.responses import RedirectResponse
 from starlette.staticfiles import StaticFiles
 
@@ -24,18 +24,35 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl=settings.LOGIN_URL)
 base_path = os.path.dirname(__file__)
 templates = Jinja2Templates(directory=base_path + "/templates")
 register_tags(templates)
-admin = FastAPI(title="后台")
-
+admin = FastAPI(title="fast-tmp")
+# todo add debug,
 admin.mount("/static", app=StaticFiles(directory=base_path + "/static"), name="static")
 
-register_model_site(UserAdmin)
+register_model_site({"Auth": [UserAdmin]})
 admin.include_router(router)
 
 
-@admin.route("/", name="index", methods=["GET", "POST"])
+@admin.get(
+    "/",
+    name="index",
+)
 def index(request: Request, user: Optional[User] = Depends(decode_access_token_from_data)):
     if not user:
-        return RedirectResponse("admin:login")
+        return RedirectResponse(request.url_for("admin:login"))
+    return templates.TemplateResponse(
+        "index.html",
+        {"request": request, "title": admin.title},
+    )
+
+
+@admin.post(
+    "/",
+    name="index",
+)  # bug:can not use admin.route .It can't check depends.
+def index_post(request: Request, user: Optional[User] = Depends(decode_access_token_from_data)):
+    if not user:
+        return RedirectResponse(request.url_for("admin:login"))
+
     return templates.TemplateResponse(
         "index.html",
         {"request": request, "title": admin.title},
@@ -92,21 +109,23 @@ def login_html(request: Request):
 
 
 @admin.get("/site")
-def get_site():
-    # todo 需要加主页
+def get_site(request: Request, user: Optional[User] = Depends(decode_access_token_from_data)):
+    if not user:
+        return RedirectResponse(request.url_for("admin:login"))
+
     pages = []
-    for name, model in model_list.items():
-        # pages.append(
-        #     {
-        #         "label": "Home",
-        #         "url": "/admin",
-        #         "redirect": "/admin/" + name
-        #     },
-        # )
+    for name, ml in model_list.items():  # todo add home page
         pages.append(
             {
-                "label": "Auth",
-                "children": [{"label": name, "url": name, "schemaApi": name + "/schema"}],
+                "label": name,
+                "children": [
+                    {
+                        "label": model.name(),
+                        "url": model.name(),
+                        "schemaApi": model.name() + "/schema",
+                    }
+                    for model in ml
+                ],
             }
         )
     return BaseRes(data={"pages": pages})

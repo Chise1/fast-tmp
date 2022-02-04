@@ -14,7 +14,7 @@ class Column(BaseModel):
     """
 
     type: ControlEnum = ControlEnum.text  # 把这个和schema获取的参数进行融合，保证schema获取的值可以使用
-    name: str
+    name: str  # type: ignore
     label: str
 
 

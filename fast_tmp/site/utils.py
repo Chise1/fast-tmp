@@ -1,12 +1,34 @@
-import warnings
-from typing import Dict, List, Tuple
+from datetime import datetime
+from typing import Dict, List, Optional, Text, Tuple
 
-from sqlalchemy import BigInteger, Column, Enum, Integer, SmallInteger, inspect
+from sqlalchemy import (
+    BOOLEAN,
+    DECIMAL,
+    INTEGER,
+    BigInteger,
+    Boolean,
+    Column,
+    DateTime,
+    Enum,
+    Float,
+    Integer,
+    Numeric,
+    SmallInteger,
+    inspect,
+)
 from sqlalchemy.orm import Mapper
 
+from fast_tmp.admin.schema.forms import Column as AmisColumn
 from fast_tmp.admin.schema.forms import Column as FormColumn
-from fast_tmp.admin.schema.forms import FormWidgetSize, ItemModel
-from fast_tmp.admin.schema.forms.widgets import NumberItem, TextItem
+from fast_tmp.admin.schema.forms import Control, FormWidgetSize, ItemModel
+from fast_tmp.admin.schema.forms.widgets import (
+    DatetimeItem,
+    NativeNumber,
+    NumberItem,
+    SwitchItem,
+    TextareaItem,
+    TextItem,
+)
 
 
 def get_pk(model) -> Dict[str, Column]:
@@ -32,58 +54,96 @@ def _get_base_attr(field_type: Column, **kwargs) -> dict:
         required=not field_type.nullable,
         mode=ItemModel.normal,
         size=FormWidgetSize.full,
-        value=field_type.default() if callable(field_type.default) else field_type.default,
     )
+    if field_type.default is not None:
+
+        if callable(field_type.default):
+            res["value"] = field_type.default()
+        else:
+            res["value"] = field_type.default.arg
     res.update(kwargs)
     return res
 
 
-def get_controls_from_model(
-    include: Tuple[Column, ...] = (),
-) -> List[FormColumn]:
+def get_controls_from_model(include: Tuple[Column, ...] = ()) -> List[Control]:
     """
     从pydantic_queryset_creator创建的schema获取字段
     extra_fields:额外的自定义字段
     """
-    res = []
+    res: List[Control] = []
     for field in include:
+        item: Optional[Control] = None
         if isinstance(field.type, Enum):
             pass
-        elif isinstance(field.type, BigInteger):
-            pass
-        elif isinstance(field.type, SmallInteger):
-            pass
-        elif isinstance(field.type, Integer):
-            res.append(
-                NumberItem(
-                    min=field.type.constraints.get("ge") or -2147483648,
-                    max=field.type.constraints.get("le") or 2147483647,
-                    precision=0,
-                    step=1,
-                    **_get_base_attr(field.type),
-                    validations={
-                        "minimum": field.type.constraints.get("ge") or -2147483648,
-                        "maximum": field.type.constraints.get("le") or 2147483647,
-                    },
-                ),
+        elif isinstance(field.type, (Boolean, BOOLEAN)):  # boolean's default value must be false.
+            item = SwitchItem(
+                **_get_base_attr(field),
+            )
+        elif isinstance(field.type, Float):
+            item = NumberItem(
+                **_get_base_attr(field),
+            )
+        elif isinstance(field.type, (DECIMAL, Numeric)):
+            item = NativeNumber(
+                **_get_base_attr(field),
+            )
+            # todo need add limit check
+        # elif isinstance(field.type,Time):
+        #     item = TimeItem(
+        #         **_get_base_attr(field),
+        #
+        #     )
+        elif isinstance(field.type, DateTime):
+            item = DatetimeItem(  # fixme need check
+                **_get_base_attr(field), format="YYYY-MM-DDTHH:mm:ss"
+            )
+        # elif isinstance(field.type, BigInteger):
+        #     pass
+        # elif isinstance(field.type, SmallInteger):
+        #     pass
+        elif isinstance(field.type, (Integer, INTEGER, BigInteger, SmallInteger)):
+            # min = (
+            #     field.type.constraints.get("ge")  # type :ignore
+            #     if hasattr(field.type, "constraints")  # type :ignore
+            #     else -2147483648  # type :ignore
+            # )  # type :ignore
+            # max = (  # type :ignore
+            #     field.type.constraints.get("le")  # type :ignore
+            #     if hasattr(field.type, "constraints")  # type :ignore
+            #     else 2147483647  # type :ignore
+            # )  # type :ignore
+            item = NumberItem(
+                # min=min,
+                # max=max,
+                precision=0,
+                step=1,
+                **_get_base_attr(field),
+                # validations={
+                #     "minimum": min,
+                #     "maximum": max,
+                # },
+            )
+        elif isinstance(field.type, Text):
+            item = TextareaItem(
+                **_get_base_attr(field),
             )
         else:
             item = TextItem(
                 **_get_base_attr(field),
             )
-            if getattr(field.type, "length"):
+            if hasattr(field.type, "length"):
                 validations = {
                     "maxLength": field.type.length,
                 }
                 item.validations = validations
+        if item is not None:
             res.append(item)
-            warnings.warn("Not found form type")
     return res
 
 
 def get_columns_from_model(
     include: Tuple[Column, ...] = (),
-) -> List[Column]:
+) -> List[AmisColumn]:
     """
     从pydantic_queryset_creator创建的schema获取字段
     todo：增加多对多字段显示
@@ -105,3 +165,18 @@ def get_columns_from_model(
         # else:
         res.append(FormColumn(name=field.name, label=field.name))
     return res
+
+
+def clean_data_to_model(model_field: Tuple[Column, ...], data: dict) -> dict:
+    """
+    把前端的数据转为后端的格式
+    """
+    for k in data:
+        for i in model_field:
+            if i.name == k:
+                if isinstance(i.type, DateTime):
+                    data[k] = datetime.strptime(data[k], "%Y-%m-%dT%H:%M:%S")
+                break
+        else:
+            del data[k]
+    return data

@@ -1,3 +1,4 @@
+import datetime
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from pydantic import HttpUrl
@@ -31,10 +32,14 @@ class NumberItem(Control):
     type: ControlEnum = ControlEnum.number
     min: Optional[int]
     max: Optional[int]
-    precision: Optional[int] = 0  # 小数点后几位
+    precision: Optional[int]  # 小数点后几位
     step: Optional[int]  # 选择的步长
     value: Optional[int]
     showSteps: Optional[bool] = False
+
+
+class NativeNumber(Control):
+    type: ControlEnum = ControlEnum.native_number
 
 
 class SelectOption(BaseModel):
@@ -83,7 +88,7 @@ class SelectItemCanModifyItem(SelectItem):
 
 
 class ArrayItem(Control):
-    type: str = ControlEnum.array
+    type: ControlEnum = ControlEnum.array
     items: str = "text"  # 这个到时候改为枚举
     addable: bool = True  # 是否可新增
     removable: bool = True  # 是否可删除
@@ -96,7 +101,7 @@ class ArrayItem(Control):
 
 
 class DatetimeItem(Control):
-    type = ControlEnum.datetime
+    type: ControlEnum = ControlEnum.datetime
     value: Optional[str]
     format: str = "YYYY-MM-DD HH:mm:ss"  # 'X'为时间戳格式,参考文档：
     # https://baidu.gitee.io/amis/zh-CN/docs/components/form/datetime
@@ -144,15 +149,24 @@ class TextItem(Control):
     # resetValue: str = ""  # 清除后设置此配置项给定的值。
 
 
+class TextareaItem(Control):
+    # Textarea 多行文本输入框
+    type = ControlEnum.textarea
+    body: Optional[Dict[str, Any]]
+    minRows: Optional[int]  # 最小行数
+    maxRows: Optional[int]  # 最大行数
+    trimContents: Optional[bool]  # 是否去除首尾空白文本。
+
+
 class TimeItem(Control):
     # Time 时间
     type = ControlEnum.time
     body: Optional[Dict[str, Any]]
-    value: Optional[str]  # 默认值
+    value: Optional[datetime.time]  # 默认值
     timeFormat: str = "HH:mm"  # 时间选择器值格式，更多格式类型请参考 moment
     format: str = "X"  # 时间选择器值格式，更多格式类型请参考 moment
     inputFormat: str = "HH:mm"  # 时间选择器显示格式，即时间戳格式，更多格式类型请参考 moment
-    placeholder: str = "请选择时间"  # 占位文本
+    placeholder: Optional[str]  # 占位文本
     clearable: bool = True  # 是否可清除
     timeConstrainst: Union[dict, bool]  # 请参考： react-datetime
 
@@ -160,7 +174,7 @@ class TimeItem(Control):
 class UUIDItem(Control):
     # 随机生成一个 id，可以用于防止表单重复提交。
     type = ControlEnum.uuid
-    name: Optional[str]
+    name: Optional[str]  # type: ignore
     length: Optional[int]
 
 
@@ -552,13 +566,7 @@ class PickerItem(Control):
 
 #
 #
-# class TextareaItem(Control):
-#     # Textarea 多行文本输入框
-#     type = "page"
-#     body: Optional[Dict[str, Any]]
-#     minRows: Optional[int]  # 最小行数
-#     maxRows: Optional[int]  # 最大行数
-#     trimContents: Optional[bool]  # 是否去除首尾空白文本。
+
 #
 #
 

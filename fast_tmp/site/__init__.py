@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Tuple, Type, Union
+from typing import Any, Dict, List, Optional, Tuple, Type
 
 from pydantic import BaseModel
 from sqlalchemy import Column
@@ -26,7 +26,7 @@ class ModelAdmin:
     search_fields: Tuple[Column, ...] = ()
     filter_fields: Tuple[Column, ...] = ()
     # create
-    create_fields: Tuple[Union[Column, BaseModel], ...] = ()
+    create_fields: Tuple[Column, ...] = ()
     # exclude: Tuple[Union[str, BaseModel], ...] = ()
     # update ,如果为空则取create_fields
     update_fields: Tuple[Column, ...] = ()
@@ -41,7 +41,7 @@ class ModelAdmin:
     __create_dialog: Any = None
     __get_pks: Any = None
     page_model: Type[BaseModel]
-    prefix: Optional[str] = None
+    prefix: str = "/admin"
 
     @classmethod
     def name(cls):
@@ -114,9 +114,7 @@ class ModelAdmin:
         return Operation(buttons=[cls.get_del_one_button(), cls.get_update_one_button()])
 
     @classmethod
-    def get_crud(
-        cls,
-    ):
+    def get_crud(cls):
         body = []
         body.append(cls.get_create_dialogation_button())
         columns = []
@@ -135,13 +133,16 @@ class ModelAdmin:
         return Page(title=cls.name(), body=cls.get_crud()).dict(exclude_none=True)
 
 
-model_list: Dict[str, Type[ModelAdmin]] = {}
+model_list: Dict[str, List[Type[ModelAdmin]]] = {}
 
 
-def register_model_site(model: Type[ModelAdmin]):
-    model_list[model.model.__name__] = model
-    model.prefix = "/admin"
+def register_model_site(model_group: Dict[str, List[Type[ModelAdmin]]]):
+    model_list.update(model_group)
 
 
-def get_model_site(resource: str) -> Optional[ModelAdmin]:
-    return model_list.get(resource)
+def get_model_site(resource: str) -> Optional[Type[ModelAdmin]]:
+    for m_l in model_list.values():
+        for i in m_l:
+            if i.name() == resource:
+                return i
+    return None

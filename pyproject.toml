@@ -15,7 +15,7 @@ repository = "https://github.com/Chise1/fast-tmp"
 python = "^3.7"
 cookiecutter = "^1.7.2"
 typer = "^0.3.2"
-sqlalchemy = { extras = ["mypy"], version = "^1.4.31" }
+sqlalchemy = {extras = ["mypy"], version = "^1.4.31"}
 
 
 [tool.poetry.dev-dependencies]

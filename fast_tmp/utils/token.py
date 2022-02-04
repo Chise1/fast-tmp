@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
 # type: ignore
-from jose import jwt
+from jose import jwt  # type:ignore
 
 from fast_tmp.conf import settings
 
@@ -9,7 +9,7 @@ SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = settings.ALGORITHM
 
 
-def create_access_token(data: dict, expires_delta: timedelta = None):
+def create_access_token(data: dict, expires_delta: timedelta):
     to_encode = data.copy()
     expire = datetime.utcnow() + expires_delta
     to_encode.update({"exp": expire})
@@ -17,7 +17,5 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
     return encoded_jwt
 
 
-def decode_access_token(
-    token: str,
-):
+def decode_access_token(token: str):
     return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
