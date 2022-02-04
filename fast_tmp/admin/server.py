@@ -9,8 +9,7 @@ from sqlalchemy.orm import Session
 from starlette.responses import RedirectResponse
 from starlette.staticfiles import StaticFiles
 
-from fast_tmp.admin.depends import (authenticate_user,
-                                    decode_access_token_from_data)
+from fast_tmp.admin.depends import authenticate_user, decode_access_token_from_data
 from fast_tmp.conf import settings
 from fast_tmp.db import get_db_session
 from fast_tmp.models import User
