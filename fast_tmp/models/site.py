@@ -13,7 +13,7 @@ class UserAdmin(ModelAdmin):
     @classmethod
     def create_model(cls, data: dict) -> Any:
         user = cls.model(**data)
-        user.set_password(user.password)
+        user.set_password(data["password"])
         return user
 
     @classmethod
