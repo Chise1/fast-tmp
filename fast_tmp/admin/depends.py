@@ -26,7 +26,6 @@ def decode_access_token_from_data(
 
 
 def get_user(username: str, session: Session) -> Optional[User]:
-
     res = session.execute(
         select(User)  # type: ignore
         .where(User.username == username)

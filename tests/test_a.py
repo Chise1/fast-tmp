@@ -50,7 +50,44 @@ def test_crud():
     # login
     login_post_res = client.post("/admin/login", data={"username": "crud_user", "password": "crud_user"})
     assert login_post_res.status_code == 307
+    assert login_post_res.next.path_url == "/admin/"
     # list
     user_list = client.get("/admin/User/list")
     assert user_list.status_code == 200
-    assert user_list.text == '{"status":0,"msg":"","data":{"items":[{"id":1,"username":"root","is_active":true},{"id":2,"username":"crud_user","is_active":true}],"total":2}}'
+    assert user_list.text.count('"username":"crud_user"') == 1
+    user_data = user_list.json()["data"]
+    assert user_data["total"] == 2
+    for i in user_data["items"]:
+        if i.get("username") == "crud_user":
+            user_id = i.get("id")
+            break
+    else:
+        raise Exception("not found user id")
+    # update
+    user_update = client.get(f"/admin/User/update?id={user_id}")
+    assert user_update.status_code == 200
+    assert user_update.text.count('"password":') == 1
+    user_update_p = client.put(f"/admin/User/update?id={user_id}", json={"password": "root"})
+    assert user_update_p.status_code == 200
+    assert user_update_p.json()["status"] == 0
+    # test error pk
+    user_delete_err = client.delete(f"/admin/User/delete?ids={user_id}")
+    error_data = user_delete_err.json()
+    assert error_data["status"] == 400
+    assert error_data["msg"] == "主键错误"
+    error_data = client.put(f"/admin/User/update?ids={user_id}", json={"password": "root"}).json()
+    assert error_data["status"] == 400
+    assert error_data["msg"] == "主键错误"
+    # delete
+    user_delete = client.delete(f"/admin/User/delete?id={user_id}")
+    assert user_delete.status_code == 200
+
+
+def test_not_singin():
+    client = TestClient(app)
+    assert client.get("/admin/User/list").text.count("Login to your account") == 1
+    assert client.post("/admin/User/create", json={"username": "crud_user1", "password": "tt"}).status_code == 307
+    assert client.get("/admin/User/update?id=1").text.count("Login to your account") == 1
+    assert client.put("/admin/User/update?id=1", json={"password": "asdfadf"}).status_code == 307
+    assert client.delete("/admin/User/delete?id=1").status_code == 307
+    assert client.get("/admin/User/schema").text.count("Login to your account") == 1

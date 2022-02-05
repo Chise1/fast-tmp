@@ -18,7 +18,8 @@ from fast_tmp.site import model_list, register_model_site
 from fast_tmp.utils.token import create_access_token
 
 from ..jinja_extension.tags import register_tags
-from .endpoint import BaseRes, router
+from .endpoint import router
+from .responses import BaseRes
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=settings.LOGIN_URL)
 base_path = os.path.dirname(__file__)

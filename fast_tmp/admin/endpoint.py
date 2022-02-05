@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
@@ -13,6 +13,7 @@ from ..db import get_db_session
 from ..models import User
 from ..site.utils import clean_data_to_model, get_pk
 from .depends import decode_access_token_from_data
+from .responses import BaseRes, key_error, not_found_instance
 
 router = APIRouter()
 
@@ -27,12 +28,6 @@ async def get_data(request: Request) -> dict:
 class ListDataWithPage(BaseModel):  # 带分页的数据
     items: List[dict]
     total: int = 0
-
-
-class BaseRes(BaseModel):
-    status: int = 0
-    msg: str = ""
-    data: Any = {}
 
 
 @router.get("/{resource}/list")
@@ -76,13 +71,12 @@ def update_data(
     if not user:
         return RedirectResponse(request.url_for("admin:login"))
     data = clean_data_to_model(page_model.update_fields, data)
-    params = dict(request.query_params)
-    pks = get_pk(page_model.model)
-    w = []
-    for k, v in params.items():
-        if pks.get(k) is not None:
-            w.append(pks[k] == v)
+    w = get_pks(page_model, request)
+    if isinstance(w, BaseRes):
+        return w
     old_data = session.execute(select(page_model.model).where(*w)).scalar_one_or_none()
+    if not old_data:
+        return not_found_instance
     page_model.update_model(old_data, data)
     session.commit()
     return BaseRes()
@@ -98,15 +92,13 @@ def update_view(
     if not user:
         return RedirectResponse(request.url_for("admin:login"))
 
-    params = dict(request.query_params)
-    pks = get_pk(page_model.model)
-    w = []
-    for k, v in params.items():
-        if pks.get(k) is not None:
-            w.append(pks[k] == v)
-    data = session.execute(select(page_model.update_fields).where(*w))
-    for i in data:
-        return BaseRes(data=dict(i))
+    w = get_pks(page_model, request)
+    if isinstance(w, BaseRes):
+        return w
+    data = session.execute(select(page_model.update_fields).where(*w)).fetchone()
+    if not data:
+        return not_found_instance
+    return BaseRes(data=dict(data))
 
 
 @router.post("/{resource}/create")
@@ -137,6 +129,15 @@ def delete_one(
     if not user:
         return RedirectResponse(request.url_for("admin:login"))
 
+    w = get_pks(page_model, request)
+    if isinstance(w, BaseRes):
+        return w
+    session.execute(delete(page_model.model).where(*w))
+    session.commit()
+    return BaseRes()
+
+
+def get_pks(page_model: ModelAdmin, request: Request):
     params = dict(request.query_params)
     pks = get_pk(page_model.model)
     w = []
@@ -144,10 +145,8 @@ def delete_one(
         if pks.get(k) is not None:
             w.append(pks[k] == v)
         else:
-            return BaseRes(status=400, msg="主键错误")
-    session.execute(delete(page_model.model).where(*w))
-    session.commit()
-    return BaseRes()
+            return key_error
+    return w
 
 
 class DIDS(BaseModel):

@@ -34,8 +34,8 @@ test:
 	pytest tests/ --cov-report=
 
 cov: deps
-	coverage run -m pytest tests/
-	coverage report --show-missing -m
+	coverage run --branch -m pytest tests/
+	coverage report --show-missing -m --omit=tests/*,conftest.py
 	coverage xml
 	coverage html
 

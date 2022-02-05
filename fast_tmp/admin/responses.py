@@ -1,10 +1,13 @@
-from starlette.requests import Request
-from starlette.responses import RedirectResponse
-from starlette.status import HTTP_303_SEE_OTHER
+from typing import Any
+
+from pydantic import BaseModel
 
 
-def redirect(request: Request, view: str, **params):
-    return RedirectResponse(
-        url=request.app.admin_path + request.app.url_path_for(view, **params),
-        status_code=HTTP_303_SEE_OTHER,
-    )
+class BaseRes(BaseModel):
+    status: int = 0
+    msg: str = ""
+    data: Any = {}
+
+
+key_error = BaseRes(status=400, msg="主键错误")
+not_found_instance = BaseRes(status=404, msg="找不到对象")
