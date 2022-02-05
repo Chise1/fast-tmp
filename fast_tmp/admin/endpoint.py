@@ -2,7 +2,7 @@ from typing import Any, List, Optional
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
-from sqlalchemy import delete, func, select, update
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 from starlette.requests import Request
 from starlette.responses import RedirectResponse
@@ -82,9 +82,8 @@ def update_data(
     for k, v in params.items():
         if pks.get(k) is not None:
             w.append(pks[k] == v)
-    session.execute(
-        update(page_model.model).where(*w).values(**data)
-    )  # todo need check field is truely
+    old_data = session.execute(select(page_model.model).where(*w)).scalar_one_or_none()
+    page_model.update_model(old_data, data)
     session.commit()
     return BaseRes()
 
@@ -121,9 +120,8 @@ def create(
     if not user:
         return RedirectResponse(request.url_for("admin:login"))
 
-    model = page_model.model
     data = clean_data_to_model(page_model.create_fields, data)
-    instance = model(**data)
+    instance = page_model.create_model(data)
     session.add(instance)
     session.commit()
     return BaseRes(data=data)

@@ -40,6 +40,8 @@ jobs:
     - name: Test with pytest
       run: |
         make test
+    - name: Coverage
+      run: make cov
     - name: "Upload Coverage"
       uses: codecov/codecov-action@v2
       with:

@@ -112,7 +112,6 @@ def login_html(request: Request):
 def get_site(request: Request, user: Optional[User] = Depends(decode_access_token_from_data)):
     if not user:
         return RedirectResponse(request.url_for("admin:login"))
-
     pages = []
     for name, ml in model_list.items():  # todo add home page
         pages.append(

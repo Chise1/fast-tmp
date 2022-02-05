@@ -1,7 +1,6 @@
 checkfiles = fast_tmp/
 black_opts = -l 100 -t py38
 py_warn = PYTHONDEVMODE=1
-pytest_opts = -n auto --cov=fast_tmp --tb=native -q
 
 help:
 	@echo "fastapi-cli development makefile"
@@ -31,11 +30,12 @@ check:
 	mypy $(checkfiles)
 
 
-test_sqlite:
-	$(py_warn) pytest tests/ --cov-report= $(pytest_opts)
+test:
+	pytest tests/ --cov-report=
 
-test: deps test_sqlite
-	coverage report --show-missing --skip-covered
+cov: deps
+	coverage run -m pytest tests/
+	coverage report --show-missing -m
 	coverage xml
 	coverage html
 

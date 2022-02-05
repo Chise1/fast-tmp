@@ -132,6 +132,22 @@ class ModelAdmin:
     def get_app_page(cls):
         return Page(title=cls.name(), body=cls.get_crud()).dict(exclude_none=True)
 
+    @classmethod
+    def create_model(cls, data: dict):
+        """
+        写入数据库之前调用
+        """
+        return cls.model(**data)
+
+    @classmethod
+    def update_model(cls, model: Any, data: dict) -> Any:
+        """
+        更新数据之前调用
+        """
+        for k, v in data.items():
+            setattr(model, k, v)
+        return model
+
 
 model_list: Dict[str, List[Type[ModelAdmin]]] = {}
 

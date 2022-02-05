@@ -50,6 +50,3 @@ default = true
 
 [tool.poetry.scripts]
 fast-tmp = "fastapi_cli:main"
-
-[mypy]
-plugins = "sqlalchemy.ext.mypy.plugin"
