@@ -26,7 +26,7 @@ style: deps
 check:
 	black --check $(black_opts) $(checkfiles) || (echo "Please run 'make style' to auto-fix style issues" && false)
 	flake8 $(checkfiles)
-	#bandit -x test -r $(checkfiles)
+	bandit -x test -r $(checkfiles)
 	mypy $(checkfiles)
 
 

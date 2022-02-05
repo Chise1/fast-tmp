@@ -20,7 +20,7 @@ def decode_access_token_from_data(
                 user = get_user(username, session)
                 if user:
                     return user
-        except Exception:  # noqa
+        except Exception:  # nosec
             pass
     return None
 
