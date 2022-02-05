@@ -3,4 +3,6 @@ site_url: https://github.com/Chise1/fast-tmp
 nav:
   - 主页: index.md
   - 设置: setting.md
+  - 模块:
+      'ModelAdmin': 'ModelAdmin.md'
 theme: readthedocs
