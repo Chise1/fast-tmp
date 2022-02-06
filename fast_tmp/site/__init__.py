@@ -11,6 +11,7 @@ from fast_tmp.admin.schema.forms import Form
 from fast_tmp.admin.schema.frame import Dialog
 from fast_tmp.admin.schema.page import Page
 
+from ..admin.constant import crud_root_rooter
 from .utils import get_columns_from_model, get_controls_from_model, get_pk
 
 
@@ -60,7 +61,7 @@ class ModelAdmin:
                         name=f"新增{cls.name()}",
                         title=f"新增{cls.name()}",
                         body=get_controls_from_model(cls.create_fields),
-                        api=f"post:{cls.prefix}/{cls.name()}/create",
+                        api=f"post:{crud_root_rooter}{cls.name()}/create",
                     ),
                 ),
             )
@@ -87,7 +88,7 @@ class ModelAdmin:
             type="button",
             level=ButtonLevelEnum.danger,
             confirmText="确认要删除？",
-            api="delete:" + cls.name() + "/delete?" + cls.pks(),
+            api="delete:" + crud_root_rooter + cls.name() + "/delete?" + cls.pks(),
         )
 
     @classmethod
@@ -99,8 +100,8 @@ class ModelAdmin:
                 body=Form(
                     name=f"修改{cls.name()}",
                     body=get_controls_from_model(cls.update_fields),
-                    api="put:" + cls.name() + "/update?" + cls.pks(),
-                    initApi="get:" + cls.name() + "/update?" + cls.pks(),
+                    api="put:" + crud_root_rooter + cls.name() + "/update?" + cls.pks(),
+                    initApi="get:" + crud_root_rooter + cls.name() + "/update?" + cls.pks(),
                 ),
             ),
         )
@@ -122,7 +123,7 @@ class ModelAdmin:
         columns.append(cls.get_operation())
         body.append(
             CRUD(
-                api=cls.name() + "/list",
+                api=crud_root_rooter + cls.name() + "/list",
                 columns=columns,
             )
         )

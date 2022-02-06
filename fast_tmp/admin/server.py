@@ -18,6 +18,7 @@ from fast_tmp.site import model_list, register_model_site
 from fast_tmp.utils.token import create_access_token
 
 from ..jinja_extension.tags import register_tags
+from .constant import crud_root_rooter, model_router
 from .endpoint import router
 from .responses import BaseRes
 
@@ -30,7 +31,7 @@ admin = FastAPI(title="fast-tmp")
 admin.mount("/static", app=StaticFiles(directory=base_path + "/static"), name="static")
 
 register_model_site({"Auth": [UserAdmin]})
-admin.include_router(router)
+admin.include_router(router, prefix=model_router)
 
 
 @admin.get(
@@ -63,8 +64,8 @@ def index_post(request: Request, user: Optional[User] = Depends(decode_access_to
 @admin.post("/login")
 def login(
     request: Request,
-    username: str = Form(...),
-    password: str = Form(...),
+    username: Optional[str] = Form(None),
+    password: Optional[str] = Form(None),
     session: Session = Depends(get_db_session),
 ):
     context = {
@@ -122,7 +123,7 @@ def get_site(request: Request, user: Optional[User] = Depends(decode_access_toke
                     {
                         "label": model.name(),
                         "url": model.name(),
-                        "schemaApi": model.name() + "/schema",
+                        "schemaApi": crud_root_rooter + model.name() + "/schema",
                     }
                     for model in ml
                 ],
