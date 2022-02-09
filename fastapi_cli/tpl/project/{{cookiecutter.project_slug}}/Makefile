@@ -1,7 +1,6 @@
 checkfiles = {{cookiecutter.project_slug}}/ tests/ conftest.py
 black_opts = -l 100 -t py38
 py_warn = PYTHONDEVMODE=1
-test_settings = SETTINGS_MODULE=tests.settings
 
 help:
 	@echo "{{cookiecutter.project_name}} development makefile"
@@ -28,6 +27,13 @@ check: deps
 	black --check $(black_opts) $(checkfiles) || (echo "Please run 'make style' to auto-fix style issues" && false)
 	flake8 $(checkfiles)
 	bandit -x test -r $(checkfiles)
+    mypy $(checkfiles)
 
 test: deps
-	$(py_warn) $(test_settings) py.test
+	pytest tests/ --cov-report=
+
+cov: deps
+	coverage run -m pytest tests/
+	coverage report --show-missing -m --omit=tests/*,conftest.py
+	coverage xml
+	coverage html

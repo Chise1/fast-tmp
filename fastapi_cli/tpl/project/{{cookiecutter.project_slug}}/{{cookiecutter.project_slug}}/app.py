@@ -1,9 +1,13 @@
 import os
+from fastapi import FastAPI
+
+from fast_tmp.admin.server import admin
 
 os.environ.setdefault("FASTAPI_SETTINGS_MODULE", '{{cookiecutter.project_slug}}.settings')
-from {{cookiecutter.project_slug}}.factory import create_app
+from fast_tmp.site import register_model_site
 
-app = create_app()
+app =FastAPI(title='{{cookiecutter.project_slug}}')
+app.mount("/admin", admin, name="admin", )
 
 if __name__ == '__main__':
     import uvicorn
