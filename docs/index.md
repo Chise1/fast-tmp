@@ -122,12 +122,16 @@ if __name__ == '__main__':  # 调试模式启动
     uvicorn.run(app, debug=True, port=8000, lifespan="on")
 ```
 
+### 使用本地amis文件
+
+由于amis的库非常大（8MB），所以页面加载会比较缓慢，可以在[下载链接](https://gitee.com/chise123/static-file)
+下载文件并在项目根目录解压缩，然后在.env配置```LOCAL_STATIC=True```
+
 ### 创建超级用户
+
 ```shell
 fast-tmp createsuperuser username password
 ```
-
-
 
 ### 自定义指令
 

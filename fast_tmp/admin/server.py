@@ -25,8 +25,10 @@ base_path = os.path.dirname(__file__)
 templates = Jinja2Templates(directory=base_path + "/templates")
 register_tags(templates)
 admin = FastAPI(title="fast-tmp")
-# todo add debug,
-admin.mount("/static", app=StaticFiles(directory=base_path + "/static"), name="static")
+if settings.LOCAL_STATIC:
+    admin.mount("/static", app=StaticFiles(directory=os.getcwd() + "/static"), name="static")
+else:
+    admin.mount("/static", app=StaticFiles(directory=base_path + "/static"), name="static")
 
 register_model_site({"Auth": [UserAdmin]})
 admin.include_router(router, prefix=model_router)
