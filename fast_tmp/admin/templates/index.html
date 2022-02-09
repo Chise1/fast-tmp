@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh">
 <head>
     <meta charset="UTF-8"/>
     <title>amis admin</title>
@@ -9,31 +9,35 @@
             content="width=device-width, initial-scale=1, maximum-scale=1"
     />
     <meta http-equiv="X-UA-Compatible" content="IE=Edge"/>
+
+    {% if local_file() %}
     <link
-      rel="stylesheet"
-      title="default"
-      href="https://unpkg.com/amis@beta/sdk/sdk.css"
+            rel="stylesheet"
+            title="default"
+            href="{{static(path='static/amis/sdk/sdk.css')}}"
     />
     <link
-      rel="stylesheet"
-      href="https://unpkg.com/amis@beta/sdk/helper.css"
+            rel="stylesheet"
+            href="{{static(path='static/amis/sdk/helper.css')}}"
+    />
+    <script src="{{static(path='static/amis/sdk/sdk.js')}}"></script>
+    <!--    不知道vue2有哪儿用到了，没启用好像也能正常运行-->
+    <!--    <script src="https://unpkg.com/vue@2"></script>-->
+    <script src="{{  static(path='static/amis/sdk/history.js') }}"></script>
+    {% else %}
+    <link
+            rel="stylesheet"
+            title="default"
+            href="https://unpkg.com/amis@beta/sdk/sdk.css"
+    />
+    <link
+            rel="stylesheet"
+            href="https://unpkg.com/amis@beta/sdk/helper.css"
     />
     <script src="https://unpkg.com/amis@beta/sdk/sdk.js"></script>
     <script src="https://unpkg.com/vue@2"></script>
     <script src="https://unpkg.com/history@4.10.1/umd/history.js"></script>
-<!--    <link-->
-<!--            rel="stylesheet"-->
-<!--            title="default"-->
-<!--            href="{{static(path='static/amis/sdk/sdk.css')}}"-->
-<!--    />-->
-<!--    <link-->
-<!--            rel="stylesheet"-->
-<!--            href="{{static(path='static/amis/sdk/helper.css')}}"-->
-<!--    />-->
-<!--    <script src="{{static(path='static/amis/sdk/sdk.js')}}"></script>-->
-<!--    &lt;!&ndash;    不知道vue2有哪儿用到了，没启用好像也能正常运行&ndash;&gt;-->
-<!--    <script src="https://unpkg.com/vue@2"></script>-->
-<!--    <script src="{{  static(path='static/amis/sdk/history.js') }}"></script>-->
+    {% endif %}
     <style>
         html,
         body,
@@ -65,7 +69,9 @@
                 type: 'tpl',
                 inline: false,
                 className: 'w-full',
-                tpl: '<div class="flex justify-between"><div>顶部区域左侧</div><div>顶部区域右侧</div></div>'
+                tpl: '<div class="flex justify-between"><div></div><div><a href="/admin/logout">登出</a></div></div>'
+
+                // tpl: '<div class="flex justify-between"><div>顶部区域左侧</div><div>顶部区域右侧</div></div>'
             },
             // footer: '<div class="p-2 text-center bg-light">底部区域</div>',
             // asideBefore: '<div class="p-2 text-center">菜单前面区域</div>',

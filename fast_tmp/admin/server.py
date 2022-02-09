@@ -3,7 +3,6 @@ from datetime import timedelta
 from typing import Optional
 
 from fastapi import Depends, FastAPI, Form, Request
-from fastapi.security import OAuth2PasswordBearer
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from starlette.responses import RedirectResponse
@@ -22,7 +21,6 @@ from .constant import crud_root_rooter, model_router
 from .endpoint import router
 from .responses import BaseRes
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl=settings.LOGIN_URL)
 base_path = os.path.dirname(__file__)
 templates = Jinja2Templates(directory=base_path + "/templates")
 register_tags(templates)
@@ -108,6 +106,19 @@ def login_html(request: Request):
         "password_err": False,
     }
     return templates.TemplateResponse("login.html", context)
+
+
+@admin.get("/logout", name="logout")
+def logout(request: Request):
+    context = {
+        "request": request,
+        "errinfo": "",
+        "username_err": False,
+        "password_err": False,
+    }
+    res = templates.TemplateResponse("login.html", context)
+    res.delete_cookie("access_token")
+    return res
 
 
 @admin.get("/site")
