@@ -14,7 +14,7 @@ fast-tmp项目受django-admin的影响，旨在实现一个基于sqlalchemy+fast
 - amis:一款利用json数据生成页面的前端低代码项目。
 
 笔者前端能力比较弱，从实用主义出发，利用amis搭建后台管理的页面。这也为未来页面的功能拓展提供了无限可能。并摆脱前端开发的影响。（由于偷懒，登陆页面用的taber构建的。以后有时间了修改）
-
+更多内容查看[教程](https://fast-tmp.readthedocs.io/)
 ## 示例
 
 url:                http://124.222.119.206:8000/admin
