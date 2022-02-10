@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str
     DEBUG: bool = True
     LOGIN_URL: str = "/api-token-auth"
+    LOCAL_STATIC: bool = False
 
     @validator("DEBUG", pre=True, allow_reuse=True)
     def get_debug(cls, v: str) -> bool:
