@@ -36,6 +36,9 @@ class User(AbstractModel):
     is_superuser = Column(Boolean(), default=False)
     is_manager = Column(Boolean(), default=False)  # could login admin
     is_active = Column(Boolean(), default=True)
+    groups: List["Group"] = relationship(
+        "Group", secondary="auth_group_user", back_populates="users", cascade="all,delete"
+    )
 
     def set_password(self, raw_password: str):
         """
@@ -131,7 +134,7 @@ class Group(AbstractModel):
         "Permission", secondary="auth_group_permission", backref="groups", cascade="all,delete"
     )
     users: List[User] = relationship(
-        "User", secondary="auth_group_user", backref="groups", cascade="all,delete"
+        "User", secondary="auth_group_user", back_populates="groups", cascade="all,delete"
     )
 
     def get_perms(self, db_session: Session) -> List[str]:

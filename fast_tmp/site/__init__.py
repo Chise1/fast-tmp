@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional, Tuple, Type
 
-from pydantic import BaseModel
-from sqlalchemy import Column
+from sqlalchemy import Column, select
+from sqlalchemy.orm import MANYTOMANY, MANYTOONE, ONETOMANY, RelationshipProperty
 
 from fast_tmp.admin.schema.actions import AjaxAction, DialogAction
 from fast_tmp.admin.schema.buttons import Operation
@@ -12,7 +12,7 @@ from fast_tmp.admin.schema.frame import Dialog
 from fast_tmp.admin.schema.page import Page
 
 from ..admin.constant import crud_root_rooter
-from .utils import get_columns_from_model, get_controls_from_model, get_pk
+from .utils import get_pk, get_real_column_field, make_columns, make_controls
 
 
 class ModelAdmin:
@@ -41,8 +41,9 @@ class ModelAdmin:
     # 页面相关的东西
     __create_dialog: Any = None
     __get_pks: Any = None
-    page_model: Type[BaseModel]
-    prefix: str = "/admin"
+    # page_model: Type[BaseModel]
+
+    # prefix: str = "/admin"
 
     @classmethod
     def name(cls):
@@ -60,7 +61,7 @@ class ModelAdmin:
                     body=Form(
                         name=f"新增{cls.name()}",
                         title=f"新增{cls.name()}",
-                        body=get_controls_from_model(cls.create_fields),
+                        body=make_controls(cls.create_fields),
                         api=f"post:{crud_root_rooter}{cls.name()}/create",
                     ),
                 ),
@@ -69,7 +70,7 @@ class ModelAdmin:
 
     @classmethod
     def get_list_page(cls):
-        return get_columns_from_model(cls.list_display)
+        return make_columns(cls.list_display)
 
     @classmethod
     def pks(cls):
@@ -99,7 +100,7 @@ class ModelAdmin:
                 title="修改",
                 body=Form(
                     name=f"修改{cls.name()}",
-                    body=get_controls_from_model(cls.update_fields),
+                    body=make_controls(cls.update_fields),
                     api="put:" + crud_root_rooter + cls.name() + "/update?" + cls.pks(),
                     initApi="get:" + crud_root_rooter + cls.name() + "/update?" + cls.pks(),
                 ),
@@ -108,25 +109,28 @@ class ModelAdmin:
 
     @classmethod
     def get_operation(cls):
-        primary_keys = get_pk(cls.model).keys()
-        del_path = []
-        for pk in primary_keys:
-            del_path.append(f"{pk}=${pk}")
-        return Operation(buttons=[cls.get_del_one_button(), cls.get_update_one_button()])
+        buttons = []
+        if "delete" in cls.methods:
+            buttons.append(cls.get_del_one_button())
+        if "update" in cls.methods and cls.update_fields:
+            buttons.append(cls.get_update_one_button())
+        return Operation(buttons=buttons)
 
     @classmethod
     def get_crud(cls):
         body = []
-        body.append(cls.get_create_dialogation_button())
-        columns = []
-        columns.extend(cls.get_list_page())
-        columns.append(cls.get_operation())
-        body.append(
-            CRUD(
-                api=crud_root_rooter + cls.name() + "/list",
-                columns=columns,
+        if "create" in cls.methods and cls.create_fields:
+            body.append(cls.get_create_dialogation_button())
+        if "list" in cls.methods and cls.list_display:
+            columns = []
+            columns.extend(cls.get_list_page())
+            columns.append(cls.get_operation())
+            body.append(
+                CRUD(
+                    api=crud_root_rooter + cls.name() + "/list",
+                    columns=columns,
+                )
             )
-        )
         return body
 
     @classmethod
@@ -138,16 +142,107 @@ class ModelAdmin:
         """
         写入数据库之前调用
         """
-        return cls.model(**data)
+        instance = cls.model()
+        for k, v in data.items():
+            field = getattr(cls.model, k)
+            if isinstance(field.property, RelationshipProperty):
+                if field.property.direction == MANYTOMANY:
+                    model = field.mapper.class_
+                    pk = list(get_pk(model).keys())[0]
+                    for i in v:
+                        child = model()
+                        setattr(child, pk, i)
+                        getattr(instance, k).append(child)
+                elif field.property.direction == MANYTOONE:
+                    field = get_real_column_field(field)
+                    setattr(instance, field.key, v)
+                elif field.property.direction == ONETOMANY:  # todo 暂时不考虑支持
+                    # onetoone
+                    if not getattr(field.property, "uselist"):
+                        pass
+                    else:
+                        pass
+                else:
+                    raise AttributeError(
+                        f"error relationshipfield: {cls.model}'s {field} relationship is not true."
+                    )
+            else:
+                setattr(instance, k, v)
+        return instance
 
     @classmethod
-    def update_model(cls, model: Any, data: dict) -> Any:
+    def update_model(cls, instance: Any, data: dict) -> Any:
         """
         更新数据之前调用
         """
         for k, v in data.items():
-            setattr(model, k, v)
-        return model
+            field = getattr(cls.model, k)
+            if isinstance(field.property, RelationshipProperty):
+                if field.property.direction == MANYTOMANY:
+                    model = field.mapper.class_
+                    pk = list(get_pk(model).keys())[0]
+                    for i in v:
+                        child = model()
+                        setattr(child, pk, i)
+                        getattr(instance, k).append(child)
+                elif field.property.direction == MANYTOONE:
+                    field = get_real_column_field(field)
+                    setattr(instance, field.key, v)
+                elif field.property.direction == ONETOMANY:  # todo 暂时不考虑支持
+                    # onetoone
+                    if not getattr(field.property, "uselist"):
+                        pass
+                    else:
+                        pass
+                else:
+                    raise AttributeError(
+                        f"error relationshipfield: {cls.model}'s {field} relationship is not true."
+                    )
+            else:
+                setattr(instance, k, v)
+        return instance
+
+    @classmethod
+    def get_clean_fields(cls, fields):
+        """
+        获取对外键进行处理过的列表,该方法主要用于数据处理
+        """
+        res = []
+        for i in fields:
+            if hasattr(i.property, "direction"):
+                if i.property.direction in (MANYTOMANY, ONETOMANY):
+                    continue
+                if i.property.direction == MANYTOONE:
+                    res.append(get_real_column_field(i))
+            else:
+                res.append(i)
+        return res
+
+    __list_sql = None
+
+    @classmethod
+    def get_list_sql(cls):
+        if cls.__list_sql is None:
+            __list_display = []
+            for i in cls.list_display:
+                if hasattr(i.property, "direction"):
+                    if i.property.direction in (MANYTOMANY, ONETOMANY):
+                        continue
+                    if i.property.direction == MANYTOONE:
+                        __list_display.append(get_real_column_field(i))
+                else:
+                    __list_display.append(i)
+            cls.__list_sql = select(__list_display)
+        return cls.__list_sql
+
+    __one_sql = None
+
+    @classmethod
+    def get_one_sql(cls, pks: list):
+        if cls.__one_sql is None:
+            __list_display = cls.get_clean_fields(cls.update_fields)
+            cls.__one_sql = select(__list_display)
+        return cls.__one_sql.where(*pks)
 
 
 model_list: Dict[str, List[Type[ModelAdmin]]] = {}

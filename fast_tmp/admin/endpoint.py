@@ -1,8 +1,22 @@
+from datetime import datetime
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends
+from fastapi.params import Path
 from pydantic import BaseModel
-from sqlalchemy import delete, func, select
+from sqlalchemy import (
+    DECIMAL,
+    INTEGER,
+    BigInteger,
+    DateTime,
+    Float,
+    Integer,
+    Numeric,
+    SmallInteger,
+    delete,
+    func,
+    select,
+)
 from sqlalchemy.orm import Session
 from starlette.requests import Request
 from starlette.responses import RedirectResponse
@@ -41,10 +55,10 @@ def list_view(
 ):
     if not user:
         return RedirectResponse(request.url_for("admin:login"))
-
-    datas = session.execute(
-        select(page_model.list_display).limit(perPage).offset((page - 1) * perPage)
-    )
+    sql = page_model.get_list_sql()
+    if sql == None:
+        return BaseRes()
+    datas = session.execute(sql.limit(perPage).offset((page - 1) * perPage))
     items = []
     for data in datas:
         items.append(dict(data))
@@ -70,7 +84,7 @@ def update_data(
 ):
     if not user:
         return RedirectResponse(request.url_for("admin:login"))
-    data = clean_data_to_model(page_model.update_fields, data)
+    data = clean_data_to_model(page_model.get_clean_fields(page_model.update_fields), data)
     w = get_pks(page_model, request)
     if isinstance(w, BaseRes):
         return w
@@ -92,10 +106,10 @@ def update_view(
     if not user:
         return RedirectResponse(request.url_for("admin:login"))
 
-    w = get_pks(page_model, request)
-    if isinstance(w, BaseRes):
-        return w
-    data = session.execute(select(page_model.update_fields).where(*w)).fetchone()
+    pks = get_pks(page_model, request)
+    if isinstance(pks, BaseRes):
+        return pks
+    data = session.execute(page_model.get_one_sql(pks)).fetchone()
     if not data:
         return not_found_instance
     return BaseRes(data=dict(data))
@@ -138,12 +152,23 @@ def delete_one(
 
 
 def get_pks(page_model: ModelAdmin, request: Request):
+    """
+    获取要查询的单个instance的主键
+    """
     params = dict(request.query_params)
     pks = get_pk(page_model.model)
     w = []
     for k, v in params.items():
         if pks.get(k) is not None:
-            w.append(pks[k] == v)
+            field = pks[k]
+            if isinstance(
+                field.type, (Integer, DECIMAL, BigInteger, Float, INTEGER, Numeric, SmallInteger)
+            ):
+                w.append(pks[k] == int(v))
+            elif isinstance(field.type, DateTime):
+                w.append(pks[k] == datetime.strptime(v, "%Y-%m-%dT%H:%M:%S"))
+            else:
+                w.append(pks[k] == v)
         else:
             return key_error
     return w
@@ -173,3 +198,29 @@ def get_schema(
         return RedirectResponse(request.url_for("admin:login"))
 
     return BaseRes(data=page.get_app_page())
+
+
+@router.get("/{resource}/selects/{field}")
+def get_selects(
+    request: Request,
+    field: str = Path(...),  # type: ignore
+    page_model: ModelAdmin = Depends(get_model_site),
+    user: Optional[User] = Depends(decode_access_token_from_data),
+    session: Session = Depends(get_db_session),
+    perPage: int = 10,
+    page: int = 1,
+):
+    source_field = getattr(page_model.model, field)
+    relation_model = source_field.property.mapper.class_
+
+    datas = session.execute(
+        select(list(get_pk(relation_model).values())).limit(perPage).offset((page - 1) * perPage)
+    )
+    items = []
+    for data in datas:
+        items.append(dict(data))
+    s = session.execute(select(func.count()).select_from(relation_model))
+    total = 0
+    for i in s:
+        total = i[0]
+    return BaseRes(data={"total": total, "rows": items})
