@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, List, Optional, Text, Tuple
+from typing import Dict, List, Optional, Text, Tuple, Union
 
 from sqlalchemy import (
     BOOLEAN,
@@ -16,8 +16,9 @@ from sqlalchemy import (
     SmallInteger,
     inspect,
 )
-from sqlalchemy.orm import Mapper
+from sqlalchemy.orm import MANYTOMANY, MANYTOONE, ONETOMANY, Mapper, RelationshipProperty
 
+from fast_tmp.admin.schema.actions import DialogAction
 from fast_tmp.admin.schema.forms import Column as AmisColumn
 from fast_tmp.admin.schema.forms import Column as FormColumn
 from fast_tmp.admin.schema.forms import Control, FormWidgetSize, ItemModel
@@ -25,10 +26,13 @@ from fast_tmp.admin.schema.forms.widgets import (
     DatetimeItem,
     NativeNumber,
     NumberItem,
+    PickerItem,
     SwitchItem,
     TextareaItem,
     TextItem,
 )
+from fast_tmp.admin.schema.frame import Dialog
+from fast_tmp.admin.schema.zs import ZSTable
 
 
 def get_pk(model) -> Dict[str, Column]:
@@ -42,8 +46,8 @@ def _get_base_attr(field_type: Column, **kwargs) -> dict:
         className=None,
         inputClassName=None,
         labelClassName=None,
-        name=field_type.name,
-        label=field_type.name,
+        name=field_type.key,
+        label=field_type.key,
         labelRemark=None,
         description=None,
         placeholder=None,
@@ -51,21 +55,63 @@ def _get_base_attr(field_type: Column, **kwargs) -> dict:
         submitOnChange=False,
         disabled=False,
         disableOn=None,
-        required=not field_type.nullable,
+        required=not field_type.nullable if hasattr(field_type, "nullable") else False,
         mode=ItemModel.normal,
         size=FormWidgetSize.full,
     )
-    if field_type.default is not None:
-
+    if hasattr(field_type, "default") and field_type.default is not None:
         if callable(field_type.default):
             res["value"] = field_type.default()
         else:
             res["value"] = field_type.default.arg
+    if isinstance(field_type.property, RelationshipProperty):
+        col = field_type.property.local_remote_pairs[0][0]
+        if not col.nullable:
+            res["required"] = True
     res.update(kwargs)
     return res
 
 
-def get_controls_from_model(include: Tuple[Column, ...] = ()) -> List[Control]:
+def get_picker_item(field):
+    property = field.property
+    if property.direction == MANYTOONE:
+        for_col = get_pk_column(field)
+        real_col = get_real_column_field(field)
+        item = PickerItem(
+            name=real_col.key,
+            label=field.key,
+            required=not field.nullable if hasattr(field, "nullable") else False,
+            valueField=for_col.key,
+            labelField=for_col.key,
+            source=f"endpoint/{field.parent.class_.__name__}/selects/{property.key}",
+            pickerSchema={
+                "mode": "table",
+                "name": for_col.key,
+                "columns": make_columns((for_col,)),  # todo 增加自定义显示列表
+            },
+        )
+    elif property.direction == MANYTOMANY:
+        real_column = field.property.local_remote_pairs[0][0]
+        item = PickerItem(
+            **_get_base_attr(field),
+            valueField=real_column.key,
+            labelField=real_column.key,
+            source=f"endpoint/{field.parent.class_.__name__}/selects/{property.key}",
+            pickerSchema={
+                "mode": "table",
+                "name": property.key,
+                "columns": make_columns((real_column,)),  # todo 增加自定义显示列表
+            },
+            multiple=True,
+        )
+    elif property.direction == ONETOMANY:  # todo onetoone
+        pass
+    else:
+        ...  # todo need check
+    return item
+
+
+def make_controls(include: Tuple[Column, ...] = ()) -> List[Control]:
     """
     从pydantic_queryset_creator创建的schema获取字段
     extra_fields:额外的自定义字段
@@ -73,97 +119,109 @@ def get_controls_from_model(include: Tuple[Column, ...] = ()) -> List[Control]:
     res: List[Control] = []
     for field in include:
         item: Optional[Control] = None
-        if isinstance(field.type, Enum):
-            pass
-        elif isinstance(field.type, (Boolean, BOOLEAN)):  # boolean's default value must be false.
-            item = SwitchItem(
-                **_get_base_attr(field),
-            )
-        elif isinstance(field.type, Float):
-            item = NumberItem(
-                **_get_base_attr(field),
-            )
-        elif isinstance(field.type, (DECIMAL, Numeric)):
-            item = NativeNumber(
-                **_get_base_attr(field),
-            )
-            # todo need add limit check
-        # elif isinstance(field.type,Time):
-        #     item = TimeItem(
-        #         **_get_base_attr(field),
-        #
-        #     )
-        elif isinstance(field.type, DateTime):
-            item = DatetimeItem(  # fixme need check
-                **_get_base_attr(field), format="YYYY-MM-DDTHH:mm:ss"
-            )
-        # elif isinstance(field.type, BigInteger):
-        #     pass
-        # elif isinstance(field.type, SmallInteger):
-        #     pass
-        elif isinstance(field.type, (Integer, INTEGER, BigInteger, SmallInteger)):
-            # min = (
-            #     field.type.constraints.get("ge")  # type :ignore
-            #     if hasattr(field.type, "constraints")  # type :ignore
-            #     else -2147483648  # type :ignore
-            # )  # type :ignore
-            # max = (  # type :ignore
-            #     field.type.constraints.get("le")  # type :ignore
-            #     if hasattr(field.type, "constraints")  # type :ignore
-            #     else 2147483647  # type :ignore
-            # )  # type :ignore
-            item = NumberItem(
-                # min=min,
-                # max=max,
-                precision=0,
-                step=1,
-                **_get_base_attr(field),
-                # validations={
-                #     "minimum": min,
-                #     "maximum": max,
-                # },
-            )
-        elif isinstance(field.type, Text):
-            item = TextareaItem(
-                **_get_base_attr(field),
-            )
+        if isinstance(field.property, RelationshipProperty):
+            item = get_picker_item(field)
         else:
-            item = TextItem(
-                **_get_base_attr(field),
-            )
-            if hasattr(field.type, "length"):
-                validations = {
-                    "maxLength": field.type.length,
-                }
-                item.validations = validations
+            if isinstance(field.type, Enum):
+                pass
+            elif isinstance(
+                field.type, (Boolean, BOOLEAN)
+            ):  # boolean's default value must be false.
+                item = SwitchItem(
+                    **_get_base_attr(field),
+                )
+            elif isinstance(field.type, Float):
+                item = NumberItem(
+                    **_get_base_attr(field),
+                )
+            elif isinstance(field.type, (DECIMAL, Numeric)):
+                item = NativeNumber(
+                    **_get_base_attr(field),
+                )
+                # todo need add limit check
+            # elif isinstance(field.type,Time):
+            #     item = TimeItem(
+            #         **_get_base_attr(field),
+            #
+            #     )
+            elif isinstance(field.type, DateTime):
+                item = DatetimeItem(  # fixme need check
+                    **_get_base_attr(field), format="YYYY-MM-DDTHH:mm:ss"
+                )
+            # elif isinstance(field.type, BigInteger):
+            #     pass
+            # elif isinstance(field.type, SmallInteger):
+            #     pass
+            elif isinstance(field.type, (Integer, INTEGER, BigInteger, SmallInteger)):
+                # min = (
+                #     field.type.constraints.get("ge")  # type :ignore
+                #     if hasattr(field.type, "constraints")  # type :ignore
+                #     else -2147483648  # type :ignore
+                # )  # type :ignore
+                # max = (  # type :ignore
+                #     field.type.constraints.get("le")  # type :ignore
+                #     if hasattr(field.type, "constraints")  # type :ignore
+                #     else 2147483647  # type :ignore
+                # )  # type :ignore
+                item = NumberItem(
+                    # min=min,
+                    # max=max,
+                    precision=0,
+                    step=1,
+                    **_get_base_attr(field),
+                    # validations={
+                    #     "minimum": min,
+                    #     "maximum": max,
+                    # },
+                )
+            elif isinstance(field.type, Text):
+                item = TextareaItem(
+                    **_get_base_attr(field),
+                )
+            else:
+                item = TextItem(
+                    **_get_base_attr(field),
+                )
+                if hasattr(field.type, "length"):
+                    validations = {
+                        "maxLength": field.type.length,
+                    }
+                    item.validations = validations
         if item is not None:
             res.append(item)
     return res
 
 
-def get_columns_from_model(
+def make_columns(
     include: Tuple[Column, ...] = (),
-) -> List[AmisColumn]:
+) -> List[Union[AmisColumn, DialogAction]]:
     """
     从pydantic_queryset_creator创建的schema获取字段
-    todo：增加多对多字段显示
     """
-    res = []
+    res: List[Union[AmisColumn, DialogAction]] = []
     for field in include:
-        # if isinstance(field_type, (IntEnumFieldInstance, CharEnumFieldInstance)):
-        #     res.append(
-        #         Mapping(
-        #             name=field,
-        #             label=field,
-        #             map={k: v for k, v in field_type.enum_type.choices.items()},
-        #         )
-        #     )
-        #     fixme:处理开关字段
-        # elif isinstance(field_type,):#fixme:处理特殊字段，比如json字段，或者图片、开关等需要特殊显示的类型。
-        # elif isinstance(field_type, ManyToManyFieldInstance):
-        #     continue
-        # else:
-        res.append(FormColumn(name=field.name, label=field.name))
+        if isinstance(field.property, RelationshipProperty):  # 除了多对一显示主键，其他都显示加载按钮
+            if field.property.direction == MANYTOONE:
+                real_col = get_real_column_field(field)
+                res.append(FormColumn(name=real_col.key, label=field.key))  # todo 考虑增加字符串识别方式
+            else:
+                res.append(
+                    DialogAction(
+                        label=field.key,
+                        dialog=Dialog(
+                            title=field.key,
+                            body=[
+                                ZSTable(
+                                    title=field.key,
+                                    name=field.key,
+                                    source=f"endpoint/{field.parent.class_.name}/selects/{field.key}",
+                                )
+                            ],
+                        ),
+                    )
+                )
+        else:
+            res.append(FormColumn(name=field.key, label=field.key))
     return res
 
 
@@ -171,12 +229,39 @@ def clean_data_to_model(model_field: Tuple[Column, ...], data: dict) -> dict:
     """
     把前端的数据转为后端的格式
     """
+    ret = {}
     for k in data:
         for i in model_field:
-            if i.name == k:
-                if isinstance(i.type, DateTime):
-                    data[k] = datetime.strptime(data[k], "%Y-%m-%dT%H:%M:%S")
-                break
-        else:
-            del data[k]
+            if i.key == k:
+                if isinstance(i.property, RelationshipProperty):  # 关系字段
+                    if i.property.direction == MANYTOONE:
+                        continue
+                else:
+                    if isinstance(i.type, DateTime):  # todo 关系和数据两种类型的要分开处理和判断
+                        data[k] = datetime.strptime(data[k], "%Y-%m-%dT%H:%M:%S")
+                ret[k] = data[k]
     return data
+
+
+def get_real_column_field(field):
+    """
+    获取多对一关系字段中自身的外键字段
+    """
+    key = field.property.local_remote_pairs[0][0].key
+    for f in field.parent.attrs:
+        if f.key == key:
+            return f.class_attribute
+    else:
+        raise Exception(f"Not found {key}")
+
+
+def get_pk_column(field):
+    """
+    获取多对一关系字段中对应表的主键字段
+    """
+    key = field.property.local_remote_pairs[0][1].key
+    for f in field.parent.attrs:
+        if f.key == key:
+            return f.class_attribute
+    else:
+        raise Exception(f"Not found {key}")

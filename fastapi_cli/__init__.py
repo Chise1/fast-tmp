@@ -38,13 +38,11 @@ def createsuperuser(username: str, password: str):
 
 
 @app.command()
-def startapp():
+def downlocalstatic():# todo need finish
     """
-    创建app
+    下载amis所需的静态文件(未完成)
     """
-    basedir = os.path.abspath(os.path.dirname(__file__))
-    from cookiecutter.main import cookiecutter
-    cookiecutter(basedir + "/tpl/app/")
+    pass
 
 
 @app.command()

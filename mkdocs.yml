@@ -5,4 +5,5 @@ nav:
   - 设置: setting.md
   - 模块:
       'ModelAdmin': 'ModelAdmin.md'
+      'cli': 'cli.md'
 theme: readthedocs
