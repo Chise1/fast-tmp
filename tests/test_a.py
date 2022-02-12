@@ -39,6 +39,13 @@ def test_sing_in():
     login_post_res = client.post("/admin/login", data={"username": "root", "password": "root"})
     assert login_post_res.status_code == 307
     assert login_post_res.headers.get("location") == "http://testserver/admin/"
+    # sign out
+    assert (
+        client.get("/admin/logout").text.count(
+            '<h2 class="card-title text-center mb-4">Login to your account</h2>'
+        )
+        == 1
+    )
 
 
 def test_site():
@@ -77,6 +84,8 @@ def test_schema():
 def test_crud():
     client = TestClient(app)
     get_cookie(client)
+    assert client.get("/admin/").text.count("<title>amis admin</title>")
+    assert client.post("/admin/").text.count("<title>amis admin</title>")
     # create
     create_user = client.post(
         "/admin/endpoint/User/create", json={"username": "crud_user", "password": "crud_user"}
@@ -147,3 +156,14 @@ def test_not_singin():
     assert client.get("/admin/site").text.count("Login to your account") == 1
     assert client.get("/admin/").text.count("Login to your account") == 1
     assert client.post("/admin/").status_code == 307
+
+
+def test_local_static():
+    client = TestClient(app)
+    get_cookie(client)
+    assert (
+        client.get("/admin/").text.count(
+            '<script src="https://unpkg.com/amis@beta/sdk/sdk.js"></script>'
+        )
+        == 1
+    )

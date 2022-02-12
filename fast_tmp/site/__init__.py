@@ -44,15 +44,16 @@ class ModelAdmin:
     # 页面相关的东西
     __create_dialog: Any = None
     __get_pks: Any = None
-    mapper = None
-
-    # page_model: Type[BaseModel]
-    @classmethod
-    def init(cls):
-        cls.mapper = inspect(cls.model)
+    __mapper = None
 
     @classmethod
-    def name(cls):
+    def mapper(cls):
+        if cls.__mapper is None:
+            cls.__mapper = inspect(cls.model)
+        return cls.__mapper
+
+    @classmethod
+    def name(cls) -> str:
         if cls.__name is None:
             cls.__name = cls.model.__name__
         return cls.__name

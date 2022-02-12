@@ -1,7 +1,7 @@
 from typing import Any, List
 
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Table, select
-from sqlalchemy.orm import Session, joinedload, relationship
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Table
+from sqlalchemy.orm import relationship
 from sqlalchemy.orm.decl_api import declarative_base
 
 from fast_tmp.utils.password import make_password, verify_password
@@ -54,24 +54,24 @@ class User(AbstractModel):
         """
         return verify_password(raw_password, self.password)
 
-    def has_perm(
-        self,
-        perm: str,
-        session: Session,
-    ) -> bool:
-        """
-        判定用户是否有权限
-        """
-        if self.is_superuser:
-            return True
-        results = session.execute(
-            select(Group.id)
-            .join(Group.users.and_(User.id == self.id))
-            .join(Group.permissions.and_(Permission.code == perm))
-        ).all()
-        if len(results) > 0:
-            return True
-        return False
+    # def has_perm(
+    #     self,
+    #     perm: str,
+    #     session: Session,
+    # ) -> bool:
+    #     """
+    #     判定用户是否有权限
+    #     """
+    #     if self.is_superuser:
+    #         return True
+    #     results = session.execute(
+    #         select(Group.id)
+    #         .join(Group.users.and_(User.id == self.id))
+    #         .join(Group.permissions.and_(Permission.code == perm))
+    #     ).all()
+    #     if len(results) > 0:
+    #         return True
+    #     return False
 
     # todo:need test
     # def has_perms(self, session: Session, perms: Set[str]) -> bool:
@@ -94,28 +94,28 @@ class User(AbstractModel):
     #         return True
     #     return False
 
-    def perms(self, session: Session) -> List[str]:
-        """
-        获取用户的所有权限
-        """
-        groups = (
-            session.execute(
-                select(Group)
-                .options(joinedload(Group.permissions))
-                .join(Group.users)
-                .filter(User.id == self.id)
-            )
-            .scalars()
-            .all()
-        )
-        permissions = []
-        for group in groups:
-            for p in group.permissions:
-                permissions.append(p.code)
-        return permissions
+    # def perms(self, session: Session) -> List[str]:
+    #     """
+    #     获取用户的所有权限
+    #     """
+    #     groups = (
+    #         session.execute(
+    #             select(Group)
+    #             .options(joinedload(Group.permissions))
+    #             .join(Group.users)
+    #             .filter(User.id == self.id)
+    #         )
+    #         .scalars()
+    #         .all()
+    #     )
+    #     permissions = []
+    #     for group in groups:
+    #         for p in group.permissions:
+    #             permissions.append(p.code)
+    #     return permissions
 
-    def __str__(self):
-        return self.username
+    # def __str__(self):
+    #     return self.username
 
 
 class Permission(Base):
@@ -123,8 +123,8 @@ class Permission(Base):
     code = Column(String(128), primary_key=True)
     name = Column(String(128))
 
-    def __str__(self):
-        return self.name + "-" + self.code
+    # def __str__(self):
+    #     return self.name + "-" + self.code
 
 
 class Group(AbstractModel):
@@ -137,11 +137,11 @@ class Group(AbstractModel):
         "User", secondary="auth_group_user", back_populates="groups", cascade="all,delete"
     )
 
-    def get_perms(self, db_session: Session) -> List[str]:
-        permissions = db_session.execute(
-            select(group_permission).where(group_permission.c.group_id == self.id)
-        ).fetchall()
-        return [permission[1] for permission in permissions]
+    # def get_perms(self, db_session: Session) -> List[str]:
+    #     permissions = db_session.execute(
+    #         select(group_permission).where(group_permission.c.group_id == self.id)
+    #     ).fetchall()
+    #     return [permission[1] for permission in permissions]
 
     # def get_users(self, session: Session) -> List[User]:
     #     results = session.execute(

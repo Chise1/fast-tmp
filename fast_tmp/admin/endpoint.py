@@ -15,7 +15,6 @@ from sqlalchemy import (
     SmallInteger,
     delete,
     func,
-    inspect,
     select,
 )
 from sqlalchemy.orm import MANYTOMANY, RelationshipProperty, Session
@@ -86,7 +85,7 @@ def update_data(
     if not user:
         return RedirectResponse(request.url_for("admin:login"))
     data = clean_data_to_model(page_model.get_clean_fields(page_model.update_fields), data)
-    w = get_pks(page_model.model, request)
+    w = search_pk_list(page_model.model, request)
     if isinstance(w, BaseRes):
         return w
     old_data = session.execute(select(page_model.model).where(*w)).scalar_one_or_none()
@@ -107,7 +106,7 @@ def update_view(
     if not user:
         return RedirectResponse(request.url_for("admin:login"))
 
-    pks = get_pks(page_model.model, request)
+    pks = search_pk_list(page_model.model, request)
     if isinstance(pks, BaseRes):
         return pks
     data = session.execute(select(page_model.model).where(*pks)).scalar_one_or_none()
@@ -119,12 +118,6 @@ def update_view(
             prop = i.property
             if prop.direction in (MANYTOMANY,):  # TODO need onetomany
                 pk = list(get_pk(prop.entity.class_).keys())[0]  # 只支持单主键
-                # subs: str = getattr(data, i.key, "")  # type: ignore
-                # if not subs:
-                #     raise not_found_model
-                # else:
-                #     # for sub in subs:
-                #     #     pk_v=getattr(sub,pk)
                 res[i.key] = [getattr(sub, pk) for sub in getattr(data, i.key)]  # type: ignore
         else:
             res[i.key] = getattr(data, i.key)  # type: ignore
@@ -160,7 +153,7 @@ def delete_one(
     if not user:
         return RedirectResponse(request.url_for("admin:login"))
 
-    w = get_pks(page_model.model, request)
+    w = search_pk_list(page_model.model, request)
     if isinstance(w, BaseRes):
         return w
     session.execute(delete(page_model.model).where(*w))
@@ -179,7 +172,7 @@ def clean_param(field_type, param: str):
         return param
 
 
-def get_pks(model, request: Request):
+def search_pk_list(model, request: Request):
     """
     获取要查询的单个instance的主键
     """
@@ -238,15 +231,14 @@ def get_selects(
     perPage: int = 10,
     page: int = 1,
 ):
-    mapper = inspect(page_model.model)
     items = []
     total = 0
-    for attr in mapper.attrs:
+    for attr in page_model.mapper().attrs:
         if attr.key == field:
             relation_model = attr.entity.class_
             secondary = attr.secondary
             for col in secondary.foreign_key_constraints:
-                if col.referred_table in mapper.tables:
+                if col.referred_table in page_model.mapper().tables:
                     params = dict(request.query_params)
                     if len(params) > 1:
                         raise single_pk
