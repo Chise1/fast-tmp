@@ -14,7 +14,7 @@ class UserInfoAdmin(ModelAdmin):
 
 class AuthorAdmin(ModelAdmin):
     model = Author
-    create_fields = [Author.name]
+    create_fields = [Author.name, Author.books]
     list_display = create_fields
 
 

@@ -15,19 +15,20 @@ from sqlalchemy import (
     SmallInteger,
     delete,
     func,
+    inspect,
     select,
 )
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import MANYTOMANY, RelationshipProperty, Session
 from starlette.requests import Request
 from starlette.responses import RedirectResponse
 
+from fast_tmp.responses import BaseRes, key_error, not_found_instance, single_pk
 from fast_tmp.site import ModelAdmin, get_model_site
 
 from ..db import get_db_session
 from ..models import User
 from ..site.utils import clean_data_to_model, get_pk
 from .depends import decode_access_token_from_data
-from .responses import BaseRes, key_error, not_found_instance
 
 router = APIRouter()
 
@@ -85,13 +86,13 @@ def update_data(
     if not user:
         return RedirectResponse(request.url_for("admin:login"))
     data = clean_data_to_model(page_model.get_clean_fields(page_model.update_fields), data)
-    w = get_pks(page_model, request)
+    w = get_pks(page_model.model, request)
     if isinstance(w, BaseRes):
         return w
     old_data = session.execute(select(page_model.model).where(*w)).scalar_one_or_none()
     if not old_data:
         return not_found_instance
-    page_model.update_model(old_data, data)
+    page_model.update_model(old_data, data, session)
     session.commit()
     return BaseRes()
 
@@ -106,13 +107,29 @@ def update_view(
     if not user:
         return RedirectResponse(request.url_for("admin:login"))
 
-    pks = get_pks(page_model, request)
+    pks = get_pks(page_model.model, request)
     if isinstance(pks, BaseRes):
         return pks
-    data = session.execute(page_model.get_one_sql(pks)).fetchone()
+    data = session.execute(select(page_model.model).where(*pks)).scalar_one_or_none()
     if not data:
         return not_found_instance
-    return BaseRes(data=dict(data))
+    res = {}
+    for i in page_model.update_fields:
+        if isinstance(i.property, RelationshipProperty):
+            prop = i.property
+            if prop.direction in (MANYTOMANY,):  # TODO need onetomany
+                pk = list(get_pk(prop.entity.class_).keys())[0]  # 只支持单主键
+                # subs: str = getattr(data, i.key, "")  # type: ignore
+                # if not subs:
+                #     raise not_found_model
+                # else:
+                #     # for sub in subs:
+                #     #     pk_v=getattr(sub,pk)
+                res[i.key] = [getattr(sub, pk) for sub in getattr(data, i.key)]  # type: ignore
+        else:
+            res[i.key] = getattr(data, i.key)  # type: ignore
+
+    return BaseRes(data=res)
 
 
 @router.post("/{resource}/create")
@@ -127,7 +144,7 @@ def create(
         return RedirectResponse(request.url_for("admin:login"))
 
     data = clean_data_to_model(page_model.create_fields, data)
-    instance = page_model.create_model(data)
+    instance = page_model.create_model(data, session)
     session.add(instance)
     session.commit()
     return BaseRes(data=data)
@@ -143,7 +160,7 @@ def delete_one(
     if not user:
         return RedirectResponse(request.url_for("admin:login"))
 
-    w = get_pks(page_model, request)
+    w = get_pks(page_model.model, request)
     if isinstance(w, BaseRes):
         return w
     session.execute(delete(page_model.model).where(*w))
@@ -151,12 +168,23 @@ def delete_one(
     return BaseRes()
 
 
-def get_pks(page_model: ModelAdmin, request: Request):
+def clean_param(field_type, param: str):
+    if isinstance(
+        field_type, (Integer, DECIMAL, BigInteger, Float, INTEGER, Numeric, SmallInteger)
+    ):
+        return int(param)
+    elif isinstance(field_type, DateTime):
+        return datetime.strptime(param, "%Y-%m-%dT%H:%M:%S")
+    else:
+        return param
+
+
+def get_pks(model, request: Request):
     """
     获取要查询的单个instance的主键
     """
     params = dict(request.query_params)
-    pks = get_pk(page_model.model)
+    pks = get_pk(model)
     w = []
     for k, v in params.items():
         if pks.get(k) is not None:
@@ -210,9 +238,62 @@ def get_selects(
     perPage: int = 10,
     page: int = 1,
 ):
-    source_field = getattr(page_model.model, field)
-    relation_model = source_field.property.mapper.class_
+    mapper = inspect(page_model.model)
+    items = []
+    total = 0
+    for attr in mapper.attrs:
+        if attr.key == field:
+            relation_model = attr.entity.class_
+            secondary = attr.secondary
+            for col in secondary.foreign_key_constraints:
+                if col.referred_table in mapper.tables:
+                    params = dict(request.query_params)
+                    if len(params) > 1:
+                        raise single_pk
+                    col_name = col.column_keys[0]
+                    for c in secondary.c:
+                        if c.key == col_name:
+                            clean_value = clean_param(c.type, list(params.values())[0])
+                            sql = (
+                                select(*list(get_pk(relation_model).values()))
+                                .join(secondary)
+                                .where(c == clean_value)
+                                .limit(perPage)
+                                .offset((page - 1) * perPage)
+                            )
+                            datas = session.execute(sql)
+                            total_f = session.execute(
+                                select(func.count())
+                                .select_from(relation_model)
+                                .join(secondary)
+                                .where(col == list(params.values())[0])
+                            ).fetchone()
+                            if total_f is not None:
+                                total = total_f[0]
+                            for data in datas:
+                                items.append(dict(data))
+    return BaseRes(data={"total": total, "rows": items})
 
+
+@router.get("/{resource}/picks/{field}")
+def get_picks(
+    request: Request,
+    field: str = Path(...),  # type: ignore
+    page_model: ModelAdmin = Depends(get_model_site),
+    user: Optional[User] = Depends(decode_access_token_from_data),
+    session: Session = Depends(get_db_session),
+    perPage: int = 10,
+    page: int = 1,
+):
+    """
+    枚举选择
+    """
+    source_field = getattr(page_model.model, field)
+    if isinstance(source_field.property, RelationshipProperty):
+        relation_model = source_field.property.mapper.class_
+
+    else:
+        relation_model = source_field.property.mapper.class_
     datas = session.execute(
         select(list(get_pk(relation_model).values())).limit(perPage).offset((page - 1) * perPage)
     )

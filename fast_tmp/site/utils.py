@@ -32,7 +32,7 @@ from fast_tmp.admin.schema.forms.widgets import (
     TextItem,
 )
 from fast_tmp.admin.schema.frame import Dialog
-from fast_tmp.admin.schema.zs import ZSTable
+from fast_tmp.admin.schema.zs import ZS, ZSTable
 
 
 def get_pk(model) -> Dict[str, Column]:
@@ -83,7 +83,7 @@ def get_picker_item(field):
             required=not field.nullable if hasattr(field, "nullable") else False,
             valueField=for_col.key,
             labelField=for_col.key,
-            source=f"endpoint/{field.parent.class_.__name__}/selects/{property.key}",
+            source=f"endpoint/{field.parent.class_.__name__}/picks/{property.key}",
             pickerSchema={
                 "mode": "table",
                 "name": for_col.key,
@@ -91,12 +91,12 @@ def get_picker_item(field):
             },
         )
     elif property.direction == MANYTOMANY:
-        real_column = field.property.local_remote_pairs[0][0]
+        real_column = get_real_column_field(field)
         item = PickerItem(
             **_get_base_attr(field),
             valueField=real_column.key,
             labelField=real_column.key,
-            source=f"endpoint/{field.parent.class_.__name__}/selects/{property.key}",
+            source=f"endpoint/{field.parent.class_.__name__}/picks/{property.key}?",
             pickerSchema={
                 "mode": "table",
                 "name": property.key,
@@ -104,9 +104,11 @@ def get_picker_item(field):
             },
             multiple=True,
         )
-    elif property.direction == ONETOMANY:  # todo onetoone
+    elif property.direction == ONETOMANY:  # todo onetoone,onetomany
+        item = None
         pass
     else:
+        item = None
         ...  # todo need check
     return item
 
@@ -200,26 +202,40 @@ def make_columns(
     """
     res: List[Union[AmisColumn, DialogAction]] = []
     for field in include:
-        if isinstance(field.property, RelationshipProperty):  # 除了多对一显示主键，其他都显示加载按钮
-            if field.property.direction == MANYTOONE:
-                real_col = get_real_column_field(field)
-                res.append(FormColumn(name=real_col.key, label=field.key))  # todo 考虑增加字符串识别方式
-            else:
-                res.append(
-                    DialogAction(
-                        label=field.key,
-                        dialog=Dialog(
-                            title=field.key,
-                            body=[
-                                ZSTable(
-                                    title=field.key,
-                                    name=field.key,
-                                    source=f"endpoint/{field.parent.class_.name}/selects/{field.key}",
-                                )
-                            ],
-                        ),
+        if hasattr(field, "property"):
+            if isinstance(field.property, RelationshipProperty):  # 除了多对一显示主键，其他都显示加载按钮
+                if field.property.direction == MANYTOONE:
+                    real_col = get_real_column_field(field)
+                    res.append(FormColumn(name=real_col.key, label=field.key))  # todo 考虑增加字符串识别方式
+                elif field.property.direction == MANYTOMANY:
+                    primary_keys = get_pk(field.class_).keys()
+                    res.append(
+                        DialogAction(
+                            label=field.key,
+                            dialog=Dialog(
+                                title=field.key,
+                                body=ZS(
+                                    api=f"endpoint/{field.class_.__name__}/selects/{field.key}?"
+                                    + "&".join([f"{pk}=${pk}" for pk in primary_keys]),
+                                    body=ZSTable(
+                                        title=field.key,
+                                        name=field.key,
+                                        source="$rows",
+                                        columns=make_columns(
+                                            tuple(get_real_pk_column(field).values())
+                                        ),
+                                    ),
+                                ),
+                            ),
+                        )
                     )
-                )
+                elif field.property.direction == ONETOMANY:  # todo need onetomany,onetoone
+                    continue
+                else:
+                    continue  # todo need check
+
+            else:
+                res.append(FormColumn(name=field.key, label=field.key))
         else:
             res.append(FormColumn(name=field.key, label=field.key))
     return res
@@ -265,3 +281,10 @@ def get_pk_column(field):
             return f.class_attribute
     else:
         raise Exception(f"Not found {key}")
+
+
+def get_real_pk_column(field):
+    """
+    获取多对多关系对方表的主键字段
+    """
+    return get_pk(field.property.entity.class_)

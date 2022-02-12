@@ -12,14 +12,14 @@ from fast_tmp.admin.depends import authenticate_user, decode_access_token_from_d
 from fast_tmp.conf import settings
 from fast_tmp.db import get_db_session
 from fast_tmp.models import User
-from fast_tmp.models.site import UserAdmin
+from fast_tmp.models.site import GroupAdmin, UserAdmin
+from fast_tmp.responses import BaseRes
 from fast_tmp.site import model_list, register_model_site
 from fast_tmp.utils.token import create_access_token
 
 from ..jinja_extension.tags import register_tags
 from .constant import crud_root_rooter, model_router
 from .endpoint import router
-from .responses import BaseRes
 
 base_path = os.path.dirname(__file__)
 templates = Jinja2Templates(directory=base_path + "/templates")
@@ -30,7 +30,7 @@ if settings.LOCAL_STATIC:
 else:
     admin.mount("/static", app=StaticFiles(directory=base_path + "/static"), name="static")
 
-register_model_site({"Auth": [UserAdmin]})
+register_model_site({"Auth": [UserAdmin, GroupAdmin]})
 admin.include_router(router, prefix=model_router)
 
 

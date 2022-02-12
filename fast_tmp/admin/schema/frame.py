@@ -12,7 +12,7 @@ class Dialog(BaseModel):
     nextCondition: bool = True
     size: DialogSize = DialogSize.md
     actions: Optional[List[_Action]]
-    body: Union[str, BaseModel]
+    body: Union[str, BaseModel, dict]
 
 
 # todo:尚未完成：https://baidu.gitee.io/amis/docs/components/dialog?page=1

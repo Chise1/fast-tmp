@@ -8,7 +8,7 @@ from sqlalchemy import Column
 
 
 class ModelAdmin:
-    model: Any  # sqlalchemy的model
+    model: Any  # sqlalchemy的model，如果model存在多对多字段，则model暂时只支持单主键
     # list
     list_display: Tuple[Column, ...] = ()  # 在前端显示的内容，注意，如果要支持修改和删除功能，这里必须有类的主键
     list_per_page: int = 10  # 每页显示数量

@@ -14,3 +14,9 @@ class ZSTable(BaseModel):
     name: str
     source: str
     columns: List[Column]
+
+
+class ZS(BaseModel):
+    type: str = "service"
+    api: str
+    body: BaseModel

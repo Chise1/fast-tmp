@@ -1,4 +1,4 @@
-checkfiles = fast_tmp/
+checkfiles = fast_tmp/ tests/
 black_opts = -l 100 -t py38
 py_warn = PYTHONDEVMODE=1
 

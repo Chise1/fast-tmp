@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional, Tuple, Type
 
-from sqlalchemy import Column, select
-from sqlalchemy.orm import MANYTOMANY, MANYTOONE, ONETOMANY, RelationshipProperty
+from sqlalchemy import Column, inspect, select
+from sqlalchemy.orm import MANYTOMANY, MANYTOONE, ONETOMANY, RelationshipProperty, Session
 
 from fast_tmp.admin.schema.actions import AjaxAction, DialogAction
 from fast_tmp.admin.schema.buttons import Operation
@@ -12,6 +12,7 @@ from fast_tmp.admin.schema.frame import Dialog
 from fast_tmp.admin.schema.page import Page
 
 from ..admin.constant import crud_root_rooter
+from ..responses import not_found_model
 from .utils import get_pk, get_real_column_field, make_columns, make_controls
 
 
@@ -32,18 +33,23 @@ class ModelAdmin:
     # update ,如果为空则取create_fields
     update_fields: Tuple[Column, ...] = ()
 
-    methods: Tuple[str, ...] = ("list", "retrieve", "create", "put", "delete", "deleteMany")
-    # actions_func: Dict[
-    #     str, Callable
-    # ] = (
-    #     {}
-    # )  # 请求对应的调用函数，"list","retrieve","create","put","delete","deleteMany"有默认自定义方法，这里如果填了就是覆盖默认方法
+    methods: Tuple[str, ...] = (
+        "list",
+        # "retrieve",
+        "create",
+        "put",
+        "delete",
+        # "deleteMany",
+    )  # todo 需要retrieve
     # 页面相关的东西
     __create_dialog: Any = None
     __get_pks: Any = None
-    # page_model: Type[BaseModel]
+    mapper = None
 
-    # prefix: str = "/admin"
+    # page_model: Type[BaseModel]
+    @classmethod
+    def init(cls):
+        cls.mapper = inspect(cls.model)
 
     @classmethod
     def name(cls):
@@ -79,7 +85,7 @@ class ModelAdmin:
             del_path = []
             for pk in primary_keys:
                 del_path.append(f"{pk}=${pk}")
-            cls.__get_pks = "".join(del_path)
+            cls.__get_pks = "&".join(del_path)
         return cls.__get_pks
 
     @classmethod
@@ -112,7 +118,7 @@ class ModelAdmin:
         buttons = []
         if "delete" in cls.methods:
             buttons.append(cls.get_del_one_button())
-        if "update" in cls.methods and cls.update_fields:
+        if "put" in cls.methods and cls.update_fields:
             buttons.append(cls.get_update_one_button())
         return Operation(buttons=buttons)
 
@@ -138,7 +144,7 @@ class ModelAdmin:
         return Page(title=cls.name(), body=cls.get_crud()).dict(exclude_none=True)
 
     @classmethod
-    def create_model(cls, data: dict):
+    def create_model(cls, data: dict, session: Session):
         """
         写入数据库之前调用
         """
@@ -148,11 +154,10 @@ class ModelAdmin:
             if isinstance(field.property, RelationshipProperty):
                 if field.property.direction == MANYTOMANY:
                     model = field.mapper.class_
-                    pk = list(get_pk(model).keys())[0]
-                    for i in v:
-                        child = model()
-                        setattr(child, pk, i)
-                        getattr(instance, k).append(child)
+                    pk = list(get_pk(model).values())[0]
+                    childs = session.execute(select(model).where(pk.in_(v))).scalars().fetchall()
+                    setattr(instance, k, childs)
+                    # getattr(instance, k).append(*childs)
                 elif field.property.direction == MANYTOONE:
                     field = get_real_column_field(field)
                     setattr(instance, field.key, v)
@@ -171,7 +176,7 @@ class ModelAdmin:
         return instance
 
     @classmethod
-    def update_model(cls, instance: Any, data: dict) -> Any:
+    def update_model(cls, instance: Any, data: dict, session: Session) -> Any:
         """
         更新数据之前调用
         """
@@ -180,11 +185,9 @@ class ModelAdmin:
             if isinstance(field.property, RelationshipProperty):
                 if field.property.direction == MANYTOMANY:
                     model = field.mapper.class_
-                    pk = list(get_pk(model).keys())[0]
-                    for i in v:
-                        child = model()
-                        setattr(child, pk, i)
-                        getattr(instance, k).append(child)
+                    pk = list(get_pk(model).values())[0]
+                    childs = session.execute(select(model).where(pk.in_(v))).scalars().fetchall()
+                    setattr(instance, k, childs)
                 elif field.property.direction == MANYTOONE:
                     field = get_real_column_field(field)
                     setattr(instance, field.key, v)
@@ -203,7 +206,7 @@ class ModelAdmin:
         return instance
 
     @classmethod
-    def get_clean_fields(cls, fields):
+    def get_clean_fields(cls, fields, need_many: bool = False):
         """
         获取对外键进行处理过的列表,该方法主要用于数据处理
         """
@@ -211,7 +214,10 @@ class ModelAdmin:
         for i in fields:
             if hasattr(i.property, "direction"):
                 if i.property.direction in (MANYTOMANY, ONETOMANY):
-                    continue
+                    if need_many:
+                        res.append(i)
+                    else:
+                        continue
                 if i.property.direction == MANYTOONE:
                     res.append(get_real_column_field(i))
             else:
@@ -238,9 +244,9 @@ class ModelAdmin:
     __one_sql = None
 
     @classmethod
-    def get_one_sql(cls, pks: list):
+    def get_one_sql(cls, pks: list, need_many: bool = False):
         if cls.__one_sql is None:
-            __list_display = cls.get_clean_fields(cls.update_fields)
+            __list_display = cls.get_clean_fields(cls.update_fields, need_many)
             cls.__one_sql = select(__list_display)
         return cls.__one_sql.where(*pks)
 
@@ -257,4 +263,4 @@ def get_model_site(resource: str) -> Optional[Type[ModelAdmin]]:
         for i in m_l:
             if i.name() == resource:
                 return i
-    return None
+    raise not_found_model
