@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 from fast_tmp.admin.server import admin
 from fast_tmp.db import get_db_session
 
-from .models import Author, Book
+# from .models import Author, Book
 
 app = FastAPI()
 app.mount("/admin", admin, name="admin")

@@ -40,7 +40,7 @@ cov: deps
 	coverage html
 
 publish: check
-	poetry publish
+	poetry publish --build
 
 docs:
 	mkdocs build
