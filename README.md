@@ -17,10 +17,6 @@ fast-tmp项目受django-admin的影响，旨在实现一个基于sqlalchemy+fast
 更多内容查看[教程](https://fast-tmp.readthedocs.io/)
 ## 示例
 
-url:                http://124.222.119.206:8000/admin
-
-username/password:  admin/admin
-
 ## 该项目的存在意义
 
 fastapi是一款非常优秀的web框架，long2ice基于异步数据库访问库（tortoise-orm）构建了fastapi-admin项目，使用fastapi+tortoise-orm。
