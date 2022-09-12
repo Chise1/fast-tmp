@@ -1,5 +1,8 @@
 {
   "project_name": "fast-tmp-example",
   "project_slug": "{{ cookiecutter.project_name|lower|replace(' ', '_')|replace('-', '_') }}",
-  "description": ""
+  "description": "",
+  "_extensions": [
+    "jcookiecutter.extensions.RandomStringExtension"
+  ]
 }

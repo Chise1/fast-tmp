@@ -1,9 +1,12 @@
 from typing import Optional
-
+from fastapi import Header, Cookie
 from fastapi import Depends, HTTPException
 from starlette.requests import Request
 from starlette.status import HTTP_404_NOT_FOUND
 from tortoise import Tortoise
+from fast_tmp.models import User
+# todo 需要判定是否存在对应的权限字段，如果没有则写入
+from fast_tmp.utils.token import decode_access_token
 
 
 def get_model(resource: str):
@@ -28,3 +31,19 @@ async def get_model_resource(request: Request, model=Depends(get_model)):
     setattr(model_resource, "bulk_actions", bulk_actions)
     setattr(model_resource, "compute_fields", compute_fields)
     return model_resource
+
+async def __get_user_or_none(access_token: Optional[str] = Cookie(None)) -> Optional[User]:
+    """
+    获取active为true的用户，否则返回none
+    """
+    try:
+        payload = decode_access_token(access_token)
+        username: str = payload.get("sub")
+        if username is None:
+            return None
+    except Exception:
+        return None
+    user = await User.filter(username=username).first()
+    if user is not None and user.is_active:
+        return user
+    return None

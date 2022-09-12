@@ -1,7 +1,5 @@
 from typing import List, Optional, Tuple, Union
 
-from pydantic import BaseModel, Field
-
 from fast_tmp.admin.schema.abstract_schema import BaseAmisModel
 
 from .enums import TypeEnum
@@ -31,32 +29,32 @@ class HBox(BaseAmisModel):
     columns: List[BaseAmisModel]
 
 
-class AppPage(BaseModel):
-    """
-    app的子页
-    """
+#
+# class AppPage(BaseModel):
+#     """
+#     app的子页
+#     """
+#
+#     label: str
+#     icon: str
+#     url: str
+#     schema_: Page = Field(..., alias="schema")
+#     # schemaApi: Optional[str] = None
+#     link: Optional[str] = None
+#     redirect: Optional[str] = None
+#     rewrite: Optional[str] = None
+#     isDefaultPage: Optional[str] = None
+#
+#     # visible:Optional[bool]=None
+#     def dict(self, *args, **kwargs):
+#         kwargs["exclude_none"] = True
+#         res: dict = super().dict(*args, **kwargs)
+#         return res
 
-    label: str
-    icon: str
-    url: str
-    schema_: Page = Field(..., alias="schema")
-    # schemaApi: Optional[str] = None
-    link: Optional[str] = None
-    redirect: Optional[str] = None
-    rewrite: Optional[str] = None
-    isDefaultPage: Optional[str] = None
 
-    # visible:Optional[bool]=None
-    def dict(self, *args, **kwargs):
-        res: dict = super().dict(*args, **kwargs)
-        schema = res.pop("schema_")
-        res["schema"] = schema
-        return res
-
-
-class AppPageGroup(BaseModel):
-    label: str
-    children: List[AppPage]
+# class AppPageGroup(BaseModel):
+#     label: str
+#     children: List[AppPage]
 
 
 # class App(BaseAmisModel):

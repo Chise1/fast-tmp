@@ -4,9 +4,13 @@ from fastapi import APIRouter, Depends, Path
 from pydantic import BaseModel
 from starlette.requests import Request
 from tortoise import Model
+from tortoise.fields import Field, ForeignKeyRelation
+from tortoise.models import MODEL
 from tortoise.transactions import in_transaction
 
 from fast_tmp.conf import settings
+from ..models import User
+from ..site import ModelAdmin, get_model_site
 
 from ..utils.common import import_module
 from .creator import AbstractApp, AbstractCRUD
@@ -34,13 +38,21 @@ def get_app_page(resource: str, app: AbstractApp = Depends(get_abstract_app)) ->
     return app.get_AbstractCRUD(resource)
 
 
+def decode_access_token_from_data():
+    """
+    读取用户信息并判定是否有对应权限
+    """
+    pass
+
+
 @router.get("/{resource}/list", response_model=BaseRes)
 async def list_view(
     request: Request,
-    abstract_crud: AbstractCRUD = Depends(get_app_page),
+    page_model: ModelAdmin = Depends(get_model_site),
     model: Model = Depends(get_model),
     perPage: int = 10,
     page: int = 1,
+    user: User = Depends(decode_access_token_from_data),
 ):
     qs = model.all()
     params = dict(request.query_params)
@@ -70,6 +82,17 @@ async def update(
         obj = await model.filter(pk=pk).using_db(conn).select_for_update().get()
         await obj.update_from_dict(data).save(using_db=conn)
     return BaseRes()
+
+
+@router.get("/{resource}/enum/{name}")
+async def get_enum(
+    request: Request,
+    name: str,
+    model: Model = Depends(get_model),
+
+):  # todo 需要增加权限认证，create和update
+    field: ForeignKeyRelation[MODEL] = getattr(model, name)
+    # field.
 
 
 @router.get("/{resource}/update/{pk}")

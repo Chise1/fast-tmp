@@ -53,6 +53,16 @@ async def authenticate_user(username: str, password: str) -> Optional[User]:
     return user
 
 
+async def authenticate_active_user(username: str, password: str) -> Optional[User]:
+    """
+    验证密码
+    """
+    user = await get_user(username)
+    if not user or not user.is_active or not user.verify_password(password):
+        return None
+    return user
+
+
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -72,11 +82,33 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     return user
 
 
+async def get_current_active_user_or_none(token: Optional[str] = Depends(oauth2_scheme)) -> Optional[User]:
+    """
+    获取active为true的用户，否则返回none
+    """
+    print("1")
+    try:
+        print("2")
+
+        payload = decode_access_token(token)
+        username: str = payload.get("sub")
+        if username is None:
+            return None
+    except JWTError:
+        print("1")
+        return None
+    user = await get_user(username=username)
+    if user is not None and user.is_active:
+        return user
+    print("4")
+
+    return None
+
+
 async def get_current_active_user(current_user: User = Depends(get_current_user)):
     """
     获取活跃用户
     """
-
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user

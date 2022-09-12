@@ -1,26 +1,27 @@
 import os
-import dotenv
-dotenv.load_dotenv()
 
 # import sentry_sdk
 # from sentry_sdk.integrations.redis import RedisIntegration
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
+SECRET_KEY = {{random_ascii_string(12)}}
 DEBUG = os.getenv("DEBUG") == "True"
 
 TORTOISE_ORM = {
-    'connections': {
-        'default': {
-            'engine': 'tortoise.backends.mysql',
-            'credentials': {
-                'host': os.getenv("DB_HOST"),
-                'port': os.getenv("DB_PORT"),
-                'user': os.getenv("DB_USER"),
-                'password': os.getenv("DB_PASSWORD"),
-                'database': os.getenv("DB_NAME"),
-            }
-        },
+    "connections": {
+        "default": "sqlite://{{cookiecutter.project_slug}}.sqlite3",
+        # mysql 连接
+        # 'connections': {
+        #     'default': {
+        #         'engine': 'tortoise.backends.mysql',
+        #         'credentials': {
+        #             'host': os.getenv("DB_HOST"),
+        #             'port': os.getenv("DB_PORT"),
+        #             'user': os.getenv("DB_USER"),
+        #             'password': os.getenv("DB_PASSWORD"),
+        #             'database': os.getenv("DB_NAME"),
+        #         }
+        #     },
     },
     'apps': {
         'fast_tmp': {
@@ -29,7 +30,7 @@ TORTOISE_ORM = {
         }
     }
 }
-EXTRA_SCRIPT=[] # 自定义执行脚本
+EXTRA_SCRIPT = []  # 自定义执行脚本
 # redis配置
 # REDIS_HOST = os.getenv("REDIS_HOST", "127.0.0.1")
 # REDIS_PORT = os.getenv("REDIS_PORT", 6379)

@@ -8,8 +8,7 @@ dotenv.load_dotenv()
 # from sentry_sdk.integrations.redis import RedisIntegration
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-DEBUG = os.getenv("DEBUG") == "True"
+SECRET_KEY = "awdfawfqergqreef"
 
 TORTOISE_ORM = {
     "connections": {
@@ -22,8 +21,9 @@ TORTOISE_ORM = {
         }
     },
 }
+STATIC_ROOT= "static"
+STATIC_PATH="static"
 EXTRA_SCRIPT = []  # 自定义执行脚本
-ADMIN_SITE_CLASS = "test_example.site.app"
 # redis配置
 # REDIS_HOST = os.getenv("REDIS_HOST", "127.0.0.1")
 # REDIS_PORT = os.getenv("REDIS_PORT", 6379)
