@@ -1,18 +1,16 @@
-from datetime import datetime
 from typing import List, Optional, Any
 
 from fastapi import APIRouter, Depends
-from fastapi.params import Path
 from pydantic import BaseModel
 
 from starlette.requests import Request
 from starlette.responses import RedirectResponse
-
-from fast_tmp.site import ModelAdmin, get_model_site
-from .depends import __get_user_or_none
+from .site import ModelAdmin
+from .auth import __get_user_or_none
+from ..amis.site import get_model_site
 
 from ..models import User
-from fast_tmp.depends.auth import get_current_active_user
+from .auth import __get_user_or_none
 
 router = APIRouter()
 
@@ -41,7 +39,7 @@ async def list_view(
     page_model: ModelAdmin = Depends(get_model_site),
     perPage: int = 10,
     page: int = 1,
-    user: Optional[User] = Depends(get_current_active_user),
+    user: Optional[User] = Depends(__get_user_or_none),
 ):
     if not user:
         return RedirectResponse(request.url_for("admin:login"))

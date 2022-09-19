@@ -1,10 +1,10 @@
 from fast_tmp.models import Group, User
-from fast_tmp.site import ModelAdmin
+from fast_tmp.amis.site import ModelAdmin
 
 
 class UserAdmin(ModelAdmin):
     model = User
-    list_display = ("id", "username", "is_active")
+    list_display = ("id", "username", "is_active","groups")
     # create_fields = (User.username, User.password)
     # update_fields = (User.password,)
 
