@@ -1,5 +1,4 @@
-from enum import Enum
-from typing import List, Optional, Tuple, Type, Union
+from typing import List, Optional, Tuple, Type, Union, Dict
 from logging import getLogger
 from tortoise import BackwardFKRelation, ForeignKeyFieldInstance, ManyToManyFieldInstance, Model
 from tortoise.fields import (
@@ -19,11 +18,12 @@ from tortoise.fields import (
     UUIDField,
 )
 from tortoise.fields.data import CharEnumFieldInstance, IntEnumFieldInstance
+from tortoise.fields import Field
+from tortoise import fields
 
-from fast_tmp.admin.schema.actions import DialogAction
-from fast_tmp.admin.schema.forms import Column, Mapping
-from fast_tmp.admin.schema.forms.enums import FormWidgetSize, ItemModel
-from fast_tmp.admin.schema.forms.widgets import (
+from fast_tmp.amis.schema.actions import DialogAction
+from fast_tmp.amis.schema.forms import Column, Mapping, ItemModel, FormWidgetSize
+from fast_tmp.amis.schema.forms.widgets import (
     DateItem,
     DatetimeItem,
     NumberItem,
@@ -32,13 +32,14 @@ from fast_tmp.admin.schema.forms.widgets import (
     SwitchItem,
     TextItem,
     TimeItem,
-    UUIDItem,
+    UUIDItem, PickerItem,
 )
 
-from fast_tmp.admin.schema.forms import Column as AmisColumn
-from fast_tmp.admin.schema.forms import Column as FormColumn
-
 logger = getLogger(__file__)
+
+
+def get_pk(model: Model) -> Dict[str, Field]:
+    return {"pk": model._meta.pk}
 
 
 def _get_base_attr(field_type: Field, **kwargs) -> dict:
@@ -57,11 +58,38 @@ def _get_base_attr(field_type: Field, **kwargs) -> dict:
         disableOn=None,
         required=field_type.required,
         mode=ItemModel.normal,
-        size=FormWidgetSize.md,
+        size=FormWidgetSize.full,
         value=field_type._get_default_value(),  # fixme:检查tortoise-orm的获取默认值
     )
     res.update(kwargs)
     return res
+
+
+def get_picker_item(field_type:Field):
+    if isinstance(field_type,fields.ManyToManyField): # TODO 需要测试
+        real_column = get_real_column_field(field_type)
+        item = PickerItem(
+            **_get_base_attr(field_type),
+            valueField=real_column.key,
+            labelField=real_column.key,
+            source=f"{field_type.}/picks/{field_type.__name__}?", # todo 需要测试
+            pickerSchema={
+                "mode": "table",
+                "name": property.key,
+                "columns": make_columns((real_column,)),  # todo 增加自定义显示列表
+            },
+            multiple=True,
+        )
+    elif isinstance(field_type,fields.ForeignKeyField):  # todo onetoone,onetomany
+        item = None
+        pass
+    elif isinstance(field_type,fields.OneToOneField):
+        item = None
+        pass
+    else:
+        item = None
+        ...  # todo need check
+    return item
 
 
 def get_columns_from_model(
@@ -289,4 +317,65 @@ def get_controls_from_model(
             raise ValueError(f"{field}字段的字段类型尚不支持!")
     if extra_fields:
         res.extend(extra_fields)
+    return res
+
+def get_real_column_field(field):
+    """
+    获取多对一关系字段中自身的外键字段
+    """
+    key = field.property.local_remote_pairs[0][0].key
+    for f in field.parent.attrs:
+        if f.key == key:
+            return f.class_attribute
+    else:
+        raise Exception(f"Not found {key}")
+
+from fast_tmp.amis.schema.forms import Column as AmisColumn
+from fast_tmp.amis.schema.forms import Column as FormColumn
+def make_columns(
+    include: Tuple[Field, ...] = (),
+) -> List[Union[AmisColumn, DialogAction]]:
+    """
+    从pydantic_queryset_creator创建的schema获取字段
+    """
+    res: List[Union[AmisColumn, DialogAction]] = []
+    for field in include:
+        if hasattr(field, "property"):
+            if isinstance(field,ManyToManyFieldInstance):
+
+            if isinstance(field.property, RelationshipProperty):  # 除了多对一显示主键，其他都显示加载按钮
+                if field.property.direction == MANYTOONE:
+                    real_col = get_real_column_field(field)
+                    res.append(FormColumn(name=real_col.key, label=field.key))  # todo 考虑增加字符串识别方式
+                elif field.property.direction == MANYTOMANY:
+                    primary_keys = get_pk(field.class_).keys()
+                    res.append(
+                        DialogAction(
+                            label=field.key,
+                            dialog=Dialog(
+                                title=field.key,
+                                body=ZS(
+                                    api=f"endpoint/{field.class_.__name__}/selects/{field.key}?"
+                                    + "&".join([f"{pk}=${pk}" for pk in primary_keys]),
+                                    body=ZSTable(
+                                        title=field.key,
+                                        name=field.key,
+                                        source="$rows",
+                                        columns=make_columns(
+                                            tuple(get_real_pk_column(field).values())
+                                        ),
+                                    ),
+                                ),
+                            ),
+                        )
+                    )
+                elif field.property.direction == ONETOMANY:  # todo need onetomany,onetoone
+                    continue
+                else:
+                    continue  # todo need check
+
+            else:
+                res.append(FormColumn(name=field.key, label=field.key))
+        else:
+            res.append(FormColumn(name=field.key, label=field.key))
     return res
