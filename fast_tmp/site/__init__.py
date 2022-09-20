@@ -14,7 +14,7 @@ from tortoise.models import Model
 from ..amis.response import AmisStructError
 
 
-class ModelAdmin:
+class ModelAdmin:  # todo inline字段必须都在update_fields内
     model: Type[Model]  # model
     __name: Optional[str] = None
     list_display: Tuple[str, ...] = ()
@@ -134,6 +134,7 @@ class ModelAdmin:
             CRUD(
                 api=self.prefix + "/list",
                 columns=columns,
+                quickSaveItemApi=self.prefix + "/patch/" + "$pk"
             )
         )
         return body
@@ -146,6 +147,14 @@ class ModelAdmin:
 
     async def get_app_page(self, request: Request):
         return Page(title=self.name(), body=await self.get_crud(request)).dict(exclude_none=True)
+
+    async def patch(self, request: Request, pk: str, data: Dict[str, Any])->Model:
+        obj = await self.get_instance(request, pk)
+        for field_name in self.inline:
+            control = self.fields[field_name]
+            await control.set_value(request, obj, data[field_name])
+        await obj.save()
+        return obj
 
     def prefetch(self, request: Request, queryset: QuerySet) -> QuerySet:
         """
@@ -250,7 +259,7 @@ class ModelAdmin:
         res = []
         for i in datas:
             ret = {}
-            for field_name, field in self.get_list_distplay().items():
+            for field_name, field in self.get_list_display_with_pk().items():
                 ret[field_name] = await field.get_value(request, i)
             res.append(ret)
         count = await base_queryset.count()
@@ -258,6 +267,9 @@ class ModelAdmin:
             "total": count,
             "items": res
         }
+
+    async def get_instance(self, request: Request, pk: Any) -> Optional[Model]:
+        return await self.model.filter(pk=pk).first()
 
     #
     # @classmethod

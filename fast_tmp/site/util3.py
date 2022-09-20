@@ -4,7 +4,8 @@ from starlette.requests import Request
 from tortoise import Model, fields
 from tortoise.queryset import QuerySet
 
-from fast_tmp.amis.forms import Column, Control, ColumnInline, QuickEdit, ControlEnum, SaveImmediately
+from fast_tmp.amis.forms import Column, Control, ColumnInline, QuickEdit, ControlEnum, \
+    QuickEditSelect
 from fast_tmp.amis.response import AmisStructError
 
 
@@ -14,6 +15,7 @@ class AbstractControl(object):
     """
     _prefix: Optional[str]  # 网段
     _field_name: Optional[str]
+    _default: Any = None
     control: Control
 
     def list_queryset(self, queryset: QuerySet) -> QuerySet:  # 列表
@@ -76,10 +78,11 @@ class AbstractControl(object):
         获取内联修改的column
         """
 
-    def __init__(self, _field_name: str, _prefix: str, **kwargs):
+    def __init__(self, _field_name: str, _prefix: str, _default: Any = None, **kwargs):
         name = kwargs.get("name") or _field_name
         label = kwargs.get("label") or name
         self._prefix = _prefix
+        self._default = _default
         if not _field_name:
             raise AmisStructError("field_name can not be none")
         self._field_name = _field_name
@@ -94,7 +97,6 @@ class StrControl(AbstractControl):
     """
 
     async def get_column(self, request: Request) -> Column:
-        print(self.control.json())
         return Column.from_orm(self.control)
 
     async def get_control(self, request: Request) -> Control:
@@ -106,7 +108,7 @@ class StrControl(AbstractControl):
         column = ColumnInline.from_orm(self.control)
         column.quickEdit = QuickEdit(
             type=ControlEnum.text,
-            saveImmediately=SaveImmediately(api=self._prefix + "/patch/$pk")
+            saveImmediately=True
         )
         return column
 
@@ -134,16 +136,59 @@ class IntControl(StrControl):
         column = ColumnInline.from_orm(self)
         column.quickEdit = QuickEdit(
             type=ControlEnum.number,
-            saveImmediately=SaveImmediately(api=self._prefix + "/patch/$pk")
+            saveImmediately=True
         )
         return column
 
 
+class BooleanControl(StrControl):
+    async def get_column_inline(self, request: Request) -> Column:
+        if not self._prefix:
+            raise AmisStructError("prefix can not be none")
+        column = ColumnInline.from_orm(self.control)
+        if self._default is not None:  # 如果bool默认为空则这里为select反之为switch
+            column.quickEdit = QuickEdit(
+                type=ControlEnum.switch,
+                saveImmediately=True
+            )
+            column.type = ControlEnum.switch
+        else:
+            column.quickEdit = QuickEditSelect(
+                type=ControlEnum.switch,
+                saveImmediately=True,
+                options=("None", "True", "False")
+            )
+        return column
+
+    async def get_value(self, request: Request, obj: Model) -> Any:
+        val = getattr(obj, self._field_name)
+        if self._default is None:
+            if val is None:
+                return "None"
+            elif val:
+                return "True"
+            else:
+                return "False"
+        else:
+            return val
+
+    async def set_value(self, request: Request, obj: Model, value: Any):
+        if isinstance(value, bool):
+            setattr(obj, self._field_name, value)
+        else:
+            if value == "True":
+                setattr(obj, self._field_name, True)
+            elif value == "False":
+                setattr(obj, self._field_name, False)
+            else:
+                setattr(obj, self._field_name, None)
+
+
 def get_list_columns(
-        model: Type[Model],
-        prefix: str,
-        include: Tuple[str, ...] = (),
-        inline: Tuple[str, ...] = (),
+    model: Type[Model],
+    prefix: str,
+    include: Tuple[str, ...] = (),
+    inline: Tuple[str, ...] = (),
 ) -> List[AbstractControl]:
     """
     从pydantic_queryset_creator创建的schema获取字段
@@ -161,13 +206,15 @@ def get_list_columns(
 
 
 def create_column(
-        field_name: str,
-        field_type: fields.Field,
-        prefix: str,
+    field_name: str,
+    field_type: fields.Field,
+    prefix: str,
 ):
     if isinstance(field_type, fields.IntField):
-        return IntControl(_field_name=field_name, _prefix=prefix, )
+        return IntControl(_field_name=field_name, _prefix=prefix, _default=field_type.default)
     elif isinstance(field_type, fields.CharField):
-        return StrControl(_field_name=field_name, _prefix=prefix, )
+        return StrControl(_field_name=field_name, _prefix=prefix, _default=field_type.default)
+    elif isinstance(field_type, fields.BooleanField):
+        return BooleanControl(_field_name=field_name, _prefix=prefix, _default=field_type.default)
     else:
         raise AmisStructError("create_column error:", type(field_type))

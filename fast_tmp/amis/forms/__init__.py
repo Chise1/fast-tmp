@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union, Tuple
 
 from pydantic import BaseModel
 
@@ -21,22 +21,19 @@ class Column(BaseModel):
         orm_mode = True
 
 
-class SaveImmediately(BaseModel):
-    """
-    及时保存
-    """
-    api: str
-
-
 class QuickEdit(BaseModel):
     model: str = "inline"
     type: ControlEnum
-    saveImmediately: SaveImmediately
+    saveImmediately: Optional[bool]
+
+
+class QuickEditSelect(QuickEdit):
+    options: Tuple[str, ...]
 
 
 class ColumnInline(Column):
     """带内联的功能"""
-    quickEdit: QuickEdit
+    quickEdit: Optional[QuickEdit]  # can not be none
 
     class Config:
         orm_mode = True

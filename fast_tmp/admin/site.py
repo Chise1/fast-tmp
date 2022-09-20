@@ -4,7 +4,8 @@ from fast_tmp.site import ModelAdmin
 
 class UserAdmin(ModelAdmin):
     model = User
-    list_display = ("id", "username",)
+    list_display = ("id", "username", "is_active")
+    inline = ("is_active",)
     # create_fields = (User.username, User.password)
     # update_fields = (User.password,)
 

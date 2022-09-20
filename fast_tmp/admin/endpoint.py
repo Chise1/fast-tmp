@@ -43,16 +43,29 @@ async def list_view(
     page: int = 1,
     user: Optional[User] = Depends(__get_user_or_none),
 ):
+    print("user:",user)
     if not user:
         return RedirectResponse(request.url_for("admin:login"))
 
-    datas = await page_model.list(perPage, page - 1)
+    datas = await page_model.list(request,perPage, page - 1)
     return BaseRes(
         data=ListDataWithPage(
             total=datas["total"],
             items=datas["items"],
         )
     )
+
+
+@router.post("/{resource}/patch/{pk}")
+async def patch_data(
+    request: Request,
+    pk: str,
+    page_model: ModelAdmin = Depends(get_model_site),
+    user: Optional[User] = Depends(__get_user_or_none),
+):
+    data = await request.json()
+    await page_model.patch(request, pk, data)
+    return BaseRes().json()
 
 
 #
@@ -203,7 +216,6 @@ async def get_schema(
         return RedirectResponse(request.url_for("admin:login"))
 
     return BaseRes(data=await page.get_app_page(request))
-
 
 # @router.get("/{resource}/selects/{field}")
 # def get_selects(
