@@ -89,6 +89,9 @@ class AbstractControl(object):
 
 
 class StrControl(AbstractControl):
+    """
+    基础的字符串control
+    """
 
     async def get_column(self, request: Request) -> Column:
         print(self.control.json())
@@ -141,7 +144,7 @@ def get_list_columns(
         prefix: str,
         include: Tuple[str, ...] = (),
         inline: Tuple[str, ...] = (),
-) -> List[Column]:
+) -> List[AbstractControl]:
     """
     从pydantic_queryset_creator创建的schema获取字段
     todo：增加多对多字段显示
@@ -154,7 +157,6 @@ def get_list_columns(
             continue
         if isinstance(field_type, fields.IntField):
             res.append(IntControl(_field_name=field, _prefix=prefix, ))
-
     return res
 
 
