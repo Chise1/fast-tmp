@@ -4,9 +4,9 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from pydantic import HttpUrl
 from pydantic.main import BaseModel
 
-# from fast_tmp.admin.schema.abstract_schema import Action
-from fast_tmp.admin.schema.forms import Control  # , Limit
-from fast_tmp.admin.schema.forms.enums import ControlEnum
+# from fast_tmp.amis.abstract_schema import Action
+from fast_tmp.amis.forms import Control  # , Limit
+from fast_tmp.amis.forms.enums import ControlEnum
 
 
 class AddControl(BaseModel):

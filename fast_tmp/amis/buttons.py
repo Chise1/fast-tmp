@@ -11,8 +11,8 @@ from typing import List
 
 from pydantic import BaseModel
 
-from fast_tmp.admin.schema.abstract_schema import _Action
-from fast_tmp.admin.schema.enums import TypeEnum
+from fast_tmp.amis.abstract_schema import _Action
+from fast_tmp.amis.enums import TypeEnum
 
 
 class Operation(BaseModel):

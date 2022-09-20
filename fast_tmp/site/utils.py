@@ -18,11 +18,11 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import MANYTOMANY, MANYTOONE, ONETOMANY, Mapper, RelationshipProperty
 
-from fast_tmp.admin.schema.actions import DialogAction
-from fast_tmp.admin.schema.forms import Column as AmisColumn
-from fast_tmp.admin.schema.forms import Column as FormColumn
-from fast_tmp.admin.schema.forms import Control, FormWidgetSize, ItemModel
-from fast_tmp.admin.schema.forms.widgets import (
+from fast_tmp.amis.actions import DialogAction
+from fast_tmp.amis.forms import Column as AmisColumn
+from fast_tmp.amis.forms import Column as FormColumn
+from fast_tmp.amis.forms import Control, FormWidgetSize, ItemModel
+from fast_tmp.amis.forms.widgets import (
     DatetimeItem,
     NativeNumber,
     NumberItem,
@@ -31,8 +31,8 @@ from fast_tmp.admin.schema.forms.widgets import (
     TextareaItem,
     TextItem,
 )
-from fast_tmp.admin.schema.frame import Dialog
-from fast_tmp.admin.schema.zs import ZS, ZSTable
+from fast_tmp.amis.frame import Dialog
+from fast_tmp.amis.zs import ZS, ZSTable
 
 
 def get_pk(model) -> Dict[str, Column]:

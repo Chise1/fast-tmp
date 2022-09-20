@@ -41,7 +41,7 @@ async def list_view(
     page_model: ModelAdmin = Depends(get_model_site),
     perPage: int = 10,
     page: int = 1,
-    user: Optional[User] = Depends(get_current_active_user),
+    user: Optional[User] = Depends(__get_user_or_none),
 ):
     if not user:
         return RedirectResponse(request.url_for("admin:login"))
@@ -194,7 +194,7 @@ class DIDS(BaseModel):
 
 
 @router.get("/{resource}/schema")
-def get_schema(
+async def get_schema(
     request: Request,
     page: ModelAdmin = Depends(get_model_site),
     user: Optional[User] = Depends(__get_user_or_none),
@@ -202,9 +202,9 @@ def get_schema(
     if not user:
         return RedirectResponse(request.url_for("admin:login"))
 
-    return BaseRes(data=page.get_app_page())
+    return BaseRes(data=await page.get_app_page(request))
 
-#
+
 # @router.get("/{resource}/selects/{field}")
 # def get_selects(
 #     request: Request,

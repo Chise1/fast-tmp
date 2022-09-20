@@ -1,7 +1,7 @@
 from pydantic.main import BaseModel
 from pydantic.networks import HttpUrl
 
-from fast_tmp.admin.schema.abstract_schema import BaseAmisModel
+from fast_tmp.amis.abstract_schema import BaseAmisModel
 
 from .enums import TypeEnum
 

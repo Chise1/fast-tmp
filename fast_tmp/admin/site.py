@@ -4,7 +4,7 @@ from fast_tmp.site import ModelAdmin
 
 class UserAdmin(ModelAdmin):
     model = User
-    list_display = ("id", "username", "is_active")
+    list_display = ("id", "username",)
     # create_fields = (User.username, User.password)
     # update_fields = (User.password,)
 
@@ -23,6 +23,6 @@ class UserAdmin(ModelAdmin):
 
 class GroupAdmin(ModelAdmin):
     model = Group
-    list_display = ("id","name","users")
+    list_display = ("id", "name", "users")
     # create_fields = (Group.name, Group.users)
     # update_fields = (Group.name, Group.users)

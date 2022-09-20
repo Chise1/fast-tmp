@@ -20,7 +20,7 @@ base_path = os.path.dirname(__file__)
 templates = Jinja2Templates(directory=base_path + "/templates")
 register_tags(templates)
 admin = FastAPI(title="fast-tmp")
-register_model_site({"Auth": [UserAdmin, GroupAdmin]})
+register_model_site({"Auth": [UserAdmin(), ]})
 admin.include_router(router)
 
 
@@ -53,7 +53,7 @@ async def login(
     if not password:
         context["password_err"] = True
         return templates.TemplateResponse("login.html", context)
-    user = await User.get(username=username)
+    user = await User.filter(username=username).first()
     if not user or not user.verify_password(password) or not user.is_active:
         context["errinfo"] = "username or password error!"
         return templates.TemplateResponse("login.html", context)

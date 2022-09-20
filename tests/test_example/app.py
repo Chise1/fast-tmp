@@ -8,7 +8,7 @@ from tortoise.contrib.fastapi import register_tortoise
 app = create_app()
 app.title = "test_example"
 
-register_tortoise(app, config=settings.TORTOISE_ORM, generate_schemas=True)
+register_tortoise(app, config=settings.TORTOISE_ORM,generate_schemas=True)
 if settings.DEBUG:
     from starlette.staticfiles import StaticFiles
 

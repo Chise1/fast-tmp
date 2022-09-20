@@ -2,9 +2,9 @@ from typing import Dict, List, Optional, Union
 
 from pydantic import BaseModel
 
-from fast_tmp.admin.schema.abstract_schema import BaseAmisModel
-from fast_tmp.admin.schema.enums import TypeEnum
-from fast_tmp.admin.schema.forms.enums import ControlEnum, FormWidgetSize, ItemModel
+from fast_tmp.amis.abstract_schema import BaseAmisModel
+from fast_tmp.amis.enums import TypeEnum
+from fast_tmp.amis.forms.enums import ControlEnum, FormWidgetSize, ItemModel
 
 
 # fixme:未来考虑更多的fields类型字段支持
@@ -16,6 +16,30 @@ class Column(BaseModel):
     type: ControlEnum = ControlEnum.text  # 把这个和schema获取的参数进行融合，保证schema获取的值可以使用
     name: str  # type: ignore
     label: str
+
+    class Config:
+        orm_mode = True
+
+
+class SaveImmediately(BaseModel):
+    """
+    及时保存
+    """
+    api: str
+
+
+class QuickEdit(BaseModel):
+    model: str = "inline"
+    type: ControlEnum
+    saveImmediately: SaveImmediately
+
+
+class ColumnInline(Column):
+    """带内联的功能"""
+    quickEdit: QuickEdit
+
+    class Config:
+        orm_mode = True
 
 
 class Mapping(Column):
@@ -71,3 +95,6 @@ class Control(AbstractControl):
     labelClassName: Optional[str]  # label 的类名
     mode: ItemModel = ItemModel.normal
     size: FormWidgetSize = FormWidgetSize.md
+
+    class Config:
+        orm_mode = True

@@ -20,10 +20,10 @@ from tortoise.fields import (
 )
 from tortoise.fields.data import CharEnumFieldInstance, IntEnumFieldInstance
 
-from fast_tmp.admin.schema.actions import DialogAction
-from fast_tmp.admin.schema.forms import Column, Mapping
-from fast_tmp.admin.schema.forms.enums import FormWidgetSize, ItemModel
-from fast_tmp.admin.schema.forms.widgets import (
+from fast_tmp.amis.actions import DialogAction
+from fast_tmp.amis.forms import Column, Mapping
+from fast_tmp.amis.forms.enums import FormWidgetSize, ItemModel
+from fast_tmp.amis.forms.widgets import (
     DateItem,
     DatetimeItem,
     NumberItem,
@@ -35,8 +35,8 @@ from fast_tmp.admin.schema.forms.widgets import (
     UUIDItem,
 )
 
-from fast_tmp.admin.schema.forms import Column as AmisColumn
-from fast_tmp.admin.schema.forms import Column as FormColumn
+from fast_tmp.amis.forms import Column as AmisColumn
+from fast_tmp.amis.forms import Column as FormColumn
 
 logger = getLogger(__file__)
 
@@ -289,4 +289,34 @@ def get_controls_from_model(
             raise ValueError(f"{field}字段的字段类型尚不支持!")
     if extra_fields:
         res.extend(extra_fields)
+    return res
+def make_columns(
+    model: Type[Model],
+    include: Tuple[str, ...] = (),
+    exclude: Tuple[str, ...] = (),
+) -> List[Column]:
+    """
+    从pydantic_queryset_creator创建的schema获取字段
+    todo：增加多对多字段显示
+    """
+    fields = model._meta.fields_map
+
+    res = []
+    for field, field_type in fields.items():
+        if include and field not in include or exclude and field in exclude:
+            continue
+        if isinstance(field_type, (IntEnumFieldInstance, CharEnumFieldInstance)):
+            res.append(
+                Mapping(
+                    name=field,
+                    label=field,
+                    map={k: v for k, v in field_type.enum_type.choices.items()},
+                )
+            )
+            # fixme:处理开关字段
+        # elif isinstance(field_type,):#fixme:处理特殊字段，比如json字段，或者图片、开关等需要特殊显示的类型。
+        elif isinstance(field_type, ManyToManyFieldInstance):
+            continue
+        else:
+            res.append(Column(name=field, label=field))
     return res

@@ -12,7 +12,7 @@ SECRET_KEY = "awdfawfqergqreef"
 
 TORTOISE_ORM = {
     "connections": {
-        "default": "sqlite://:memory:",
+        "default": "sqlite://test_example.sqlite3",
     },
     "apps": {
         "fast_tmp": {

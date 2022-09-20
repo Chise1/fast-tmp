@@ -1,29 +1,25 @@
-from typing import Any, Dict, List, Optional, Tuple, Type, Container, Tuple
+from typing import Any, Dict, List, Optional, Type, Tuple
 
+from starlette.requests import Request
+from tortoise.queryset import QuerySet
 
-from fast_tmp.admin.schema.actions import AjaxAction, DialogAction
-from fast_tmp.admin.schema.buttons import Operation
-from fast_tmp.admin.schema.crud import CRUD
-from fast_tmp.admin.schema.enums import ButtonLevelEnum
-from fast_tmp.admin.schema.forms import Form
-from fast_tmp.admin.schema.frame import Dialog
-from fast_tmp.admin.schema.page import Page
+from fast_tmp.amis.crud import CRUD
+from fast_tmp.amis.page import Page
 
 from fast_tmp.responses import not_found_model
+from .util3 import AbstractControl, create_column
 from .utils2 import get_columns_from_model, get_controls_from_model
 from tortoise.models import Model
-from tortoise.fields import BackwardFKRelation, ForeignKeyRelation, OneToOneRelation, \
-    ReverseRelation
-from tortoise import ForeignKeyFieldInstance, OneToOneFieldInstance, BackwardOneToOneRelation
+
+from ..amis.response import AmisStructError
 
 
 class ModelAdmin:
     model: Type[Model]  # model
     __name: Optional[str] = None
-    # list
     list_display: Tuple[str, ...] = ()
-    list_per_page: int = 10
-    list_max_show_all: int = 200
+    inline: Tuple[str, ...] = ()
+    prefix: str
     # search list
     search_fields: Tuple[str, ...] = ()
     filter_fields: Tuple[str, ...] = ()
@@ -32,10 +28,13 @@ class ModelAdmin:
     # exclude: Tuple[Union[str, BaseModel], ...] = ()
     # update ,如果为空则取create_fields
     update_fields: Tuple[str, ...] = ()
-
+    fields: Dict[str, AbstractControl] = dict()
+    __list_display: Dict[str, AbstractControl] = {}
+    __list_display_with_pk: Dict[str, AbstractControl] = {}
+    pk: AbstractControl = None
     methods: Tuple[str, ...] = (
         "list",
-        # "retrieve",
+        "retrieve",
         "create",
         "put",
         "delete",
@@ -44,6 +43,8 @@ class ModelAdmin:
     # 页面相关的东西
     __create_dialog: Any = None
     __get_pks: Any = None
+    list_per_page: int = 10  # 每页多少数据
+    list_max_show_all: int = 200  # 最多每页多少数据
 
     @classmethod
     def name(cls) -> str:
@@ -68,9 +69,14 @@ class ModelAdmin:
     #         )
     #     return cls.__create_dialog
     #
-    @classmethod
-    def get_list_page(cls):
-        return get_columns_from_model(cls.model, cls.list_display)
+    async def get_list_page(self, request: Request):
+        res = []
+        for field_name, col in self.get_list_distplay().items():
+            if field_name in self.inline:
+                res.append(await col.get_column_inline(request))
+            else:
+                res.append(await col.get_column(request))
+        return res
 
     #
     # @classmethod
@@ -116,26 +122,38 @@ class ModelAdmin:
     #         buttons.append(cls.get_update_one_button())
     #     return Operation(buttons=buttons)
 
-    @classmethod
-    def get_crud(cls):
+    async def get_crud(self, request: Request):
         body = []
-        if "create" in cls.methods and cls.create_fields:
-            body.append(cls.get_create_dialogation_button())
-        if "list" in cls.methods and cls.list_display:
-            columns = []
-            columns.extend(cls.get_list_page())
-            # columns.append(cls.get_operation())
-            body.append(
-                CRUD(
-                    api=cls.name() + "/list",
-                    columns=columns,
-                )
+        # if "create" in cls.methods and cls.create_fields:
+        #     body.append(cls.get_create_dialogation_button())
+        # if "list" in cls.methods and cls.list_display:
+        columns = []
+        columns.extend(await self.get_list_page(request))
+        # columns.append(cls.get_operation())
+        body.append(
+            CRUD(
+                api=self.prefix + "/list",
+                columns=columns,
             )
+        )
         return body
 
-    @classmethod
-    def get_app_page(cls):
-        return Page(title=cls.name(), body=cls.get_crud()).dict(exclude_none=True)
+    def get_list_distplay(self) -> Dict[str, AbstractControl]:
+        return self.__list_display
+
+    def get_list_display_with_pk(self) -> Dict[str, AbstractControl]:
+        return self.__list_display_with_pk
+
+    async def get_app_page(self, request: Request):
+        return Page(title=self.name(), body=await self.get_crud(request)).dict(exclude_none=True)
+
+    def prefetch(self, request: Request, queryset: QuerySet) -> QuerySet:
+        """
+        判断是否需要额外预加载的数据
+        """
+        for field_name, field in self.fields.items():
+            queryset = field.prefetch(request, queryset)
+        return queryset
 
     # @classmethod
     # def create_model(cls, data: dict, session: Session):
@@ -220,53 +238,27 @@ class ModelAdmin:
 
     __list_sql = None
 
-    #
-    # @classmethod
-    # def get_list_sql(cls):
-    #     if cls.__list_sql is None:
-    #         __list_display = []
-    #         for i in cls.list_display:
-    #             if hasattr(i.property, "direction"):
-    #                 if i.property.direction in (MANYTOMANY, ONETOMANY):
-    #                     continue
-    #                 if i.property.direction == MANYTOONE:
-    #                     __list_display.append(get_real_column_field(i))
-    #             else:
-    #                 __list_display.append(i)
-    #         cls.__list_sql = select(__list_display)
-    #     return cls.__list_sql
-    #
-    # __one_sql = None
-
     @classmethod
-    def queryset(cls):
+    def queryset(cls, request: Request):
         ret = cls.model.all()
-        for field in cls.list_display:
-            if isinstance(getattr(cls.model, field), ForeignKeyFieldInstance):
-                ret = ret.select_related(field)
-            elif isinstance(getattr(cls.model, field), OneToOneFieldInstance):
-                ret = ret.select_related(field)
-            elif isinstance(getattr(cls.model, field), BackwardOneToOneRelation):
-                ret = ret.prefetch_related(field)
         return ret
 
-    @classmethod
-    async def list(cls, limit: int = 10, offset: int = 0):
-        datas = await cls.queryset().limit(limit).offset(offset)
+    async def list(self, request: Request, limit: int = 10, offset: int = 0):
+        base_queryset = self.queryset(request)
+        queryset = self.prefetch(request, base_queryset)
+        datas = await queryset.limit(limit).offset(offset)
         res = []
         for i in datas:
             ret = {}
-            for name in cls.list_display:
-                field = getattr(i, name)
-                if isinstance(field, ReverseRelation):
-                    ret[name] = str(field)
-                ret[name] = field
+            for field_name, field in self.get_list_distplay().items():
+                ret[field_name] = await field.get_value(request, i)
             res.append(ret)
-        count = await cls.queryset().count()
+        count = await base_queryset.count()
         return {
             "total": count,
             "items": res
         }
+
     #
     # @classmethod
     # def get_one_sql(cls, pks: list, need_many: bool = False):
@@ -275,12 +267,42 @@ class ModelAdmin:
     #         cls.__one_sql = select(__list_display)
     #     return cls.__one_sql.where(*pks)
     #
+    def make_fields(self):
+        fields = set()
+        for field in self.list_display:
+            fields.add(field)
+        for field in self.create_fields:
+            fields.add(field)
+        for field in fields:
+            if isinstance(field, AbstractControl):
+                self.fields[field._field_name] = field
+            else:  # todo 只能为字符串
+                field_type = self.model._meta.fields_map.get(field)
+                if field_type is None:
+                    raise AmisStructError("can not found field")
+                else:
+                    self.fields[field] = create_column(field, field_type, self.prefix)
+        for field in self.list_display:
+            if isinstance(field, AbstractControl):
+                self.__list_display[field._field_name] = field
+            else:
+                self.__list_display[field] = self.fields[field]
+        self.pk = create_column("pk", self.model._meta.pk, self.prefix)
+
+    def __init__(self, prefix: str = None):
+        if prefix:
+            self.prefix = prefix
+        else:
+            self.prefix = self.name()
+        self.make_fields()
+        self.__list_display_with_pk = {"pk": self.pk}
+        self.__list_display_with_pk.update(self.__list_display)
 
 
-model_list: Dict[str, List[Type[ModelAdmin]]] = {}
+model_list: Dict[str, List[ModelAdmin]] = {}
 
 
-def register_model_site(model_group: Dict[str, List[Type[ModelAdmin]]]):
+def register_model_site(model_group: Dict[str, List[ModelAdmin]]):
     model_list.update(model_group)
 
 

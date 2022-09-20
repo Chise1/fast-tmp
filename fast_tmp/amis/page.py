@@ -1,6 +1,6 @@
 from typing import List, Optional, Tuple, Union
 
-from fast_tmp.admin.schema.abstract_schema import BaseAmisModel
+from fast_tmp.amis.abstract_schema import BaseAmisModel
 
 from .enums import TypeEnum
 

@@ -1,6 +1,6 @@
 from pydantic.main import BaseModel
 
-from fast_tmp.admin.schema.enums import TypeEnum
+from fast_tmp.amis.enums import TypeEnum
 
 from .crud import CRUD
 

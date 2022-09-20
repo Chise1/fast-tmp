@@ -18,9 +18,9 @@ from tortoise.fields import (
 )
 from tortoise.fields.data import CharEnumFieldInstance, IntEnumFieldInstance
 
-from fast_tmp.admin.schema.forms import Column, Mapping
-from fast_tmp.admin.schema.forms.enums import FormWidgetSize, ItemModel
-from fast_tmp.admin.schema.forms.widgets import (
+from fast_tmp.amis.forms import Column, Mapping
+from fast_tmp.amis.forms.enums import FormWidgetSize, ItemModel
+from fast_tmp.amis.forms.widgets import (
     CheckboxesItem,
     DateItem,
     DatetimeItem,
