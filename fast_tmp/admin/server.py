@@ -9,9 +9,9 @@ from starlette.responses import RedirectResponse
 from fast_tmp.conf import settings
 from fast_tmp.models import User
 from fast_tmp.responses import BaseRes
-from fast_tmp.site import model_list, register_model_site
+from fast_tmp.amis.site import model_list, register_model_site
 from fast_tmp.utils.token import create_access_token
-from .depends import __get_user_or_none
+from .auth import __get_user_or_none
 from ..jinja_extension.tags import register_tags
 from .endpoint import router
 from fast_tmp.admin.site import UserAdmin, GroupAdmin
