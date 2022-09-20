@@ -1,0 +1,86 @@
+{
+  "msg_head": {
+    "subtype": "mod",
+    "client": "alarm-java-service",
+    "type": "503"
+  },
+  "msg_body": {
+    "attributeMap": [
+      {
+        "attributeCode": "k_ALARMCLASS",
+        "attributeName": "告警类别",
+        "attributeType": "field",
+        "mapExpr": "alarm1.k_NODENAME",
+        "mapType": "field",
+        "seperator": "|"
+      },
+      {
+        "attributeCode": "k_ALARMCLASSNAME",
+        "attributeName": "告警类别名称",
+        "attributeType": "field",
+        "mapExpr": "alarm1.k_ALARMTYPEID,alarm1.k_NODENAME",
+        "mapType": "join",
+        "seperator": "|"
+      },
+      {
+        "attributeCode": "k_ALARMTYPEID",
+        "attributeName": "告警类型",
+        "attributeType": "field",
+        "mapExpr": "SL0008",
+        "mapType": "fixed",
+        "seperator": "|"
+      },
+      {
+        "attributeCode": "k_NODENAME",
+        "attributeName": "节点名称",
+        "attributeType": "field",
+        "mapExpr": "alarm1.k_NODENAME,CZ",
+        "mapType": "reg",
+        "seperator": "|"
+      },
+      {
+        "attributeCode": "k_RESNAME",
+        "attributeName": "资源名称",
+        "attributeType": "field",
+        "mapExpr": "alarm1.k_RESNAME,${k_SRCINFO1}",
+        "mapType": "join",
+        "seperator": "|"
+      },
+      {
+        "attributeCode": "k_SRCINFO1",
+        "attributeName": "附加信息1",
+        "attributeType": "var",
+        "mapExpr": "/api/res/alarm/getCardNo?devip=${k_RESIP}&port=${k_RESPARA}",
+        "mapType": "api",
+        "seperator": "|"
+      }
+    ],
+    "clearPolicy": "all",
+    "clearTimeMode": "1",
+    "deriveThreshold": 2,
+    "deriveType": 2,
+    "ruleDesc": "",
+    "ruleId": "object_yuzhi",
+    "ruleName": "告警对象超阈值",
+    "ruleStatus": 1,
+    "ruleType": 2,
+    "specialty": "IP",
+    "subAlarms": [
+      {
+        "alarmDesc": "端口光功率",
+        "alarmName": "alarm1",
+        "alarmType": "",
+        "filterExpr": "( k_PREHANDLE_FLAG == 0 && k_RAWMSG matches '.*alarmtype code:PortPerf0001*.' && k_RESPARA in ['1/2/6','4/2/8','ge-1/2/1','4/2/4','4/2/5','1/2/1','so-2/1/1','ge-2/2/5','1/2/2','ge-2/2/6','ge-2/2/1','22/2/6','ge-1/2/2','ge-4/2/9','21/2/8','5/1/2','4/2/9','ge-4/2/4','2ge-4/2/8','ge-4/2/5'] && l_ALARMLEVEL >= 2 && l_TIMES < 1 ) || ( k_ALARMTYPEID == 'DS0000' ) || ( k_ALARMTYPEID == 'RS0000' )",
+        "filterType": "2",
+        "isExist": 1,
+        "isMain": 0,
+        "locationField": "k_RESID,k_PORTID",
+        "locationFieldType": "field",
+        "relationField": "k_RESID",
+        "relationFieldType": "field"
+      }
+    ],
+    "timeWindow": 300,
+    "vendor": ""
+  }
+}
