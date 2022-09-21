@@ -5,7 +5,7 @@ from pydantic import HttpUrl
 from pydantic.main import BaseModel
 
 # from fast_tmp.amis.abstract_schema import Action
-from fast_tmp.amis.forms import Control  # , Limit
+from fast_tmp.amis.forms import Control, SelectOption  # , Limit
 from fast_tmp.amis.forms.enums import ControlEnum
 
 
@@ -42,9 +42,6 @@ class NativeNumber(Control):
     type: ControlEnum = ControlEnum.native_number
 
 
-class SelectOption(BaseModel):
-    label: str
-    value: Union[int, str]
 
 
 class SelectItem(Control):
@@ -52,7 +49,7 @@ class SelectItem(Control):
     options: Optional[List[Union[SelectOption, str, int]]]
     source: Optional[str]  # 通过数据源里面获取，也可以配置地址从远程获取，值格式为:options:[{label:..,value:...,}]
     # children: Optional[List[Union[SelectOption, str, int]]]  # 这个在树结构在考虑
-    multiple: bool = False  # 是否多选
+    multiple: Optional[bool]  # 是否多选
     delimeter: Optional[str]
     labelField: Optional[str]
     valueField: Optional[str]
@@ -63,8 +60,11 @@ class SelectItem(Control):
     defaultCheckAll: Optional[bool]  # 是否默认全选
     # 配置返回数组格式，具体参考https://baidu.gitee.io/amis/docs/components/form/
     # options#%E5%8A%A8%E6%80%81%E9%85%8D%E7%BD%AE
-    searchable: bool = False  # 前端对选项是否启动搜索功能
-    autoComplete: bool = True  # 是否对选项启动自动补全
+    searchable: Optional[bool]  # 前端对选项是否启动搜索功能
+    autoComplete: Optional[bool]  # 是否对选项启动自动补全
+
+    class Config:
+        orm_mode = True
 
 
 class SelectItemCanModifyItem(SelectItem):
@@ -251,7 +251,6 @@ class PickerItem(Control):
     modalMode: Optional[str]  # 配置弹出方式，默认为dialog，也可以配置drawer
     pickerSchema: Optional[Dict]  # 即用 List 类型的渲染，来展示列表信息。更多配置参考 CRUD
     embed: Optional[bool]  # 是否使用内嵌模式
-
 
 # class ButtonToolbarItem(Control):
 #     """

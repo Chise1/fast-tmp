@@ -13,7 +13,7 @@ from fast_tmp.responses import BaseRes
 from fast_tmp.site import model_list, register_model_site
 from fast_tmp.utils.token import create_access_token
 from .depends import __get_user_or_none
-from .middware import check_error_middle
+from .middware import check_error_middle, no_auth_middle
 from ..jinja_extension.tags import register_tags
 from .endpoint import router
 from fast_tmp.admin.site import UserAdmin, GroupAdmin
@@ -24,7 +24,9 @@ register_tags(templates)
 admin = FastAPI(title="fast-tmp")
 register_model_site({"Auth": [UserAdmin(), ]})
 admin.include_router(router)
-admin.middleware("http")(check_error_middle)
+# admin.middleware("http")(check_error_middle)
+admin.middleware("http")(no_auth_middle)
+
 
 @admin.post("/", name="index")
 @admin.get("/", name="index")

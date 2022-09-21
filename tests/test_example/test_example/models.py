@@ -142,7 +142,7 @@ class FieldTesting(Model):
     height = fields.FloatField()
     married = fields.BooleanField(default=False)
     gender = fields.CharEnumField(Gender)
-    degree = fields.IntEnumField(Degree, )
+    degree = fields.IntEnumField(Degree, default=Degree.unknow)
     game_length = fields.BigIntField(default=0)  # 游戏时长，按秒计算
     avator = fields.BinaryField()  # 头像
     config = fields.JSONField()

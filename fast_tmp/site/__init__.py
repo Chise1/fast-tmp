@@ -10,10 +10,37 @@ from fast_tmp.responses import not_found_model
 from .util import AbstractControl, create_column
 from tortoise.models import Model
 
+from ..amis.actions import DialogAction
+from ..amis.forms import Form
+from ..amis.frame import Dialog
 from ..amis.response import AmisStructError
 
 
-class ModelAdmin:  # todo inline字段必须都在update_fields内
+# 操作数据库的方法
+class DbSession:
+    async def list(self, request: Request, limit: int = 10, offset: int = 0):
+        """
+        获取列表
+        """
+        pass
+
+    async def get_instance(self, request: Request, pk: Any) -> Optional[Model]:
+        """
+        根据pk获取一个实例
+        """
+        pass
+
+    async def patch(self, request: Request, pk: str, data: Dict[str, Any]) -> Model:
+        """
+        对inline的数据进行更新
+        """
+        pass
+
+    async def create(self, request: Request, data: Dict[str, Any]) -> Model:
+        pass
+
+
+class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
     model: Type[Model]  # model
     __name: Optional[str] = None
     list_display: Tuple[str, ...] = ()
@@ -39,7 +66,6 @@ class ModelAdmin:  # todo inline字段必须都在update_fields内
         # "deleteMany",
     )  # todo 需要retrieve
     # 页面相关的东西
-    __create_dialog: Any = None
     __get_pks: Any = None
     list_per_page: int = 10  # 每页多少数据
     list_max_show_all: int = 200  # 最多每页多少数据
@@ -50,23 +76,25 @@ class ModelAdmin:  # todo inline字段必须都在update_fields内
             cls.__name = cls.model.__name__
         return cls.__name
 
-    # @classmethod
-    # def get_create_dialogation_button(cls):
-    #     if cls.__create_dialog is None:
-    #         cls.__create_dialog = DialogAction(
-    #             label="新增",
-    #             dialog=Dialog(
-    #                 title="新增",
-    #                 body=Form(
-    #                     name=f"新增{cls.name()}",
-    #                     title=f"新增{cls.name()}",
-    #                     body=make_controls(cls.create_fields),
-    #                     api=f"post:{cls.name()}/create",
-    #                 ),
-    #             ),
-    #         )
-    #     return cls.__create_dialog
-    #
+    def get_create_fields(self) -> Dict[str, AbstractControl]:
+        return {i: self.fields[i] for i in self.create_fields}
+
+    async def get_create_dialogation_button(self, request: Request):
+        controls = self.get_create_fields()
+
+        return DialogAction(
+            label="新增",
+            dialog=Dialog(
+                title="新增",
+                body=Form(
+                    name=f"新增{self.name()}",
+                    title=f"新增{self.name()}",
+                    body=[(await i.get_control(request)) for i in controls.values()],
+                    api=f"post:{self.name()}/create",
+                ),
+            ),
+        )
+
     async def get_list_page(self, request: Request):
         res = []
         for field_name, col in self.get_list_distplay().items():
@@ -122,11 +150,11 @@ class ModelAdmin:  # todo inline字段必须都在update_fields内
 
     async def get_crud(self, request: Request):
         body = []
-        # if "create" in cls.methods and cls.create_fields:
-        #     body.append(cls.get_create_dialogation_button())
-        # if "list" in cls.methods and cls.list_display:
         columns = []
-        columns.extend(await self.get_list_page(request))
+        if "create" in self.methods and self.create_fields:
+            body.append(await self.get_create_dialogation_button(request))
+        if "list" in self.methods and self.list_display:
+            columns.extend(await self.get_list_page(request))
         # columns.append(cls.get_operation())
         body.append(
             CRUD(
@@ -153,7 +181,16 @@ class ModelAdmin:  # todo inline字段必须都在update_fields内
         obj = await self.get_instance(request, pk)
         for field_name in self.inline:
             control = self.fields[field_name]
+            control.validate(data[field_name])
             await control.set_value(request, obj, data[field_name])
+        await obj.save()
+        return obj
+
+    async def create(self, request: Request, data: Dict[str, Any]) -> Model:
+        obj = self.model()
+        for field_name,field in self.get_create_fields().items():
+            field.validate(data[field_name])
+            await field.set_value(request, obj, data[field_name])
         await obj.save()
         return obj
 

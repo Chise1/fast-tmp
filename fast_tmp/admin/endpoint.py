@@ -9,15 +9,13 @@ from starlette.requests import Request
 from starlette.responses import RedirectResponse
 
 from fast_tmp.site import ModelAdmin, get_model_site
-from .depends import __get_user_or_none
+from .depends import __get_user
 
 from ..models import User
 from fast_tmp.depends.auth import get_current_active_user
 from ..responses import BaseRes
 
 router = APIRouter()
-
-
 
 
 async def get_data(request: Request) -> dict:
@@ -34,16 +32,13 @@ class ListDataWithPage(BaseModel):  # 带分页的数据
 
 @router.get("/{resource}/list")
 async def list_view(
-    request: Request,
-    page_model: ModelAdmin = Depends(get_model_site),
-    perPage: int = 10,
-    page: int = 1,
-    user: Optional[User] = Depends(__get_user_or_none),
+        request: Request,
+        page_model: ModelAdmin = Depends(get_model_site),
+        perPage: int = 10,
+        page: int = 1,
+        user: Optional[User] = Depends(__get_user),
 ):
-    if not user:
-        return RedirectResponse(request.url_for("admin:login"))
-
-    datas = await page_model.list(request,perPage, page - 1)
+    datas = await page_model.list(request, perPage, page - 1)
     return BaseRes(
         data=ListDataWithPage(
             total=datas["total"],
@@ -54,10 +49,10 @@ async def list_view(
 
 @router.post("/{resource}/patch/{pk}")
 async def patch_data(
-    request: Request,
-    pk: str,
-    page_model: ModelAdmin = Depends(get_model_site),
-    user: Optional[User] = Depends(__get_user_or_none),
+        request: Request,
+        pk: str,
+        page_model: ModelAdmin = Depends(get_model_site),
+        user: Optional[User] = Depends(__get_user),
 ):
     data = await request.json()
     await page_model.patch(request, pk, data)
@@ -117,22 +112,17 @@ async def patch_data(
 #     return BaseRes(data=res)
 #
 #
-# @router.post("/{resource}/create")
-# def create(
-#     request: Request,
-#     data: dict = Depends(get_data),
-#     page_model: ModelAdmin = Depends(get_model_site),
-#     session: Session = Depends(get_db_session),
-#     user: Optional[User] = Depends(decode_access_token_from_data),
-# ):
-#     if not user:
-#         return RedirectResponse(request.url_for("admin:login"))
-#
-#     data = clean_data_to_model(page_model.create_fields, data)
-#     instance = page_model.create_model(data, session)
-#     session.add(instance)
-#     session.commit()
-#     return BaseRes(data=data)
+@router.post("/{resource}/create")
+async def create(
+        request: Request,
+        page_model: ModelAdmin = Depends(get_model_site),
+        user: Optional[User] = Depends(__get_user),
+):
+    data = await request.json()
+    await page_model.create(request, data)
+    return BaseRes(data=data)
+
+
 #
 #
 # @router.delete("/{resource}/delete")
@@ -204,13 +194,10 @@ class DIDS(BaseModel):
 
 @router.get("/{resource}/schema")
 async def get_schema(
-    request: Request,
-    page: ModelAdmin = Depends(get_model_site),
-    user: Optional[User] = Depends(__get_user_or_none),
+        request: Request,
+        page: ModelAdmin = Depends(get_model_site),
+        user: Optional[User] = Depends(__get_user),
 ):
-    if not user:
-        return RedirectResponse(request.url_for("admin:login"))
-
     return BaseRes(data=await page.get_app_page(request))
 
 # @router.get("/{resource}/selects/{field}")

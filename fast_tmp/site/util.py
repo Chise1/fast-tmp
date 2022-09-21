@@ -2,11 +2,14 @@ from typing import Optional, Any, Type, Tuple, List
 
 from starlette.requests import Request
 from tortoise import Model, fields
+from tortoise.fields.data import CharEnumFieldInstance, IntEnumFieldInstance
 from tortoise.queryset import QuerySet
 
 from fast_tmp.amis.forms import Column, Control, ColumnInline, QuickEdit, ControlEnum, \
     QuickEditSelect
+from fast_tmp.amis.forms.widgets import SelectItem, SelectOption
 from fast_tmp.amis.response import AmisStructError
+from fast_tmp.responses import TmpValueError
 
 
 class AbstractControl(object):
@@ -98,10 +101,16 @@ class BaseAdminControl(AbstractControl):
     _field: fields.Field
 
     async def get_column(self, request: Request) -> Column:
-        return Column.from_orm(self.control)
+        ret = Column.from_orm(self.control)
+        ret.type = ControlEnum.text
+        return ret
 
     async def get_control(self, request: Request) -> Control:
-        return Control.from_orm(self.control)
+        control = Control.from_orm(self.control)
+        control.type = ControlEnum.input_text
+        if self._default is not None:
+            control.value = self._default
+        return control
 
     async def get_column_inline(self, request: Request) -> Column:
         if not self._prefix:
@@ -114,7 +123,6 @@ class BaseAdminControl(AbstractControl):
         return column
 
     async def set_value(self, request: Request, obj: Model, value: Any):
-        self.validate(value)
         setattr(obj, self._field_name, value)
 
     async def get_value(self, request: Request, obj: Model) -> Any:
@@ -133,6 +141,8 @@ class BaseAdminControl(AbstractControl):
     def __init__(self, _field_name: str, _field: fields.Field, _prefix: str, **kwargs):
         super().__init__(_field_name, _prefix, _default=_field.default, **kwargs)
         self._field = _field
+        if not self._field.null:
+            self.control.required = True
 
     def validate(self, value: Any):
         self._field.validate(value)
@@ -156,75 +166,87 @@ class IntControl(BaseAdminControl):
         return column
 
 
-class BooleanControl(BaseAdminControl):
-    # async def get_column(self, request: Request) -> Column:
-    #     if not self._prefix:
-    #         raise AmisStructError("prefix can not be none")
-    #     column = ColumnInline.from_orm(self.control)
-    #     if self._default is not None:  # 如果bool默认为空则这里为select反之为switch
-    #         column.type = ControlEnum.switch
-    #     return column
+class IntEnumControl(BaseAdminControl):
+    def __init__(self, _field_name: str, _field: fields.Field, _prefix: str, **kwargs):
+        super(IntEnumControl, self).__init__(_field_name, _field, _prefix, **kwargs)
+        self.control.type = ControlEnum.select
+        control = SelectItem.from_orm(self.control)
+        if self._default is not None:
+            control.value = self._default.name
+        control.options = self.options()
+        self.control = control
+
+    async def get_value(self, request: Request, obj: Model) -> Any:
+        ret = getattr(obj, self._field_name)
+        return ret.name
+
+    async def set_value(self, request: Request, obj: Model, value: Any):
+        for i in self._field.enum_type:
+            if i.name == value:
+                setattr(obj, self._field_name, i)
+                return
+        raise TmpValueError()
+
+    def options(self) -> List[str]:
+        res = []
+        for i in self._field.enum_type:
+            res.append(i.name)
+        return res
+
     async def get_column_inline(self, request: Request) -> Column:
         if not self._prefix:
             raise AmisStructError("prefix can not be none")
         column = ColumnInline.from_orm(self.control)
-        if self._default is not None:  # 如果bool默认为空则这里为select反之为switch
-            column.quickEdit = QuickEdit(
-                type=ControlEnum.switch,
-                saveImmediately=True
-            )
-            column.type = ControlEnum.switch
-        else:
-            column.quickEdit = QuickEditSelect(
-                type=ControlEnum.switch,
-                saveImmediately=True,
-                options=("None", "True", "False")
-            )
+        column.type = None
+        column.quickEdit = QuickEditSelect(
+            type=ControlEnum.select,
+            saveImmediately=True,
+            options=self.options()
+        )
         return column
+
+    async def get_control(self, request: Request) -> Control:
+        return self.control
+
+
+class BooleanControl(IntEnumControl):
+    def options(self) -> List[str]:
+        if self._field.null:
+            return ["None", "True", "False"]
+        return ["True", "False"]
+
+    def __init__(self, _field_name: str, _field: fields.Field, _prefix: str, **kwargs):
+        super(IntEnumControl, self).__init__(_field_name, _field, _prefix, **kwargs)
+        self.control.type = ControlEnum.select
+        control = SelectItem.from_orm(self.control)
+        if self._default is not None:
+            control.value = "True" if self._default else "False"
+        control.options = self.options()
+        self.control = control
 
     async def get_value(self, request: Request, obj: Model) -> Any:
         val = getattr(obj, self._field_name)
-        if self._default is None:
-            if val is None:
-                return "None"
-            elif val:
-                return "True"
-            else:
-                return "False"
+        if val is None:
+            return "None"
+        elif val:
+            return "True"
         else:
-            return val
+            return "False"
 
     async def set_value(self, request: Request, obj: Model, value: Any):
-        if isinstance(value, bool):
-            setattr(obj, self._field_name, value)
+        if value == "None" or value is None:
+            setattr(obj, self._field_name, None)
+        elif value == "True" or value is True:
+            setattr(obj, self._field_name, True)
         else:
-            if value == "True":
-                setattr(obj, self._field_name, True)
-            elif value == "False":
-                setattr(obj, self._field_name, False)
-            else:
-                setattr(obj, self._field_name, None)
+            setattr(obj, self._field_name, False)
+
+    async def get_control(self, request: Request) -> Control:
+        return self.control
 
 
-def get_list_columns(
-        model: Type[Model],
-        prefix: str,
-        include: Tuple[str, ...] = (),
-        inline: Tuple[str, ...] = (),
-) -> List[AbstractControl]:
-    """
-    从pydantic_queryset_creator创建的schema获取字段
-    todo：增加多对多字段显示
-    """
-    field_types = model._meta.fields_map
-
-    res = []
-    for field, field_type in field_types.items():
-        if include and field not in include:
-            continue
-        if isinstance(field_type, fields.IntField):
-            res.append(IntControl(_field_name=field, _prefix=prefix, ))
-    return res
+class StrEnumControl(IntEnumControl):
+    pass
 
 
 def create_column(
@@ -232,7 +254,11 @@ def create_column(
         field_type: fields.Field,
         prefix: str,
 ):
-    if isinstance(field_type, fields.IntField):
+    if isinstance(field_type, IntEnumFieldInstance):
+        return IntEnumControl(field_name, field_type, prefix)
+    elif isinstance(field_type, CharEnumFieldInstance):
+        return StrEnumControl(field_name, field_type, prefix)
+    elif isinstance(field_type, (fields.IntField, fields.SmallIntField, fields.BigIntField)):
         return IntControl(field_name, field_type, prefix)
     elif isinstance(field_type, fields.CharField):
         return StrControl(field_name, field_type, prefix)

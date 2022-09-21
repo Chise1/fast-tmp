@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Union, Tuple
+from typing import Dict, List, Optional, Union, Tuple, Any
 
 from pydantic import BaseModel
 
@@ -7,13 +7,16 @@ from fast_tmp.amis.enums import TypeEnum
 from fast_tmp.amis.forms.enums import ControlEnum, FormWidgetSize, ItemModel
 
 
+class SelectOption(BaseModel):
+    label: str
+    value: Union[int, str]
 # fixme:未来考虑更多的fields类型字段支持
 class Column(BaseModel):
     """
     用于列表等的显示
     """
 
-    type: Optional[ControlEnum]# 把这个和schema获取的参数进行融合，保证schema获取的值可以使用
+    type: Optional[ControlEnum]  # 把这个和schema获取的参数进行融合，保证schema获取的值可以使用
     name: str  # type: ignore
     label: str
 
@@ -28,7 +31,7 @@ class QuickEdit(BaseModel):
 
 
 class QuickEditSelect(QuickEdit):
-    options: Tuple[str, ...]
+    options: List[Union[SelectOption, str, int]]
 
 
 class ColumnInline(Column):
@@ -70,28 +73,29 @@ class Control(AbstractControl):
     用户form表单等写入
     """
 
+    value: Optional[Any]  # 默认值
     labelRemark: Optional[str]  # 表单项标签描述
     description: Optional[str]  # 描述
     placeholder: Optional[str]  # 描述
-    inline: bool = False  # 内联样式
-    submitOnChange: bool = False  # 是否该表单项值发生变化时就提交当前表单。
-    disabled: bool = False
+    inline: Optional[bool]  # 内联样式
+    submitOnChange: Optional[bool]  # 是否该表单项值发生变化时就提交当前表单。
+    disabled: Optional[bool]
     disableOn: Optional[str]  # 配置规则查看https://baidu.gitee.io/amis/docs/components/form/formitem
     visible: Optional[bool]
     visibleOn: Optional[str]  # 配置规则查看https://baidu.gitee.io/amis/docs/components/form/formitem
-    required: bool = True
+    required: Optional[bool]
     requiredOn: Optional[str]
     hidden: Optional[bool]  # 可使用条件配置如 this.number>1
     hiddenOn: Optional[str]  # 配置判定逻辑
     validations: Optional[Dict[str, Union[int, str]]]  # 注意，键值对请参考ValidateEnum
     validationErrors: Optional[
-        Dict[str, str]
+        Dict[str, str]  # todo tortoise-orm的校验转这里
     ]  # 注意，键值对请参考ValidateEnum，举例："minimum": "同学，最少输入$1以上的数字哈",其中$1为该错误的数据
     className: Optional[str]  # 表单最外层类名
     inputClassName: Optional[str]  # 表单控制器类名
     labelClassName: Optional[str]  # label 的类名
-    mode: ItemModel = ItemModel.normal
-    size: FormWidgetSize = FormWidgetSize.md
+    mode: Optional[ItemModel]
+    size: Optional[FormWidgetSize]
 
     class Config:
         orm_mode = True
