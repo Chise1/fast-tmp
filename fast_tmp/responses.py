@@ -22,11 +22,11 @@ class FastTmpError(HTTPException):
 
 class NoAuthError(FastTmpError):
     def __init__(self):
-        self.status_code = 401
+        self.status_code = 200
         self.detail = BaseRes(msg="未登录").dict()
 
 
 class TmpValueError(FastTmpError):
-    def __init__(self):
-        self.status_code = 401
-        self.detail = BaseRes(msg="值错误").dict()
+    def __init__(self, content: str):
+        self.status_code = 200
+        self.detail = BaseRes(status=400, msg=content or "值错误").dict()

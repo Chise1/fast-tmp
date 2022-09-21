@@ -28,7 +28,7 @@ class QuickEdit(BaseModel):
     type: ControlEnum
     saveImmediately: Optional[bool]
     options: Optional[List[Union[SelectOption, str, int]]]
-
+    clearable:Optional[bool]
 
 class ColumnInline(Column):
     """带内联的功能"""

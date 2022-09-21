@@ -44,6 +44,7 @@ class NativeNumber(Control):
 
 class SelectItem(Control):
     type: ControlEnum = ControlEnum.select
+    clearable: Optional[bool]
     options: Optional[List[Union[SelectOption, str, int]]]
     source: Optional[str]  # 通过数据源里面获取，也可以配置地址从远程获取，值格式为:options:[{label:..,value:...,}]
     # children: Optional[List[Union[SelectOption, str, int]]]  # 这个在树结构在考虑
@@ -253,7 +254,6 @@ class PickerItem(Control):
     modalMode: Optional[str]  # 配置弹出方式，默认为dialog，也可以配置drawer
     pickerSchema: Optional[Dict]  # 即用 List 类型的渲染，来展示列表信息。更多配置参考 CRUD
     embed: Optional[bool]  # 是否使用内嵌模式
-
 
 # class ButtonToolbarItem(Control):
 #     """

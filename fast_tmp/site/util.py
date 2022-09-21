@@ -114,7 +114,7 @@ class BaseAdminControl(AbstractControl):
             self._control = Control(type=self._control_type, name=self.name, label=self.label)
             if not self._field.null:
                 self._control.required = True
-            if self._field is not None:
+            if self._field.default is not None:
                 self._control.value = self.orm_2_amis(self._field.default)
         return self._control
 
@@ -133,6 +133,8 @@ class BaseAdminControl(AbstractControl):
             options = self.options()
             if options:
                 self._column_inline.quickEdit.options = options
+                if self._field.null:
+                    self._column_inline.quickEdit.clearable=True
         return self._column_inline
 
     async def set_value(self, request: Request, obj: Model, value: Any):
@@ -192,29 +194,28 @@ class IntEnumControl(BaseAdminControl):
             await super().get_control(request)
             d = self._control.dict(exclude_none=True)
             d.pop("type")
+            if self._field.null:
+                d["clearable"] = True
             self._control = SelectItem(**d)
             self._control.options = self.options()
         return self._control
 
     def orm_2_amis(self, value: Any) -> Any:
-        if value is None:
-            return "None"
-        return value.name
+        if value is not None:
+            return value.name
 
     def amis_2_orm(self, value: Any) -> Any:
-        if value == "None" and self._field.null:
+        if value is None and self._field.null:
             return None
         for i in self._field.enum_type:
             if i.name == value:
                 return i.value
-        raise TmpValueError()
+        raise TmpValueError(f"{self.label} 不能为 {value}")
 
     def options(self) -> List[str]:
         res = []
         for i in self._field.enum_type:
             res.append(i.name)
-        if self._field.null:
-            res.insert(0, "None")
         return res
 
 
@@ -226,13 +227,13 @@ class BooleanControl(BaseAdminControl):
             await super().get_control(request)
             d = self._control.dict(exclude_none=True)
             d.pop("type")
+            if self._field.null:
+                d["clearable"] = True
             self._control = SelectItem(**d)
             self._control.options = self.options()
         return self._control
 
     def options(self) -> List[str]:
-        if self._field.null:
-            return ["None", "True", "False"]
         return ["True", "False"]
 
     def amis_2_orm(self, value: Any) -> Any:
@@ -253,22 +254,21 @@ class BooleanControl(BaseAdminControl):
 
 
 class StrEnumControl(IntEnumControl):
-    def orm_2_amis(self, value: Any) -> Any:
-        if value is None:
-            return "None"
-        return value
+    pass
 
 
-class DateTimeCOntrol(BaseAdminControl):
+class DateTimeControl(BaseAdminControl):
     _control_type = ControlEnum.datetime
 
     def amis_2_orm(self, value: Any) -> Any:
         if (value == "None" or not value) and self._field.null:
             return None
-        return datetime.datetime.strptime(value, "YYYY-MM-DD HH:mm:ss")
+        return datetime.datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
 
     def orm_2_amis(self, value: datetime.datetime) -> Any:
-        return datetime.datetime.strftime(value, "YYYY-MM-DD HH:mm:ss")
+        if value is None:
+            return None
+        return value.strftime("%Y-%m-%d %H:%M:%S")
 
 
 def create_column(
@@ -284,7 +284,8 @@ def create_column(
         return IntControl(field_name, field_type, prefix)
     elif isinstance(field_type, fields.TextField):
         return TextControl(field_name, field_type, prefix)
-
+    elif isinstance(field_type, fields.DatetimeField):
+        return DateTimeControl(field_name, field_type, prefix)
     elif isinstance(field_type, fields.CharField):
         return StrControl(field_name, field_type, prefix)
     elif isinstance(field_type, fields.BooleanField):
