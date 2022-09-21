@@ -134,7 +134,7 @@ class BaseAdminControl(AbstractControl):
             if options:
                 self._column_inline.quickEdit.options = options
                 if self._field.null:
-                    self._column_inline.quickEdit.clearable=True
+                    self._column_inline.quickEdit.clearable = True
         return self._column_inline
 
     async def set_value(self, request: Request, obj: Model, value: Any):
@@ -259,6 +259,18 @@ class StrEnumControl(IntEnumControl):
 
 class DateTimeControl(BaseAdminControl):
     _control_type = ControlEnum.datetime
+
+    async def get_control(self, request: Request) -> Control:
+        if not self._control:
+            await super().get_control(request)
+            self._control = DatetimeItem.from_orm(self._control)
+        return self._control
+
+    async def get_column_inline(self, request: Request) -> Column:
+        if not self._column_inline:
+            await super().get_column_inline(request)
+            self._column_inline.quickEdit.format = "YYYY-MM-DD HH:mm:ss"
+        return self._column_inline
 
     def amis_2_orm(self, value: Any) -> Any:
         if (value == "None" or not value) and self._field.null:

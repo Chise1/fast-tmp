@@ -102,9 +102,9 @@ class ArrayItem(Control):
 class DatetimeItem(Control):
     type: ControlEnum = ControlEnum.datetime
     value: Optional[str]
-    format: Optional[str]  # "YYYY-MM-DD HH:mm:ss"  # 'X'为时间戳格式,参考文档：
+    format: str = "YYYY-MM-DD HH:mm:ss"  # 'X'为时间戳格式,参考文档：
     # https://baidu.gitee.io/amis/zh-CN/docs/components/form/datetime
-    inputFormat: Optional[str]  # "YYYY-MM-DD HH:mm:ss"  # 'X'为时间戳格式
+    inputFormat: str = "YYYY-MM-DD HH:mm:ss"  # 'X'为时间戳格式
     # shortcuts: List[str] = []  # "yesterday" ,"today", "tomorrow",now,{n}hoursago : n 小时前，例
     # 如：1daysago，下面用法相同,{n}hourslater : n 小时前，例如：1daysago
     utc: Optional[bool]

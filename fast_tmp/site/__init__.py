@@ -188,8 +188,8 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
     async def create(self, request: Request, data: Dict[str, Any]) -> Model:
         obj = self.model()
         for field_name, field in self.get_create_fields().items():
-            field.validate(data[field_name])
-            await field.set_value(request, obj, data[field_name])
+            field.validate(data.get(field_name))
+            await field.set_value(request, obj, data.get(field_name))
         await obj.save()
         return obj
 
