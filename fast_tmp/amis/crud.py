@@ -14,6 +14,7 @@ class CRUD(BaseAmisModel):
     columns: List[Union[Column, _Action, Operation]]
     affixHeader: bool = False
     quickSaveItemApi: Optional[str]  # 快速保存
+    syncLocation: Optional[bool]
 
     class Config:
         arbitrary_types_allowed = True

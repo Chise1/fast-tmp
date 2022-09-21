@@ -9,6 +9,7 @@ from tortoise.models import MODEL
 from tortoise.transactions import in_transaction
 
 from fast_tmp.conf import settings
+from .responses import BaseRes
 from ..models import User
 from ..site import ModelAdmin, get_model_site
 
@@ -23,11 +24,6 @@ class ListDataWithPage(BaseModel):  # 带分页的数据
     items: List[dict]
     total: int = 0
 
-
-class BaseRes(BaseModel):
-    status: int = 0
-    msg: str = ""
-    data: Any = {}
 
 
 def get_abstract_app():

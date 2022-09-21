@@ -7,8 +7,7 @@ from fast_tmp.amis.crud import CRUD
 from fast_tmp.amis.page import Page
 
 from fast_tmp.responses import not_found_model
-from .util3 import AbstractControl, create_column
-from .utils2 import get_columns_from_model, get_controls_from_model
+from .util import AbstractControl, create_column
 from tortoise.models import Model
 
 from ..amis.response import AmisStructError
@@ -133,7 +132,8 @@ class ModelAdmin:  # todo inline字段必须都在update_fields内
             CRUD(
                 api=self.prefix + "/list",
                 columns=columns,
-                quickSaveItemApi=self.prefix + "/patch/" + "$pk"
+                quickSaveItemApi=self.prefix + "/patch/" + "$pk",
+                syncLocation=False,
             )
         )
         return body

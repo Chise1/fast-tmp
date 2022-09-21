@@ -13,14 +13,11 @@ from .depends import __get_user_or_none
 
 from ..models import User
 from fast_tmp.depends.auth import get_current_active_user
+from ..responses import BaseRes
 
 router = APIRouter()
 
 
-class BaseRes(BaseModel):
-    status: int = 0
-    msg: str = ""
-    data: Any = {}
 
 
 async def get_data(request: Request) -> dict:
@@ -43,7 +40,6 @@ async def list_view(
     page: int = 1,
     user: Optional[User] = Depends(__get_user_or_none),
 ):
-    print("user:",user)
     if not user:
         return RedirectResponse(request.url_for("admin:login"))
 

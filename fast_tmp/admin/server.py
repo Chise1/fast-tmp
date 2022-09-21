@@ -13,6 +13,7 @@ from fast_tmp.responses import BaseRes
 from fast_tmp.site import model_list, register_model_site
 from fast_tmp.utils.token import create_access_token
 from .depends import __get_user_or_none
+from .middware import check_error_middle
 from ..jinja_extension.tags import register_tags
 from .endpoint import router
 from fast_tmp.admin.site import UserAdmin, GroupAdmin
@@ -23,7 +24,7 @@ register_tags(templates)
 admin = FastAPI(title="fast-tmp")
 register_model_site({"Auth": [UserAdmin(), ]})
 admin.include_router(router)
-
+admin.middleware("http")(check_error_middle)
 
 @admin.post("/", name="index")
 @admin.get("/", name="index")
@@ -61,7 +62,7 @@ async def login(
 
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user.username, "id": user.id}, expires_delta=access_token_expires
+        data={"sub": user.username, "id": user.pk}, expires_delta=access_token_expires
     )
     res = RedirectResponse(
         request.url_for("admin:index"), status_code=status.HTTP_302_FOUND,
@@ -72,7 +73,6 @@ async def login(
 
 @admin.get("/login", name="login")
 def login_html(request: Request):
-    print("...........")
     context = {
         "request": request,
         "errinfo": "",

@@ -16,7 +16,7 @@ class Page(BaseAmisModel):
     ]  # 往页面的右上角加内容，需要注意的是，当有 title 时，该区域在右上角，没有时该区域在顶部
     body: List[BaseAmisModel] = []
     initApi: Optional[str]  # 获取初始数据
-    initFetch: bool = False  # 是否进行初始数据获取
+    initFetch: Optional[bool]  # 是否进行初始数据获取
 
     _list_fields: Tuple[str, ...] = ()
     _update_fields: Tuple[str, ...] = ()
@@ -27,7 +27,6 @@ class HBox(BaseAmisModel):
     type = TypeEnum.hbox
     className: Optional[str]
     columns: List[BaseAmisModel]
-
 
 #
 # class AppPage(BaseModel):
