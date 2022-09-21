@@ -2,7 +2,9 @@
 This is the testing Models
 """
 import binascii
+import datetime
 import os
+from enum import Enum, IntEnum
 
 from tortoise import fields
 from tortoise.models import Model
@@ -116,3 +118,52 @@ class Team(Model):
 
     def __str__(self):
         return self.name
+
+
+class Gender(str, Enum):
+    male = "male"
+    womale = "womale"
+
+
+class Degree(IntEnum):
+    unknow = 0
+    bachelor = 1  # 学士
+    master = 2  # 硕士
+    doctor = 3  # 博士
+
+
+class FieldTesting(Model):
+    name = fields.CharField(max_length=32)
+    age = fields.IntField()
+    desc = fields.TextField()
+    # birthday = fields.DateField()
+    # created_time = fields.DatetimeField(auto_now_add=True,null=True)
+    money = fields.DecimalField(max_digits=10, decimal_places=2)
+    height = fields.FloatField()
+    married = fields.BooleanField(default=False)
+    gender = fields.CharEnumField(Gender)
+    degree = fields.IntEnumField(Degree, )
+    game_length = fields.BigIntField(default=0)  # 游戏时长，按秒计算
+    avator = fields.BinaryField()  # 头像
+    config = fields.JSONField()
+    waiting_length = fields.TimeDeltaField()  # 等待时长
+    max_time_length = fields.TimeField(default=datetime.time())  # 最长游戏时长
+    uuid = fields.UUIDField()
+    level = fields.SmallIntField(default=0)
+    name_inline = fields.CharField(max_length=32)
+    age_inline = fields.IntField()
+    desc_inline = fields.TextField()
+    # birthday_inline = fields.DateField()
+    # update_time_inline = fields.DatetimeField(auto_now=True,null=True)
+    money_inline = fields.DecimalField(max_digits=10, decimal_places=2)
+    height_inline = fields.FloatField()
+    married_inline = fields.BooleanField(default=False)
+    gender_inline = fields.CharEnumField(Gender)
+    degree_inline = fields.IntEnumField(Degree, )
+    game_length_inline = fields.BigIntField(default=0)  # 游戏时长，按秒计算
+    avator_inline = fields.BinaryField()  # 头像
+    config_inline = fields.JSONField()
+    waiting_length_inline = fields.TimeDeltaField()  # 等待时长
+    max_time_length_inline = fields.TimeField(default=datetime.time())  # 最长游戏时长
+    uuid_inline = fields.UUIDField()
+    level_inline = fields.SmallIntField(default=0)
