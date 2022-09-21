@@ -101,15 +101,19 @@ class ArrayItem(Control):
 class DatetimeItem(Control):
     type: ControlEnum = ControlEnum.datetime
     value: Optional[str]
-    format: str = "YYYY-MM-DD HH:mm:ss"  # 'X'为时间戳格式,参考文档：
+    format: Optional[str]  # "YYYY-MM-DD HH:mm:ss"  # 'X'为时间戳格式,参考文档：
     # https://baidu.gitee.io/amis/zh-CN/docs/components/form/datetime
-    inputFormat: str = "YYYY-MM-DD HH:mm:ss"  # 'X'为时间戳格式
-    shortcuts: List[str] = []  # "yesterday" ,"today", "tomorrow",now,{n}hoursago : n 小时前，例
+    inputFormat: Optional[str]  # "YYYY-MM-DD HH:mm:ss"  # 'X'为时间戳格式
+    # shortcuts: List[str] = []  # "yesterday" ,"today", "tomorrow",now,{n}hoursago : n 小时前，例
     # 如：1daysago，下面用法相同,{n}hourslater : n 小时前，例如：1daysago
-    utc: bool = False
-    clearable: bool = True
-    embed: bool = False  # fixme:学习内联如何使用
-    timeConstrainst: bool = True  # 不知道干吗用的
+    utc: Optional[bool]
+    clearable: Optional[bool]
+    embed: Optional[bool]
+
+    # timeConstrainst: bool = True  # 不知道干吗用的
+
+    class Config:
+        orm_mode = True
 
 
 class DateItem(Control):

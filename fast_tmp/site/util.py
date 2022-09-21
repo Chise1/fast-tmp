@@ -1,19 +1,13 @@
-from typing import Any, List, Optional, Tuple, Type
+import datetime
+from typing import Any, List, Optional
 
 from starlette.requests import Request
 from tortoise import Model, fields
 from tortoise.fields.data import CharEnumFieldInstance, IntEnumFieldInstance
 from tortoise.queryset import QuerySet
 
-from fast_tmp.amis.forms import (
-    Column,
-    ColumnInline,
-    Control,
-    ControlEnum,
-    QuickEdit,
-    QuickEditSelect,
-)
-from fast_tmp.amis.forms.widgets import SelectItem, SelectOption
+from fast_tmp.amis.forms import Column, ColumnInline, Control, ControlEnum, QuickEdit
+from fast_tmp.amis.forms.widgets import DateItem, DatetimeItem, SelectItem, TimeItem
 from fast_tmp.amis.response import AmisStructError
 from fast_tmp.responses import TmpValueError
 
@@ -25,8 +19,6 @@ class AbstractControl(object):
 
     _prefix: Optional[str]  # 网段
     _field_name: Optional[str]
-    _default: Any = None
-    control: Control
 
     def list_queryset(self, queryset: QuerySet) -> QuerySet:  # 列表
         """
@@ -92,17 +84,11 @@ class AbstractControl(object):
         获取内联修改的column
         """
 
-    def __init__(self, _field_name: str, _prefix: str, _default: Any = None, **kwargs):
-        name = kwargs.get("name") or _field_name
-        label = kwargs.get("label") or name
+    def __init__(self, _field_name: str, _prefix: str, **kwargs):
         self._prefix = _prefix
-        self._default = _default
         if not _field_name:
             raise AmisStructError("field_name can not be none")
         self._field_name = _field_name
-        kwargs["name"] = name
-        kwargs["label"] = label
-        self.control = Control(**kwargs)
 
 
 class BaseAdminControl(AbstractControl):
@@ -110,32 +96,50 @@ class BaseAdminControl(AbstractControl):
     默认的将model字段转control的类
     """
 
+    name: str
+    label: str
     _field: fields.Field
-    _control_type = ControlEnum.input_text
+    _control: Control = None
+    _column: Column = None
+    _column_inline: ColumnInline = None
+    _control_type: ControlEnum = ControlEnum.input_text
 
     async def get_column(self, request: Request) -> Column:
-        ret = Column.from_orm(self.control)
-        ret.type = ControlEnum.text
-        return ret
+        if not self._column:
+            self._column = Column(type=ControlEnum.text, name=self.name, label=self.label)
+        return self._column
 
     async def get_control(self, request: Request) -> Control:
-        control = Control.from_orm(self.control)
-        control.type = self._control_type
-        control.value = self._default
-        return control
+        if not self._control:
+            self._control = Control(type=self._control_type, name=self.name, label=self.label)
+            if not self._field.null:
+                self._control.required = True
+            if self._field is not None:
+                self._control.value = self.orm_2_amis(self._field.default)
+        return self._control
+
+    def options(self):
+        return None
 
     async def get_column_inline(self, request: Request) -> Column:
-        if not self._prefix:
-            raise AmisStructError("prefix can not be none")
-        column = ColumnInline.from_orm(self.control)
-        column.quickEdit = QuickEdit(type=ControlEnum.text, saveImmediately=True)
-        return column
+        if not self._column_inline:
+            column = await self.get_column(request)
+            self._column_inline = ColumnInline(
+                type=column.type,
+                name=self.name,
+                label=self.label,
+                quickEdit=QuickEdit(type=self._control_type, saveImmediately=True),
+            )
+            options = self.options()
+            if options:
+                self._column_inline.quickEdit.options = options
+        return self._column_inline
 
     async def set_value(self, request: Request, obj: Model, value: Any):
-        setattr(obj, self._field_name, value)
+        setattr(obj, self._field_name, self.amis_2_orm(value))
 
     async def get_value(self, request: Request, obj: Model) -> Any:
-        return getattr(obj, self._field_name)
+        return self.orm_2_amis(getattr(obj, self._field_name))
 
     def filter_queryset(self, queryset: QuerySet, request: Request, filter: str) -> QuerySet:  # 列表
         return queryset.filter(**{self._field_name: filter})
@@ -148,13 +152,22 @@ class BaseAdminControl(AbstractControl):
         return queryset.filter(**{self._field_name + "__contains": filter})
 
     def __init__(self, _field_name: str, _field: fields.Field, _prefix: str, **kwargs):
-        super().__init__(_field_name, _prefix, _default=_field.default, **kwargs)
+        super().__init__(_field_name, _prefix, **kwargs)
         self._field = _field
-        if not self._field.null:
-            self.control.required = True
+        self.name = kwargs.get("name") or _field_name
+        self.label = kwargs.get("label") or self.name
 
     def validate(self, value: Any):
         self._field.validate(value)
+
+    def orm_2_amis(self, value: Any) -> Any:
+        """
+        orm的值转成amis需要的值
+        """
+        return value
+
+    def amis_2_orm(self, value: Any) -> Any:
+        return value
 
 
 class StrControl(BaseAdminControl):
@@ -170,38 +183,30 @@ class TextControl(StrControl):
 class IntControl(BaseAdminControl):
     _control_type = ControlEnum.number
 
-    async def get_column_inline(self, request: Request) -> Column:
-        if not self._prefix:
-            raise AmisStructError("prefix can not be none")
-        column = ColumnInline.from_orm(self.control)
-        column.quickEdit = QuickEdit(type=ControlEnum.number, saveImmediately=True)
-        return column
-
 
 class IntEnumControl(BaseAdminControl):
-    def __init__(self, _field_name: str, _field: fields.Field, _prefix: str, **kwargs):
-        super(IntEnumControl, self).__init__(_field_name, _field, _prefix, **kwargs)
-        self.control.type = ControlEnum.select
-        control = SelectItem.from_orm(self.control)
-        if self._default is not None:
-            control.value = self._default.name
-        control.options = self.options()
-        self.control = control
+    _control_type = ControlEnum.select
 
-    async def get_value(self, request: Request, obj: Model) -> Any:
-        ret = getattr(obj, self._field_name)
-        if not ret:
+    async def get_control(self, request: Request) -> Control:
+        if not self._control:
+            await super().get_control(request)
+            d = self._control.dict(exclude_none=True)
+            d.pop("type")
+            self._control = SelectItem(**d)
+            self._control.options = self.options()
+        return self._control
+
+    def orm_2_amis(self, value: Any) -> Any:
+        if value is None:
             return "None"
-        return ret.name
+        return value.name
 
-    async def set_value(self, request: Request, obj: Model, value: Any):
-        if value == "None":
-            setattr(obj, self._field_name, None)
-            return
+    def amis_2_orm(self, value: Any) -> Any:
+        if value == "None" and self._field.null:
+            return None
         for i in self._field.enum_type:
             if i.name == value:
-                setattr(obj, self._field_name, i)
-                return
+                return i.value
         raise TmpValueError()
 
     def options(self) -> List[str]:
@@ -212,58 +217,58 @@ class IntEnumControl(BaseAdminControl):
             res.insert(0, "None")
         return res
 
-    async def get_column_inline(self, request: Request) -> Column:
-        if not self._prefix:
-            raise AmisStructError("prefix can not be none")
-        column = ColumnInline.from_orm(self.control)
-        column.type = None
-        column.quickEdit = QuickEditSelect(
-            type=ControlEnum.select, saveImmediately=True, options=self.options()
-        )
-        return column
+
+class BooleanControl(BaseAdminControl):
+    _control_type = ControlEnum.select
 
     async def get_control(self, request: Request) -> Control:
-        return self.control
+        if not self._control:
+            await super().get_control(request)
+            d = self._control.dict(exclude_none=True)
+            d.pop("type")
+            self._control = SelectItem(**d)
+            self._control.options = self.options()
+        return self._control
 
-
-class BooleanControl(IntEnumControl):
     def options(self) -> List[str]:
         if self._field.null:
             return ["None", "True", "False"]
         return ["True", "False"]
 
-    def __init__(self, _field_name: str, _field: fields.Field, _prefix: str, **kwargs):
-        super(IntEnumControl, self).__init__(_field_name, _field, _prefix, **kwargs)
-        self.control.type = ControlEnum.select
-        control = SelectItem.from_orm(self.control)
-        if self._default is not None:
-            control.value = "True" if self._default else "False"
-        control.options = self.options()
-        self.control = control
+    def amis_2_orm(self, value: Any) -> Any:
+        if (value == "None" or not value) and self._field.null:
+            return None
+        if value == "True":
+            return True
+        elif value == "False":
+            return False
+        raise TmpValueError()
 
-    async def get_value(self, request: Request, obj: Model) -> Any:
-        val = getattr(obj, self._field_name)
-        if val is None:
+    def orm_2_amis(self, value: Any) -> Any:
+        if value is None:
             return "None"
-        elif val:
+        elif value:
             return "True"
-        else:
-            return "False"
-
-    async def set_value(self, request: Request, obj: Model, value: Any):
-        if value == "None" or value is None:
-            setattr(obj, self._field_name, None)
-        elif value == "True" or value is True:
-            setattr(obj, self._field_name, True)
-        else:
-            setattr(obj, self._field_name, False)
-
-    async def get_control(self, request: Request) -> Control:
-        return self.control
+        return "False"
 
 
 class StrEnumControl(IntEnumControl):
-    pass
+    def orm_2_amis(self, value: Any) -> Any:
+        if value is None:
+            return "None"
+        return value
+
+
+class DateTimeCOntrol(BaseAdminControl):
+    _control_type = ControlEnum.datetime
+
+    def amis_2_orm(self, value: Any) -> Any:
+        if (value == "None" or not value) and self._field.null:
+            return None
+        return datetime.datetime.strptime(value, "YYYY-MM-DD HH:mm:ss")
+
+    def orm_2_amis(self, value: datetime.datetime) -> Any:
+        return datetime.datetime.strftime(value, "YYYY-MM-DD HH:mm:ss")
 
 
 def create_column(

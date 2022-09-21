@@ -22,18 +22,12 @@ class Column(BaseModel):
     name: str  # type: ignore
     label: str
 
-    class Config:
-        orm_mode = True
-
 
 class QuickEdit(BaseModel):
     model: str = "inline"
     type: ControlEnum
     saveImmediately: Optional[bool]
-
-
-class QuickEditSelect(QuickEdit):
-    options: List[Union[SelectOption, str, int]]
+    options: Optional[List[Union[SelectOption, str, int]]]
 
 
 class ColumnInline(Column):
