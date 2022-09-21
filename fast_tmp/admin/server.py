@@ -4,6 +4,7 @@ from typing import Optional
 
 from fastapi import Depends, FastAPI, Form, Request
 from fastapi.templating import Jinja2Templates
+from starlette import status
 from starlette.responses import RedirectResponse
 
 from fast_tmp.conf import settings
@@ -37,9 +38,9 @@ async def index(request: Request, user: Optional[User] = Depends(__get_user_or_n
 
 @admin.post("/login", name="login")
 async def login(
-    request: Request,
-    username: Optional[str] = Form(None),
-    password: Optional[str] = Form(None),
+        request: Request,
+        username: Optional[str] = Form(None),
+        password: Optional[str] = Form(None),
 ):
     context = {
         "request": request,
@@ -63,9 +64,7 @@ async def login(
         data={"sub": user.username, "id": user.id}, expires_delta=access_token_expires
     )
     res = RedirectResponse(
-        request.url_for(
-            "admin:index",
-        ),
+        request.url_for("admin:index"), status_code=status.HTTP_302_FOUND,
     )
     res.set_cookie("access_token", access_token, expires=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60)
     return res

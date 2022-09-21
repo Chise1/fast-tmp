@@ -91,9 +91,9 @@ class AbstractControl(object):
         self.control = Control(**kwargs)
 
 
-class StrControl(AbstractControl):
+class BaseAdminControl(AbstractControl):
     """
-    基础的字符串control
+        默认的将model字段转control的类
     """
 
     async def get_column(self, request: Request) -> Column:
@@ -129,11 +129,17 @@ class StrControl(AbstractControl):
         return queryset.filter(**{self._field_name + "__contains": filter})
 
 
-class IntControl(StrControl):
+class StrControl(BaseAdminControl):
+    """
+    基础的字符串control
+    """
+
+
+class IntControl(BaseAdminControl):
     async def get_column_inline(self, request: Request) -> Column:
         if not self._prefix:
             raise AmisStructError("prefix can not be none")
-        column = ColumnInline.from_orm(self)
+        column = ColumnInline.from_orm(self.control)
         column.quickEdit = QuickEdit(
             type=ControlEnum.number,
             saveImmediately=True
@@ -141,7 +147,7 @@ class IntControl(StrControl):
         return column
 
 
-class BooleanControl(StrControl):
+class BooleanControl(BaseAdminControl):
     async def get_column_inline(self, request: Request) -> Column:
         if not self._prefix:
             raise AmisStructError("prefix can not be none")
@@ -185,10 +191,10 @@ class BooleanControl(StrControl):
 
 
 def get_list_columns(
-    model: Type[Model],
-    prefix: str,
-    include: Tuple[str, ...] = (),
-    inline: Tuple[str, ...] = (),
+        model: Type[Model],
+        prefix: str,
+        include: Tuple[str, ...] = (),
+        inline: Tuple[str, ...] = (),
 ) -> List[AbstractControl]:
     """
     从pydantic_queryset_creator创建的schema获取字段
@@ -206,9 +212,9 @@ def get_list_columns(
 
 
 def create_column(
-    field_name: str,
-    field_type: fields.Field,
-    prefix: str,
+        field_name: str,
+        field_type: fields.Field,
+        prefix: str,
 ):
     if isinstance(field_type, fields.IntField):
         return IntControl(_field_name=field_name, _prefix=prefix, _default=field_type.default)

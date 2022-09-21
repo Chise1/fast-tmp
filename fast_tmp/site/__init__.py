@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Type, Tuple
+from typing import Any, Dict, List, Optional, Type, Tuple, Sequence, Iterable, TypeVar
 
 from starlette.requests import Request
 from tortoise.queryset import QuerySet
@@ -28,10 +28,9 @@ class ModelAdmin:  # todo inline字段必须都在update_fields内
     # exclude: Tuple[Union[str, BaseModel], ...] = ()
     # update ,如果为空则取create_fields
     update_fields: Tuple[str, ...] = ()
-    fields: Dict[str, AbstractControl] = dict()
+    fields: Dict[str, AbstractControl] = dict()  # 存储字段名:control
     __list_display: Dict[str, AbstractControl] = {}
     __list_display_with_pk: Dict[str, AbstractControl] = {}
-    pk: AbstractControl = None
     methods: Tuple[str, ...] = (
         "list",
         "retrieve",
@@ -140,15 +139,17 @@ class ModelAdmin:  # todo inline字段必须都在update_fields内
         return body
 
     def get_list_distplay(self) -> Dict[str, AbstractControl]:
-        return self.__list_display
+        return {i: self.fields[i] for i in self.list_display}
 
     def get_list_display_with_pk(self) -> Dict[str, AbstractControl]:
-        return self.__list_display_with_pk
+        ret = self.get_list_distplay()
+        ret["pk"] = self.fields["pk"]
+        return ret
 
     async def get_app_page(self, request: Request):
         return Page(title=self.name(), body=await self.get_crud(request)).dict(exclude_none=True)
 
-    async def patch(self, request: Request, pk: str, data: Dict[str, Any])->Model:
+    async def patch(self, request: Request, pk: str, data: Dict[str, Any]) -> Model:
         obj = await self.get_instance(request, pk)
         for field_name in self.inline:
             control = self.fields[field_name]
@@ -280,26 +281,17 @@ class ModelAdmin:  # todo inline字段必须都在update_fields内
     #     return cls.__one_sql.where(*pks)
     #
     def make_fields(self):
-        fields = set()
+        if not self.fields.get("pk"):
+            self.fields["pk"] = create_column("pk", self.model._meta.pk, self.prefix)
+
         for field in self.list_display:
-            fields.add(field)
-        for field in self.create_fields:
-            fields.add(field)
-        for field in fields:
-            if isinstance(field, AbstractControl):
-                self.fields[field._field_name] = field
-            else:  # todo 只能为字符串
+            if not self.fields.get(field):
                 field_type = self.model._meta.fields_map.get(field)
-                if field_type is None:
-                    raise AmisStructError("can not found field")
-                else:
-                    self.fields[field] = create_column(field, field_type, self.prefix)
-        for field in self.list_display:
-            if isinstance(field, AbstractControl):
-                self.__list_display[field._field_name] = field
-            else:
-                self.__list_display[field] = self.fields[field]
-        self.pk = create_column("pk", self.model._meta.pk, self.prefix)
+                self.fields[field] = create_column(field, field_type, self.prefix)
+        for field in self.create_fields:
+            if not self.fields.get(field):
+                field_type = self.model._meta.fields_map.get(field)
+                self.fields[field] = create_column(field, field_type, self.prefix)
 
     def __init__(self, prefix: str = None):
         if prefix:
@@ -307,10 +299,9 @@ class ModelAdmin:  # todo inline字段必须都在update_fields内
         else:
             self.prefix = self.name()
         self.make_fields()
-        self.__list_display_with_pk = {"pk": self.pk}
-        self.__list_display_with_pk.update(self.__list_display)
 
 
+# TModelAdmin=TypeVar("TModelAdmin",bound=ModelAdmin)
 model_list: Dict[str, List[ModelAdmin]] = {}
 
 
@@ -318,7 +309,7 @@ def register_model_site(model_group: Dict[str, List[ModelAdmin]]):
     model_list.update(model_group)
 
 
-def get_model_site(resource: str) -> Optional[Type[ModelAdmin]]:
+def get_model_site(resource: str) -> Optional[ModelAdmin]:
     for m_l in model_list.values():
         for i in m_l:
             if i.name() == resource:
