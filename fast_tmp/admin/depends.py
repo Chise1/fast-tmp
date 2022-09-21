@@ -1,12 +1,14 @@
 from typing import Optional
-from fastapi import Header, Cookie
-from fastapi import Depends, HTTPException
+
+from fastapi import Cookie, Depends, Header, HTTPException
 from starlette.requests import Request
 from starlette.responses import RedirectResponse
 from starlette.status import HTTP_404_NOT_FOUND
 from tortoise import Tortoise
+
 from fast_tmp.models import User
 from fast_tmp.responses import NoAuthError
+
 # todo 需要判定是否存在对应的权限字段，如果没有则写入
 from fast_tmp.utils.token import decode_access_token
 

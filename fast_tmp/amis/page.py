@@ -28,6 +28,7 @@ class HBox(BaseAmisModel):
     className: Optional[str]
     columns: List[BaseAmisModel]
 
+
 #
 # class AppPage(BaseModel):
 #     """

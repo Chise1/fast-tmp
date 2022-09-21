@@ -42,8 +42,6 @@ class NativeNumber(Control):
     type: ControlEnum = ControlEnum.native_number
 
 
-
-
 class SelectItem(Control):
     type: ControlEnum = ControlEnum.select
     options: Optional[List[Union[SelectOption, str, int]]]
@@ -251,6 +249,7 @@ class PickerItem(Control):
     modalMode: Optional[str]  # 配置弹出方式，默认为dialog，也可以配置drawer
     pickerSchema: Optional[Dict]  # 即用 List 类型的渲染，来展示列表信息。更多配置参考 CRUD
     embed: Optional[bool]  # 是否使用内嵌模式
+
 
 # class ButtonToolbarItem(Control):
 #     """

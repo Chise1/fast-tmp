@@ -13,8 +13,7 @@ class TestCreatesuperuser(SimpleTestCase):  # fixme:create error.
 
         await Tortoise.init(
             db_url="sqlite://:memory:",
-            modules={
-            "fast_tmp": settings.TORTOISE_ORM["apps"]["fast_tmp"]["models"]},
+            modules={"fast_tmp": settings.TORTOISE_ORM["apps"]["fast_tmp"]["models"]},
         )
         await Tortoise.generate_schemas()
         from fastapi_cli import create_superuser

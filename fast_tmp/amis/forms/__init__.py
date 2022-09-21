@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Union, Tuple, Any
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from pydantic import BaseModel
 
@@ -10,6 +10,8 @@ from fast_tmp.amis.forms.enums import ControlEnum, FormWidgetSize, ItemModel
 class SelectOption(BaseModel):
     label: str
     value: Union[int, str]
+
+
 # fixme:未来考虑更多的fields类型字段支持
 class Column(BaseModel):
     """
@@ -36,6 +38,7 @@ class QuickEditSelect(QuickEdit):
 
 class ColumnInline(Column):
     """带内联的功能"""
+
     quickEdit: Optional[QuickEdit]  # can not be none
 
     class Config:

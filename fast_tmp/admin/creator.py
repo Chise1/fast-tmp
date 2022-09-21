@@ -2,13 +2,13 @@ from typing import Dict, Optional, Tuple, Type
 
 from tortoise import Model
 
+from fast_tmp.admin.utils import get_columns_from_model, get_controls_from_model
 from fast_tmp.amis.actions import AjaxAction, DialogAction
 from fast_tmp.amis.crud import CRUD
 from fast_tmp.amis.enums import ButtonLevelEnum
 from fast_tmp.amis.forms import Form
 from fast_tmp.amis.frame import Dialog
 from fast_tmp.amis.page import AppPage, AppPageGroup, Page
-from fast_tmp.admin.utils import get_columns_from_model, get_controls_from_model
 
 
 class AbstractApp:

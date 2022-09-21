@@ -9,13 +9,13 @@ from tortoise.models import MODEL
 from tortoise.transactions import in_transaction
 
 from fast_tmp.conf import settings
-from .responses import BaseRes
+
 from ..models import User
 from ..site import ModelAdmin, get_model_site
-
 from ..utils.common import import_module
 from .creator import AbstractApp, AbstractCRUD
 from .depends import get_model
+from .responses import BaseRes
 
 router = APIRouter()
 
@@ -23,7 +23,6 @@ router = APIRouter()
 class ListDataWithPage(BaseModel):  # 带分页的数据
     items: List[dict]
     total: int = 0
-
 
 
 def get_abstract_app():
@@ -85,7 +84,6 @@ async def get_enum(
     request: Request,
     name: str,
     model: Model = Depends(get_model),
-
 ):  # todo 需要增加权限认证，create和update
     field: ForeignKeyRelation[MODEL] = getattr(model, name)
     # field.

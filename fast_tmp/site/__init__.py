@@ -1,19 +1,18 @@
-from typing import Any, Dict, List, Optional, Type, Tuple, Sequence, Iterable, TypeVar
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Type, TypeVar
 
 from starlette.requests import Request
+from tortoise.models import Model
 from tortoise.queryset import QuerySet
 
 from fast_tmp.amis.crud import CRUD
 from fast_tmp.amis.page import Page
-
 from fast_tmp.responses import not_found_model
-from .util import AbstractControl, create_column
-from tortoise.models import Model
 
 from ..amis.actions import DialogAction
 from ..amis.forms import Form
 from ..amis.frame import Dialog
 from ..amis.response import AmisStructError
+from .util import AbstractControl, create_column
 
 
 # 操作数据库的方法
@@ -188,7 +187,7 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
 
     async def create(self, request: Request, data: Dict[str, Any]) -> Model:
         obj = self.model()
-        for field_name,field in self.get_create_fields().items():
+        for field_name, field in self.get_create_fields().items():
             field.validate(data[field_name])
             await field.set_value(request, obj, data[field_name])
         await obj.save()
@@ -301,10 +300,7 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
                 ret[field_name] = await field.get_value(request, i)
             res.append(ret)
         count = await base_queryset.count()
-        return {
-            "total": count,
-            "items": res
-        }
+        return {"total": count, "items": res}
 
     async def get_instance(self, request: Request, pk: Any) -> Optional[Model]:
         return await self.model.filter(pk=pk).first()

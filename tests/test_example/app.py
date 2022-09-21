@@ -1,17 +1,18 @@
 import os
 
 os.environ.setdefault("FASTAPI_SETTINGS_MODULE", "test_example.settings")
-from fast_tmp.factory import create_app
-from fast_tmp.conf import settings
-from tortoise.contrib.fastapi import register_tortoise
-from fast_tmp.site import register_model_site
 from test_example.admin import FieldTestingModel
+from tortoise.contrib.fastapi import register_tortoise
+
+from fast_tmp.conf import settings
+from fast_tmp.factory import create_app
+from fast_tmp.site import register_model_site
 
 register_model_site({"fieldtesting": [FieldTestingModel()]})
 app = create_app()
 app.title = "test_example"
 
-register_tortoise(app, config=settings.TORTOISE_ORM,generate_schemas=True)
+register_tortoise(app, config=settings.TORTOISE_ORM, generate_schemas=True)
 if settings.DEBUG:
     from starlette.staticfiles import StaticFiles
 

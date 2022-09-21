@@ -21,8 +21,8 @@ TORTOISE_ORM = {
         }
     },
 }
-STATIC_ROOT= "static"
-STATIC_PATH="static"
+STATIC_ROOT = "static"
+STATIC_PATH = "static"
 EXTRA_SCRIPT = []  # 自定义执行脚本
 # redis配置
 # REDIS_HOST = os.getenv("REDIS_HOST", "127.0.0.1")

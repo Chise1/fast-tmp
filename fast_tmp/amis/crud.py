@@ -1,4 +1,4 @@
-from typing import List, Union, Optional
+from typing import List, Optional, Union
 
 from fast_tmp.amis.abstract_schema import BaseAmisModel, _Action
 from fast_tmp.amis.buttons import Operation

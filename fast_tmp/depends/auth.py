@@ -82,7 +82,9 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     return user
 
 
-async def get_current_active_user_or_none(token: Optional[str] = Depends(oauth2_scheme)) -> Optional[User]:
+async def get_current_active_user_or_none(
+    token: Optional[str] = Depends(oauth2_scheme),
+) -> Optional[User]:
     """
     获取active为true的用户，否则返回none
     """
