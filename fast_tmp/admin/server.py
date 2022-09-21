@@ -7,24 +7,31 @@ from fastapi.templating import Jinja2Templates
 from starlette import status
 from starlette.responses import RedirectResponse
 
+from fast_tmp.admin.site import GroupAdmin, UserAdmin
 from fast_tmp.conf import settings
 from fast_tmp.models import User
 from fast_tmp.responses import BaseRes
 from fast_tmp.site import model_list, register_model_site
 from fast_tmp.utils.token import create_access_token
-from .depends import __get_user_or_none
-from .middware import check_error_middle, no_auth_middle
+
 from ..jinja_extension.tags import register_tags
+from .depends import __get_user_or_none
 from .endpoint import router
-from fast_tmp.admin.site import UserAdmin, GroupAdmin
+from .middware import check_error_middle, no_auth_middle
 
 base_path = os.path.dirname(__file__)
 templates = Jinja2Templates(directory=base_path + "/templates")
 register_tags(templates)
 admin = FastAPI(title="fast-tmp")
-register_model_site({"Auth": [UserAdmin(), ]})
+register_model_site(
+    {
+        "Auth": [
+            UserAdmin(),
+        ]
+    }
+)
 admin.include_router(router)
-# admin.middleware("http")(check_error_middle)
+admin.middleware("http")(check_error_middle)
 admin.middleware("http")(no_auth_middle)
 
 
@@ -41,9 +48,9 @@ async def index(request: Request, user: Optional[User] = Depends(__get_user_or_n
 
 @admin.post("/login", name="login")
 async def login(
-        request: Request,
-        username: Optional[str] = Form(None),
-        password: Optional[str] = Form(None),
+    request: Request,
+    username: Optional[str] = Form(None),
+    password: Optional[str] = Form(None),
 ):
     context = {
         "request": request,
@@ -67,7 +74,8 @@ async def login(
         data={"sub": user.username, "id": user.pk}, expires_delta=access_token_expires
     )
     res = RedirectResponse(
-        request.url_for("admin:index"), status_code=status.HTTP_302_FOUND,
+        request.url_for("admin:index"),
+        status_code=status.HTTP_302_FOUND,
     )
     res.set_cookie("access_token", access_token, expires=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60)
     return res

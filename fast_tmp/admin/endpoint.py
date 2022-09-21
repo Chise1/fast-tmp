@@ -1,19 +1,18 @@
 from datetime import datetime
-from typing import List, Optional, Any
+from typing import Any, List, Optional
 
 from fastapi import APIRouter, Depends
 from fastapi.params import Path
 from pydantic import BaseModel
-
 from starlette.requests import Request
 from starlette.responses import RedirectResponse
 
+from fast_tmp.depends.auth import get_current_active_user
 from fast_tmp.site import ModelAdmin, get_model_site
-from .depends import __get_user
 
 from ..models import User
-from fast_tmp.depends.auth import get_current_active_user
 from ..responses import BaseRes
+from .depends import __get_user
 
 router = APIRouter()
 
@@ -32,11 +31,11 @@ class ListDataWithPage(BaseModel):  # 带分页的数据
 
 @router.get("/{resource}/list")
 async def list_view(
-        request: Request,
-        page_model: ModelAdmin = Depends(get_model_site),
-        perPage: int = 10,
-        page: int = 1,
-        user: Optional[User] = Depends(__get_user),
+    request: Request,
+    page_model: ModelAdmin = Depends(get_model_site),
+    perPage: int = 10,
+    page: int = 1,
+    user: Optional[User] = Depends(__get_user),
 ):
     datas = await page_model.list(request, perPage, page - 1)
     return BaseRes(
@@ -49,14 +48,14 @@ async def list_view(
 
 @router.post("/{resource}/patch/{pk}")
 async def patch_data(
-        request: Request,
-        pk: str,
-        page_model: ModelAdmin = Depends(get_model_site),
-        user: Optional[User] = Depends(__get_user),
+    request: Request,
+    pk: str,
+    page_model: ModelAdmin = Depends(get_model_site),
+    user: Optional[User] = Depends(__get_user),
 ):
     data = await request.json()
     await page_model.patch(request, pk, data)
-    return BaseRes().json()
+    return BaseRes().dict()
 
 
 #
@@ -114,9 +113,9 @@ async def patch_data(
 #
 @router.post("/{resource}/create")
 async def create(
-        request: Request,
-        page_model: ModelAdmin = Depends(get_model_site),
-        user: Optional[User] = Depends(__get_user),
+    request: Request,
+    page_model: ModelAdmin = Depends(get_model_site),
+    user: Optional[User] = Depends(__get_user),
 ):
     data = await request.json()
     await page_model.create(request, data)
@@ -194,11 +193,12 @@ class DIDS(BaseModel):
 
 @router.get("/{resource}/schema")
 async def get_schema(
-        request: Request,
-        page: ModelAdmin = Depends(get_model_site),
-        user: Optional[User] = Depends(__get_user),
+    request: Request,
+    page: ModelAdmin = Depends(get_model_site),
+    user: Optional[User] = Depends(__get_user),
 ):
     return BaseRes(data=await page.get_app_page(request))
+
 
 # @router.get("/{resource}/selects/{field}")
 # def get_selects(

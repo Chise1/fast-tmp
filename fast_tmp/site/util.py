@@ -1,12 +1,18 @@
-from typing import Optional, Any, Type, Tuple, List
+from typing import Any, List, Optional, Tuple, Type
 
 from starlette.requests import Request
 from tortoise import Model, fields
 from tortoise.fields.data import CharEnumFieldInstance, IntEnumFieldInstance
 from tortoise.queryset import QuerySet
 
-from fast_tmp.amis.forms import Column, Control, ColumnInline, QuickEdit, ControlEnum, \
-    QuickEditSelect
+from fast_tmp.amis.forms import (
+    Column,
+    ColumnInline,
+    Control,
+    ControlEnum,
+    QuickEdit,
+    QuickEditSelect,
+)
 from fast_tmp.amis.forms.widgets import SelectItem, SelectOption
 from fast_tmp.amis.response import AmisStructError
 from fast_tmp.responses import TmpValueError
@@ -16,6 +22,7 @@ class AbstractControl(object):
     """
     用户自定义的column组件
     """
+
     _prefix: Optional[str]  # 网段
     _field_name: Optional[str]
     _default: Any = None
@@ -41,7 +48,11 @@ class AbstractControl(object):
         """
         raise AmisStructError("未构建")
 
-    def prefetch(self, request: Request, queryset: QuerySet, ) -> QuerySet:  # 列表
+    def prefetch(
+        self,
+        request: Request,
+        queryset: QuerySet,
+    ) -> QuerySet:  # 列表
         """
         过滤规则，用于页面查询和过滤用
         要求值必须相等
@@ -96,9 +107,11 @@ class AbstractControl(object):
 
 class BaseAdminControl(AbstractControl):
     """
-        默认的将model字段转control的类
+    默认的将model字段转control的类
     """
+
     _field: fields.Field
+    _control_type = ControlEnum.input_text
 
     async def get_column(self, request: Request) -> Column:
         ret = Column.from_orm(self.control)
@@ -107,19 +120,15 @@ class BaseAdminControl(AbstractControl):
 
     async def get_control(self, request: Request) -> Control:
         control = Control.from_orm(self.control)
-        control.type = ControlEnum.input_text
-        if self._default is not None:
-            control.value = self._default
+        control.type = self._control_type
+        control.value = self._default
         return control
 
     async def get_column_inline(self, request: Request) -> Column:
         if not self._prefix:
             raise AmisStructError("prefix can not be none")
         column = ColumnInline.from_orm(self.control)
-        column.quickEdit = QuickEdit(
-            type=ControlEnum.text,
-            saveImmediately=True
-        )
+        column.quickEdit = QuickEdit(type=ControlEnum.text, saveImmediately=True)
         return column
 
     async def set_value(self, request: Request, obj: Model, value: Any):
@@ -154,15 +163,18 @@ class StrControl(BaseAdminControl):
     """
 
 
+class TextControl(StrControl):
+    _control_type = ControlEnum.textarea
+
+
 class IntControl(BaseAdminControl):
+    _control_type = ControlEnum.number
+
     async def get_column_inline(self, request: Request) -> Column:
         if not self._prefix:
             raise AmisStructError("prefix can not be none")
         column = ColumnInline.from_orm(self.control)
-        column.quickEdit = QuickEdit(
-            type=ControlEnum.number,
-            saveImmediately=True
-        )
+        column.quickEdit = QuickEdit(type=ControlEnum.number, saveImmediately=True)
         return column
 
 
@@ -178,9 +190,14 @@ class IntEnumControl(BaseAdminControl):
 
     async def get_value(self, request: Request, obj: Model) -> Any:
         ret = getattr(obj, self._field_name)
+        if not ret:
+            return "None"
         return ret.name
 
     async def set_value(self, request: Request, obj: Model, value: Any):
+        if value == "None":
+            setattr(obj, self._field_name, None)
+            return
         for i in self._field.enum_type:
             if i.name == value:
                 setattr(obj, self._field_name, i)
@@ -191,6 +208,8 @@ class IntEnumControl(BaseAdminControl):
         res = []
         for i in self._field.enum_type:
             res.append(i.name)
+        if self._field.null:
+            res.insert(0, "None")
         return res
 
     async def get_column_inline(self, request: Request) -> Column:
@@ -199,9 +218,7 @@ class IntEnumControl(BaseAdminControl):
         column = ColumnInline.from_orm(self.control)
         column.type = None
         column.quickEdit = QuickEditSelect(
-            type=ControlEnum.select,
-            saveImmediately=True,
-            options=self.options()
+            type=ControlEnum.select, saveImmediately=True, options=self.options()
         )
         return column
 
@@ -250,9 +267,9 @@ class StrEnumControl(IntEnumControl):
 
 
 def create_column(
-        field_name: str,
-        field_type: fields.Field,
-        prefix: str,
+    field_name: str,
+    field_type: fields.Field,
+    prefix: str,
 ):
     if isinstance(field_type, IntEnumFieldInstance):
         return IntEnumControl(field_name, field_type, prefix)
@@ -260,9 +277,13 @@ def create_column(
         return StrEnumControl(field_name, field_type, prefix)
     elif isinstance(field_type, (fields.IntField, fields.SmallIntField, fields.BigIntField)):
         return IntControl(field_name, field_type, prefix)
+    elif isinstance(field_type, fields.TextField):
+        return TextControl(field_name, field_type, prefix)
+
     elif isinstance(field_type, fields.CharField):
         return StrControl(field_name, field_type, prefix)
     elif isinstance(field_type, fields.BooleanField):
         return BooleanControl(field_name, field_type, prefix)
+
     else:
         raise AmisStructError("create_column error:", type(field_type))

@@ -4,6 +4,7 @@ This is the testing Models
 import binascii
 import datetime
 import os
+import uuid
 from enum import Enum, IntEnum
 
 from tortoise import fields
@@ -136,34 +137,49 @@ class FieldTesting(Model):
     name = fields.CharField(max_length=32)
     age = fields.IntField()
     desc = fields.TextField()
-    # birthday = fields.DateField()
-    # created_time = fields.DatetimeField(auto_now_add=True,null=True)
-    money = fields.DecimalField(max_digits=10, decimal_places=2)
-    height = fields.FloatField()
+    birthday = fields.DateField(null=True)
+    money = fields.DecimalField(max_digits=10, decimal_places=2, null=True)
+    height = fields.FloatField(null=True)
     married = fields.BooleanField(default=False)
     gender = fields.CharEnumField(Gender)
     degree = fields.IntEnumField(Degree, default=Degree.unknow)
     game_length = fields.BigIntField(default=0)  # 游戏时长，按秒计算
-    avator = fields.BinaryField()  # 头像
-    config = fields.JSONField()
-    waiting_length = fields.TimeDeltaField()  # 等待时长
+    avator = fields.BinaryField(null=True)  # 头像
+    config = fields.JSONField(null=True)
+    waiting_length = fields.TimeDeltaField(null=True)  # 等待时长
     max_time_length = fields.TimeField(default=datetime.time())  # 最长游戏时长
-    uuid = fields.UUIDField()
+    uuid = fields.UUIDField(default=uuid.uuid4)
     level = fields.SmallIntField(default=0)
-    name_inline = fields.CharField(max_length=32)
-    age_inline = fields.IntField()
-    desc_inline = fields.TextField()
-    # birthday_inline = fields.DateField()
-    # update_time_inline = fields.DatetimeField(auto_now=True,null=True)
-    money_inline = fields.DecimalField(max_digits=10, decimal_places=2)
-    height_inline = fields.FloatField()
-    married_inline = fields.BooleanField(default=False)
-    gender_inline = fields.CharEnumField(Gender)
-    degree_inline = fields.IntEnumField(Degree, )
-    game_length_inline = fields.BigIntField(default=0)  # 游戏时长，按秒计算
-    avator_inline = fields.BinaryField()  # 头像
-    config_inline = fields.JSONField()
-    waiting_length_inline = fields.TimeDeltaField()  # 等待时长
-    max_time_length_inline = fields.TimeField(default=datetime.time())  # 最长游戏时长
-    uuid_inline = fields.UUIDField()
-    level_inline = fields.SmallIntField(default=0)
+    name_inline = fields.CharField(null=True, max_length=32)
+    age_inline = fields.IntField(
+        null=True,
+    )
+    desc_inline = fields.TextField(
+        null=True,
+    )
+    birthday_inline = fields.DateField(
+        null=True,
+    )
+    money_inline = fields.DecimalField(null=True, max_digits=10, decimal_places=2)
+    height_inline = fields.FloatField(
+        null=True,
+    )
+    married_inline = fields.BooleanField(null=True, default=False)
+    gender_inline = fields.CharEnumField(Gender, null=True)
+    degree_inline = fields.IntEnumField(Degree, null=True)
+    game_length_inline = fields.BigIntField(null=True, default=0)  # 游戏时长，按秒计算
+    avator_inline = fields.BinaryField(
+        null=True,
+    )  # 头像
+    config_inline = fields.JSONField(
+        null=True,
+    )
+    waiting_length_inline = fields.TimeDeltaField(
+        null=True,
+    )  # 等待时长
+    max_time_length_inline = fields.TimeField(null=True, default=datetime.time())  # 最长游戏时长
+    uuid_inline = fields.UUIDField(
+        null=True,
+    )
+    level_inline = fields.SmallIntField(null=True, default=0)
+    created_time = fields.DatetimeField(auto_now_add=True, null=True)
