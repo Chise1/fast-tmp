@@ -21,7 +21,7 @@ class ControlEnum(str, Enum):
     number = "input-number"
     native_number = "native-number"  # exploer natave number
     array = "array"
-    date = "date"
+    date = "input-date"
     datetime = "input-datetime"
     uuid = "uuid"
     rich_text = "rich-text"

@@ -14,8 +14,18 @@ class FieldTestingModel(ModelAdmin):
         "married_inline",
         "degree",
         "degree_inline",
-        "created_time"
+        "created_time",
+        "birthday",
     )
-    inline = ("name_inline", "age_inline","married", "married_inline", "degree_inline", "created_time")
+    inline = ("name_inline", "age_inline", "married", "married_inline", "degree_inline", "birthday")
     create_fields = (
-    "name", "age", "desc", "married", "degree", "degree_inline", "gender", "created_time")
+        "name",
+        "age",
+        "desc",
+        "married",
+        "degree",
+        "degree_inline",
+        "gender",
+        "created_time",
+        "birthday",
+    )

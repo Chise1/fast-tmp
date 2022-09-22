@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Type, TypeVar
 
 from starlette.requests import Request
@@ -13,6 +14,8 @@ from ..amis.forms import Form
 from ..amis.frame import Dialog
 from ..amis.response import AmisStructError
 from .util import AbstractControl, create_column
+
+logger = logging.getLogger(__file__)
 
 
 # 操作数据库的方法
@@ -320,6 +323,8 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
         for field in self.list_display:
             if not self.fields.get(field):
                 field_type = self.model._meta.fields_map.get(field)
+                if not field_type:
+                    logger.error(f"can not found field {field} in {self.model.__name__}")
                 self.fields[field] = create_column(field, field_type, self.prefix)
         for field in self.create_fields:
             if not self.fields.get(field):
@@ -331,7 +336,12 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
             self.prefix = prefix
         else:
             self.prefix = self.name()
+        inline_set = set(self.inline)
         self.make_fields()
+        col_set = set(self.get_list_distplay())
+        for i in inline_set:
+            if i not in col_set:
+                logger.warning("inline field " + i + " not in list_display")
 
 
 # TModelAdmin=TypeVar("TModelAdmin",bound=ModelAdmin)

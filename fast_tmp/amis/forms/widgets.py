@@ -122,11 +122,14 @@ class DateItem(Control):
     value: Optional[str]
     format: str = "YYYY-MM-DD"  # 格式请参考文档：https://baidu.gitee.io/amis/zh-CN/docs/components/form/date  # 'X'为时间戳格式
     inputFormat: str = "YYYY-MM-DD"  # 'X'为时间戳格式
-    shortcuts: List[str] = []  # "yesterday" ,"today", "tomorrow"
+    # shortcuts: List[str] = []  # "yesterday" ,"today", "tomorrow"
     utc: bool = False
     clearable: bool = True
-    embed: bool = False  # fixme:学习内联如何使用
-    timeConstrainst: bool = True  # 不知道干吗用的
+    embed: Optional[bool]
+    # timeConstrainst: bool = True  # 不知道干吗用的
+
+    class Config:
+        orm_mode = True
 
 
 class SwitchItem(Control):
@@ -254,6 +257,7 @@ class PickerItem(Control):
     modalMode: Optional[str]  # 配置弹出方式，默认为dialog，也可以配置drawer
     pickerSchema: Optional[Dict]  # 即用 List 类型的渲染，来展示列表信息。更多配置参考 CRUD
     embed: Optional[bool]  # 是否使用内嵌模式
+
 
 # class ButtonToolbarItem(Control):
 #     """

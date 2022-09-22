@@ -283,6 +283,33 @@ class DateTimeControl(BaseAdminControl):
         return value.strftime("%Y-%m-%d %H:%M:%S")
 
 
+class DateControl(BaseAdminControl):
+    _control_type = ControlEnum.date
+
+    async def get_control(self, request: Request) -> Control:
+        if not self._control:
+            await super().get_control(request)
+            self._control = DateItem.from_orm(self._control)
+        return self._control
+
+    async def get_column_inline(self, request: Request) -> Column:
+        if not self._column_inline:
+            await super().get_column_inline(request)
+            self._column_inline.quickEdit.format = "YYYY-MM-DD"
+        return self._column_inline
+
+    def amis_2_orm(self, value: Any) -> Any:
+        if (value == "None" or not value) and self._field.null:
+            return None
+        year, month, day = value.split("-")
+        return datetime.date(int(year), int(month), int(day))
+
+    def orm_2_amis(self, value: datetime.date) -> Any:
+        if value is None:
+            return None
+        return value.strftime("%Y-%m-%d")
+
+
 def create_column(
     field_name: str,
     field_type: fields.Field,
@@ -298,6 +325,8 @@ def create_column(
         return TextControl(field_name, field_type, prefix)
     elif isinstance(field_type, fields.DatetimeField):
         return DateTimeControl(field_name, field_type, prefix)
+    elif isinstance(field_type, fields.DateField):
+        return DateControl(field_name, field_type, prefix)
     elif isinstance(field_type, fields.CharField):
         return StrControl(field_name, field_type, prefix)
     elif isinstance(field_type, fields.BooleanField):
