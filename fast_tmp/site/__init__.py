@@ -13,7 +13,7 @@ from ..amis.actions import DialogAction
 from ..amis.forms import Form
 from ..amis.frame import Dialog
 from ..amis.response import AmisStructError
-from .util import AbstractControl, create_column
+from .util import AbstractControl, SelectByApi, create_column
 
 logger = logging.getLogger(__file__)
 
@@ -56,7 +56,7 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
     # exclude: Tuple[Union[str, BaseModel], ...] = ()
     # update ,如果为空则取create_fields
     update_fields: Tuple[str, ...] = ()
-    fields: Dict[str, AbstractControl] = dict()  # 存储字段名:control
+    fields: Dict[str, AbstractControl] = None  # 存储字段名:control
     __list_display: Dict[str, AbstractControl] = {}
     __list_display_with_pk: Dict[str, AbstractControl] = {}
     methods: Tuple[str, ...] = (
@@ -71,12 +71,12 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
     __get_pks: Any = None
     list_per_page: int = 10  # 每页多少数据
     list_max_show_all: int = 200  # 最多每页多少数据
+    selct_defs = None
 
-    @classmethod
-    def name(cls) -> str:
-        if cls.__name is None:
-            cls.__name = cls.model.__name__
-        return cls.__name
+    def name(self) -> str:
+        if self.__name is None:
+            self.__name = self.model.__name__
+        return self.__name
 
     def get_create_fields(self) -> Dict[str, AbstractControl]:
         return {i: self.fields[i] for i in self.create_fields}
@@ -287,9 +287,8 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
 
     __list_sql = None
 
-    @classmethod
-    def queryset(cls, request: Request):
-        ret = cls.model.all()
+    def queryset(self, request: Request):
+        ret = self.model.all()
         return ret
 
     async def list(self, request: Request, limit: int = 10, offset: int = 0):
@@ -332,6 +331,7 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
                 self.fields[field] = create_column(field, field_type, self.prefix)
 
     def __init__(self, prefix: str = None):
+        self.fields = {}
         if prefix:
             self.prefix = prefix
         else:
@@ -342,6 +342,16 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
         for i in inline_set:
             if i not in col_set:
                 logger.warning("inline field " + i + " not in list_display")
+        # 同步select或其他接口
+        self.selct_defs = {}
+        for field_name, field in self.fields.items():
+            if isinstance(field, SelectByApi):
+                self.selct_defs[field_name] = field.get_selects
+
+    async def select_options(
+        self, name: str, request: Request, perPage: Optional[int], page: Optional[int]
+    ):
+        return await self.selct_defs[name](request, perPage, page)
 
 
 # TModelAdmin=TypeVar("TModelAdmin",bound=ModelAdmin)

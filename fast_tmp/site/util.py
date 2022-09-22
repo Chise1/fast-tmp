@@ -3,14 +3,21 @@ import json
 from typing import Any, List, Optional
 
 from starlette.requests import Request
-from tortoise import Model, fields
+from tortoise import ForeignKeyFieldInstance, Model, fields
 from tortoise.fields.data import CharEnumFieldInstance, IntEnumFieldInstance
 from tortoise.queryset import QuerySet
 
 from fast_tmp.amis.forms import Column, ColumnInline, Control, ControlEnum, QuickEdit
-from fast_tmp.amis.forms.widgets import DateItem, DatetimeItem, SelectItem, TimeItem
+from fast_tmp.amis.forms.widgets import (
+    DateItem,
+    DatetimeItem,
+    PickerItem,
+    PickerSchema,
+    SelectItem,
+    TimeItem,
+)
 from fast_tmp.amis.response import AmisStructError
-from fast_tmp.responses import TmpValueError
+from fast_tmp.responses import ListDataWithPage, TmpValueError
 
 
 class AbstractControl(object):
@@ -41,11 +48,7 @@ class AbstractControl(object):
         """
         raise AmisStructError("未构建")
 
-    def prefetch(
-        self,
-        request: Request,
-        queryset: QuerySet,
-    ) -> QuerySet:  # 列表
+    def prefetch(self, request: Request, queryset: QuerySet) -> QuerySet:  # 列表
         """
         过滤规则，用于页面查询和过滤用
         要求值必须相等
@@ -339,7 +342,7 @@ class TimeControl(BaseAdminControl):
         return value.strftime("%H:%M:%S")
 
 
-class JsonControl(TextControl):
+class JsonControl(TextControl):  # fixme 用代码编辑器重构？
     def amis_2_orm(self, value: Any) -> Any:
         return json.loads(value)
 
@@ -359,6 +362,129 @@ class JsonControl(TextControl):
         return self._column_inline
 
 
+class SelectByApi:
+    """
+    增加一个查询返回数据的接口
+    """
+
+    async def get_selects(
+        self,
+        request: Request,
+        perPage: Optional[int],
+        page: Optional[int],
+    ) -> List[dict]:
+        pass
+
+
+class ForeignKeyPickerControl(BaseAdminControl, SelectByApi):  # todo 支持搜索功能
+    """
+    当外键太多的时候可以使用这个来进行查看，这样可以更容易选择数据
+    """
+
+    _control_type = ControlEnum.select
+
+    async def get_selects(
+        self,
+        request: Request,
+        perPage: Optional[int],
+        page: Optional[int],
+    ):
+        field_model_all = self._field.related_model.all()
+        if perPage is not None and page is not None:
+            field_model = field_model_all.limit(perPage).offset(page - 1)
+            count = await field_model_all.count()
+            data = await field_model
+            return ListDataWithPage(
+                total=count,
+                items=[{"pk": i.pk, "name": str(i)} for i in data],
+            )
+        else:
+            data = await field_model_all
+            return {"options": [{"pk": i.pk, "name": str(i)} for i in data]}
+
+    def prefetch(self, request: Request, queryset: QuerySet) -> QuerySet:
+        return queryset.select_related(self._field_name)
+
+    async def get_column_inline(self, request: Request) -> Column:
+        raise AttributeError("foreignkey field can not be used in column inline.")
+
+    async def get_control(self, request: Request) -> Control:
+        if not self._control:
+            self._control = PickerItem(
+                name=self.name,
+                label=self.label,
+                source=f"get:{self._prefix}/select/{self.name}",
+                pickerSchema=PickerSchema(
+                    name=self.name,
+                    columns=[Column(label="pk", name="pk"), Column(label="name", name="name")],
+                ),
+                labelField="name",
+                valueField="pk",
+            )
+
+            if self._field.null:
+                self._control.clearable = True
+        return self._control
+
+    def orm_2_amis(self, value: Any) -> Any:
+        return str(value)
+
+    async def set_value(self, request: Request, obj: Model, value: Any):
+        if value is not None:
+            value = await self._field.related_model.filter(pk=value).first()
+        setattr(obj, self._field_name, value)
+
+
+class ForeignKeyControl(BaseAdminControl, SelectByApi):
+    _control_type = ControlEnum.select
+
+    async def get_selects(
+        self,
+        request: Request,
+        perPage: Optional[int],
+        page: Optional[int],
+    ):
+        field_model_all = self._field.related_model.all()
+        if perPage is not None and page is not None:
+            field_model = field_model_all.limit(perPage).offset(page - 1)
+            count = await field_model_all.count()
+            data = await field_model
+            return ListDataWithPage(
+                total=count,
+                items=[{"pk": i.pk, "name": str(i)} for i in data],
+            )
+        else:
+            data = await field_model_all
+            return {"options": [{"pk": i.pk, "name": str(i)} for i in data]}
+
+    def prefetch(self, request: Request, queryset: QuerySet) -> QuerySet:
+        return queryset.select_related(self._field_name)
+
+    async def get_column_inline(self, request: Request) -> Column:  # todo 之后想办法解决这个问题 也许默认把主键拼接上去？？
+        raise AttributeError("foreignkey field can not be used in column inline.")
+
+    async def get_control(self, request: Request) -> Control:
+        if not self._control:
+            self._control = SelectItem(
+                name=self.name,
+                label=self.label,
+                source=f"get:{self._prefix}/select/{self.name}",
+                labelField="name",
+                valueField="pk",
+            )
+            if self._field.null:
+                self._control.clearable = True
+        return self._control
+
+    def orm_2_amis(self, value: Any) -> Any:
+        return str(value)
+
+    async def set_value(self, request: Request, obj: Model, value: Any):
+        if value is not None:
+            value = await self._field.related_model.filter(pk=value).first()
+        setattr(obj, self._field_name, value)
+
+
 def create_column(
     field_name: str,
     field_type: fields.Field,
@@ -368,7 +494,9 @@ def create_column(
         return IntEnumControl(field_name, field_type, prefix)
     elif isinstance(field_type, CharEnumFieldInstance):
         return StrEnumControl(field_name, field_type, prefix)
-    elif isinstance(field_type, (fields.IntField, fields.SmallIntField, fields.BigIntField)):
+    elif isinstance(
+        field_type, (fields.IntField, fields.SmallIntField, fields.BigIntField, fields.FloatField)
+    ):
         return IntControl(field_name, field_type, prefix)
     elif isinstance(field_type, fields.TextField):
         return TextControl(field_name, field_type, prefix)
@@ -384,5 +512,7 @@ def create_column(
         return JsonControl(field_name, field_type, prefix)
     elif isinstance(field_type, fields.TimeField):
         return TimeControl(field_name, field_type, prefix)
+    elif isinstance(field_type, ForeignKeyFieldInstance):
+        return ForeignKeyControl(field_name, field_type, prefix)
     else:
         raise AmisStructError("create_column error:", type(field_type))

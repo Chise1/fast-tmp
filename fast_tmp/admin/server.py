@@ -31,7 +31,7 @@ register_model_site(
     }
 )
 admin.include_router(router)
-admin.middleware("http")(check_error_middle)
+# admin.middleware("http")(check_error_middle)
 admin.middleware("http")(no_auth_middle)
 
 

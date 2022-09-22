@@ -1,4 +1,4 @@
-from test_example.models import FieldTesting
+from test_example.models import Author, Book, FieldTesting
 
 from fast_tmp.site import ModelAdmin
 
@@ -42,3 +42,16 @@ class FieldTestingModel(ModelAdmin):
         "config",
         "max_time_length",
     )
+
+
+class BookModel(ModelAdmin):
+    model = Book
+    list_display = ("name", "author", "rating")
+    create_fields = ("name", "author", "rating")
+
+
+class AuthorModel(ModelAdmin):
+    model = Author
+    list_display = ("name",)
+    create_fields = ("name",)
+    inline = ("name",)

@@ -5,7 +5,7 @@ from pydantic import HttpUrl
 from pydantic.main import BaseModel
 
 # from fast_tmp.amis.abstract_schema import Action
-from fast_tmp.amis.forms import Control, SelectOption  # , Limit
+from fast_tmp.amis.forms import Column, Control, SelectOption  # , Limit
 from fast_tmp.amis.forms.enums import ControlEnum
 
 
@@ -44,7 +44,6 @@ class NativeNumber(Control):
 
 class SelectItem(Control):
     type: ControlEnum = ControlEnum.select
-    clearable: Optional[bool]
     options: Optional[List[Union[SelectOption, str, int]]]
     source: Optional[str]  # 通过数据源里面获取，也可以配置地址从远程获取，值格式为:options:[{label:..,value:...,}]
     # children: Optional[List[Union[SelectOption, str, int]]]  # 这个在树结构在考虑
@@ -124,9 +123,8 @@ class DateItem(Control):
     inputFormat: str = "YYYY-MM-DD"  # 'X'为时间戳格式
     # shortcuts: List[str] = []  # "yesterday" ,"today", "tomorrow"
     utc: bool = False
-    clearable: bool = True
+    clearable: Optional[bool]
     embed: Optional[bool]
-    # timeConstrainst: bool = True  # 不知道干吗用的
 
     class Config:
         orm_mode = True
@@ -174,6 +172,7 @@ class TimeItem(Control):
     inputFormat: str = "HH:mm:ss"  # 时间选择器显示格式，即时间戳格式，更多格式类型请参考 moment
     placeholder: Optional[str]  # 占位文本
     clearable: Optional[bool]  # 是否可清除
+
     # timeConstrainst: Union[dict, bool]  # 请参考： react-datetime
     class Config:
         orm_mode = True
@@ -244,6 +243,17 @@ class TransferItem(Control):
     rightMode: Optional[str]  # 当展示形式为 associated 时用来配置右边的选择形式，可选：list、table、tree、chained。
 
 
+# fixme 参考pickerSchema 需要补充值
+class PickerSchema(BaseModel):
+    model = "table"
+    name: str
+    # quickSaveApi: Optional[str]
+    # quickSaveItemApi: Optional[str]
+    # draggable: Optional[bool]
+    # headerToolbar: Optional[Any]  # 配置搜索框用
+    columns: Optional[List[Column]]
+
+
 class PickerItem(Control):
     # 列表选取，在功能上和 Select 类似，但它能显示更复杂的信息。默认和 Select 很像，但请看后面的 pickerSchema 设置。
     type = ControlEnum.picker
@@ -251,13 +261,13 @@ class PickerItem(Control):
     source: Optional[str]
     multiple: bool = False
     delimeter: bool = False  # 拼接符
-    labelField: str = "label"  # 选项标签字段
-    valueField: str = "value"  # 选项值字符
+    labelField: Optional[str]  # 选项标签字段
+    valueField: Optional[str]  # 选项值字符
     joinValues: bool = False  # 拼接值
     extractValue: bool = True  # 提取值
     autoFill: Optional[Dict[str, str]]  # 自动填充到某个位置
     modalMode: Optional[str]  # 配置弹出方式，默认为dialog，也可以配置drawer
-    pickerSchema: Optional[Dict]  # 即用 List 类型的渲染，来展示列表信息。更多配置参考 CRUD
+    pickerSchema: Optional[PickerSchema]  # 即用 List 类型的渲染，来展示列表信息。更多配置参考 CRUD
     embed: Optional[bool]  # 是否使用内嵌模式
 
 

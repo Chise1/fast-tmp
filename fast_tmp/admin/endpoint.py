@@ -11,7 +11,7 @@ from fast_tmp.depends.auth import get_current_active_user
 from fast_tmp.site import ModelAdmin, get_model_site
 
 from ..models import User
-from ..responses import BaseRes
+from ..responses import BaseRes, ListDataWithPage
 from .depends import __get_user
 
 router = APIRouter()
@@ -22,11 +22,6 @@ async def get_data(request: Request) -> dict:
     从异步函数里面读取数据
     """
     return await request.json()
-
-
-class ListDataWithPage(BaseModel):  # 带分页的数据
-    items: List[dict]
-    total: int = 0
 
 
 @router.get("/{resource}/list")
@@ -44,6 +39,19 @@ async def list_view(
             items=datas["items"],
         )
     )
+
+
+@router.get("/{resource}/select/{field_name}")
+async def list_view(
+    request: Request,
+    field_name: str,
+    perPage: Optional[int] = None,
+    page: Optional[int] = None,
+    page_model: ModelAdmin = Depends(get_model_site),
+    user: Optional[User] = Depends(__get_user),
+):
+    datas = await page_model.select_options(field_name, request, perPage, page)
+    return BaseRes(data=datas)
 
 
 @router.post("/{resource}/patch/{pk}")

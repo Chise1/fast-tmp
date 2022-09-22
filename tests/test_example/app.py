@@ -1,14 +1,14 @@
 import os
 
 os.environ.setdefault("FASTAPI_SETTINGS_MODULE", "test_example.settings")
-from test_example.admin import FieldTestingModel
+from test_example.admin import AuthorModel, BookModel, FieldTestingModel
 from tortoise.contrib.fastapi import register_tortoise
 
 from fast_tmp.conf import settings
 from fast_tmp.factory import create_app
 from fast_tmp.site import register_model_site
 
-register_model_site({"fieldtesting": [FieldTestingModel()]})
+register_model_site({"fieldtesting": [FieldTestingModel(), BookModel(), AuthorModel()]})
 app = create_app()
 app.title = "test_example"
 

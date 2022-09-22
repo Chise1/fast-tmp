@@ -75,6 +75,7 @@ class Control(AbstractControl):
     用户form表单等写入
     """
 
+    clearable: Optional[bool]
     value: Optional[Any]  # 默认值
     labelRemark: Optional[str]  # 表单项标签描述
     description: Optional[str]  # 描述
