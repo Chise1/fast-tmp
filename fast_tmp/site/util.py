@@ -1,4 +1,5 @@
 import datetime
+import json
 from typing import Any, List, Optional
 
 from starlette.requests import Request
@@ -310,6 +311,26 @@ class DateControl(BaseAdminControl):
         return value.strftime("%Y-%m-%d")
 
 
+class JsonControl(TextControl):
+    def amis_2_orm(self, value: Any) -> Any:
+        return json.loads(value)
+
+    def orm_2_amis(self, value: Any) -> Any:
+        return json.dumps(value)
+
+    async def get_control(self, request: Request) -> Control:
+        if not self._control:
+            await super().get_control(request)
+            self._control.validations = "isJson"
+        return self._control
+
+    async def get_column_inline(self, request: Request) -> Column:
+        if not self._column_inline:
+            await super().get_column_inline(request)
+            self._column_inline.quickEdit.validations = "isJson"
+        return self._column_inline
+
+
 def create_column(
     field_name: str,
     field_type: fields.Field,
@@ -331,6 +352,7 @@ def create_column(
         return StrControl(field_name, field_type, prefix)
     elif isinstance(field_type, fields.BooleanField):
         return BooleanControl(field_name, field_type, prefix)
-
+    elif isinstance(field_type, fields.JSONField):
+        return JsonControl(field_name, field_type, prefix)
     else:
         raise AmisStructError("create_column error:", type(field_type))

@@ -16,8 +16,17 @@ class FieldTestingModel(ModelAdmin):
         "degree_inline",
         "created_time",
         "birthday",
+        "config",
     )
-    inline = ("name_inline", "age_inline", "married", "married_inline", "degree_inline", "birthday")
+    inline = (
+        "name_inline",
+        "age_inline",
+        "married",
+        "married_inline",
+        "degree_inline",
+        "birthday",
+        "config",
+    )
     create_fields = (
         "name",
         "age",
@@ -28,4 +37,5 @@ class FieldTestingModel(ModelAdmin):
         "gender",
         "created_time",
         "birthday",
+        "config",
     )

@@ -30,6 +30,7 @@ class QuickEdit(BaseModel):
     options: Optional[List[Union[SelectOption, str, int]]]
     clearable: Optional[bool]
     format: Optional[str]
+    validations: Optional[Dict[str, Union[int, str]]]  # 注意，键值对请参考ValidateEnum
 
 
 class ColumnInline(Column):
