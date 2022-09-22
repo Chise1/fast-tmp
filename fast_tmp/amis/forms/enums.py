@@ -25,7 +25,7 @@ class ControlEnum(str, Enum):
     datetime = "input-datetime"
     uuid = "uuid"
     rich_text = "rich-text"
-    time = "time"
+    time = "input-time"
     mapping = "mapping"
     transfer = "transfer"
     checkboxes = "checkboxes"

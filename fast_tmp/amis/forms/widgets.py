@@ -169,12 +169,14 @@ class TimeItem(Control):
     type = ControlEnum.time
     body: Optional[Dict[str, Any]]
     value: Optional[datetime.time]  # 默认值
-    timeFormat: str = "HH:mm"  # 时间选择器值格式，更多格式类型请参考 moment
-    format: str = "X"  # 时间选择器值格式，更多格式类型请参考 moment
-    inputFormat: str = "HH:mm"  # 时间选择器显示格式，即时间戳格式，更多格式类型请参考 moment
+    timeFormat: str = "HH:mm:ss"  # 时间选择器值格式，更多格式类型请参考 moment
+    format: Optional[str]  # = "X"  # 时间选择器值格式，更多格式类型请参考 moment
+    inputFormat: str = "HH:mm:ss"  # 时间选择器显示格式，即时间戳格式，更多格式类型请参考 moment
     placeholder: Optional[str]  # 占位文本
-    clearable: bool = True  # 是否可清除
-    timeConstrainst: Union[dict, bool]  # 请参考： react-datetime
+    clearable: Optional[bool]  # 是否可清除
+    # timeConstrainst: Union[dict, bool]  # 请参考： react-datetime
+    class Config:
+        orm_mode = True
 
 
 class UUIDItem(Control):

@@ -161,7 +161,7 @@ class BaseAdminControl(AbstractControl):
         self.label = kwargs.get("label") or self.name
 
     def validate(self, value: Any):
-        self._field.validate(value)
+        self._field.validate(self.amis_2_orm(value))
 
     def orm_2_amis(self, value: Any) -> Any:
         """
@@ -311,6 +311,34 @@ class DateControl(BaseAdminControl):
         return value.strftime("%Y-%m-%d")
 
 
+class TimeControl(BaseAdminControl):
+    _control_type = ControlEnum.time
+
+    async def get_control(self, request: Request) -> Control:
+        if not self._control:
+            await super().get_control(request)
+            self._control = TimeItem.from_orm(self._control)
+        return self._control
+
+    async def get_column_inline(self, request: Request) -> Column:
+        if not self._column_inline:
+            await super().get_column_inline(request)
+            self._column_inline.quickEdit.format = "HH:mm:ss"
+            self._column_inline.quickEdit.inputFormat = "HH:mm:ss"
+            self._column_inline.quickEdit.timeFormat = "HH:mm:ss"
+        return self._column_inline
+
+    def amis_2_orm(self, value: Any) -> Any:
+        if not value:
+            return None
+        return datetime.time.fromisoformat(value)
+
+    def orm_2_amis(self, value: datetime.date) -> Any:
+        if value is None:
+            return None
+        return value.strftime("%H:%M:%S")
+
+
 class JsonControl(TextControl):
     def amis_2_orm(self, value: Any) -> Any:
         return json.loads(value)
@@ -354,5 +382,7 @@ def create_column(
         return BooleanControl(field_name, field_type, prefix)
     elif isinstance(field_type, fields.JSONField):
         return JsonControl(field_name, field_type, prefix)
+    elif isinstance(field_type, fields.TimeField):
+        return TimeControl(field_name, field_type, prefix)
     else:
         raise AmisStructError("create_column error:", type(field_type))

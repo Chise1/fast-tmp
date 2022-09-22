@@ -17,6 +17,7 @@ class FieldTestingModel(ModelAdmin):
         "created_time",
         "birthday",
         "config",
+        "max_time_length",
     )
     inline = (
         "name_inline",
@@ -26,6 +27,7 @@ class FieldTestingModel(ModelAdmin):
         "degree_inline",
         "birthday",
         "config",
+        "max_time_length",
     )
     create_fields = (
         "name",
@@ -38,4 +40,5 @@ class FieldTestingModel(ModelAdmin):
         "created_time",
         "birthday",
         "config",
+        "max_time_length",
     )

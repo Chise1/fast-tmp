@@ -31,6 +31,8 @@ class QuickEdit(BaseModel):
     clearable: Optional[bool]
     format: Optional[str]
     validations: Optional[Dict[str, Union[int, str]]]  # 注意，键值对请参考ValidateEnum
+    timeFormat: Optional[str]  # = "HH:mm:ss"  # 时间选择器值格式，更多格式类型请参考 moment
+    inputFormat: Optional[str]  # "HH:mm:ss"  # 时间选择器显示格式，即时间戳格式，更多格式类型请参考 moment
 
 
 class ColumnInline(Column):
