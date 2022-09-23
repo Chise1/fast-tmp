@@ -28,6 +28,7 @@ class _Action(BaseAmisModel):
     size: ButtonSize = ButtonSize.md
     level: ButtonLevelEnum = ButtonLevelEnum.primary
     tooltip: Optional[str]  # 鼠标挪上去的提示
+    className: Optional[str]
 
 
 class Message(BaseModel):

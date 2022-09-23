@@ -48,6 +48,7 @@ class BookModel(ModelAdmin):
     model = Book
     list_display = ("name", "author", "rating")
     create_fields = ("name", "author", "rating")
+    update_fields = ("name", "author")
 
 
 class AuthorModel(ModelAdmin):
@@ -55,3 +56,4 @@ class AuthorModel(ModelAdmin):
     list_display = ("name",)
     create_fields = ("name",)
     inline = ("name",)
+    update_fields = ("name",)

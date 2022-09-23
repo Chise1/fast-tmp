@@ -19,7 +19,7 @@ class Author(Model):
     name = fields.CharField(max_length=255)
 
     def __str__(self):
-        return "author:" + self.name
+        return self.name
 
 
 class Book(Model):

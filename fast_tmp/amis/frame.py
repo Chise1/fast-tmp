@@ -9,7 +9,7 @@ from .enums import DialogSize
 
 class Dialog(BaseModel):
     title: str
-    nextCondition: bool = True
+    nextCondition: Optional[bool]
     size: DialogSize = DialogSize.md
     actions: Optional[List[_Action]]
     body: Union[str, BaseModel, dict]

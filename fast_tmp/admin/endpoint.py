@@ -66,59 +66,29 @@ async def patch_data(
     return BaseRes().dict()
 
 
-#
-#
-# @router.put("/{resource}/update")
-# def update_data(
-#     request: Request,
-#     page_model: ModelAdmin = Depends(get_model_site),
-#     session: Session = Depends(get_db_session),
-#     data: dict = Depends(get_data),
-#     user: Optional[User] = Depends(decode_access_token_from_data),
-# ):
-#     if not user:
-#         return RedirectResponse(request.url_for("admin:login"))
-#     data = clean_data_to_model(page_model.get_clean_fields(page_model.update_fields), data)
-#     w = search_pk_list(page_model.model, request)
-#     if isinstance(w, BaseRes):
-#         return w
-#     old_data = session.execute(select(page_model.model).where(*w)).scalar_one_or_none()
-#     if not old_data:
-#         return not_found_instance
-#     page_model.update_model(old_data, data, session)
-#     session.commit()
-#     return BaseRes()
-#
-#
-# @router.get("/{resource}/update")
-# def update_view(
-#     request: Request,
-#     page_model: ModelAdmin = Depends(get_model_site),
-#     session: Session = Depends(get_db_session),
-#     user: Optional[User] = Depends(decode_access_token_from_data),
-# ):
-#     if not user:
-#         return RedirectResponse(request.url_for("admin:login"))
-#
-#     pks = search_pk_list(page_model.model, request)
-#     if isinstance(pks, BaseRes):
-#         return pks
-#     data = session.execute(select(page_model.model).where(*pks)).scalar_one_or_none()
-#     if not data:
-#         return not_found_instance
-#     res = {}
-#     for i in page_model.update_fields:
-#         if isinstance(i.property, RelationshipProperty):
-#             prop = i.property
-#             if prop.direction in (MANYTOMANY,):  # TODO need onetomany
-#                 pk = list(get_pk(prop.entity.class_).keys())[0]  # 只支持单主键
-#                 res[i.key] = [getattr(sub, pk) for sub in getattr(data, i.key)]  # type: ignore
-#         else:
-#             res[i.key] = getattr(data, i.key)  # type: ignore
-#
-#     return BaseRes(data=res)
-#
-#
+@router.put("/{resource}/update/{pk}")
+async def update_data(
+    request: Request,
+    pk: str,
+    page_model: ModelAdmin = Depends(get_model_site),
+    user: Optional[User] = Depends(__get_user),
+):
+    data = await request.json()
+    data = await page_model.put(request, pk, data)
+    return BaseRes(data=data)
+
+
+@router.get("/{resource}/update/{pk}")
+async def update_view(
+    request: Request,
+    pk: str,
+    page_model: ModelAdmin = Depends(get_model_site),
+    user: Optional[User] = Depends(__get_user),
+):
+    data = await page_model.put_get(request, pk)
+    return BaseRes(data=data)
+
+
 @router.post("/{resource}/create")
 async def create(
     request: Request,

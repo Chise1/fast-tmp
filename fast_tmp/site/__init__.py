@@ -9,9 +9,11 @@ from fast_tmp.amis.crud import CRUD
 from fast_tmp.amis.page import Page
 from fast_tmp.responses import not_found_model
 
-from ..amis.actions import DialogAction
+from ..amis.actions import AjaxAction, DialogAction, DrawerAction
+from ..amis.buttons import Operation
+from ..amis.enums import ButtonLevelEnum
 from ..amis.forms import Form
-from ..amis.frame import Dialog
+from ..amis.frame import Dialog, Drawer
 from ..amis.response import AmisStructError
 from .util import AbstractControl, SelectByApi, create_column
 
@@ -81,6 +83,9 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
     def get_create_fields(self) -> Dict[str, AbstractControl]:
         return {i: self.fields[i] for i in self.create_fields}
 
+    def get_update_fields(self) -> Dict[str, AbstractControl]:
+        return {i: self.fields[i] for i in self.update_fields}
+
     async def get_create_dialogation_button(self, request: Request):
         controls = self.get_create_fields()
 
@@ -106,49 +111,41 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
                 res.append(await col.get_column(request))
         return res
 
-    #
-    # @classmethod
-    # def pks(cls):
-    #     if cls.__get_pks is None:
-    #         primary_keys = get_pk(cls.model).keys()
-    #         del_path = []
-    #         for pk in primary_keys:
-    #             del_path.append(f"{pk}=${pk}")
-    #         cls.__get_pks = "&".join(del_path)
-    #     return cls.__get_pks
+    def get_del_one_button(self):
+        return AjaxAction(
+            label="删除",
+            level=ButtonLevelEnum.link,
+            className="text-danger",
+            confirmText="确认要删除？",
+            api="delete:" + self.name() + "/delete?pk=$pk",
+        )
 
     # @classmethod
-    # def get_del_one_button(cls):
-    #     return AjaxAction(
-    #         label="删除",
-    #         level=ButtonLevelEnum.danger,
-    #         confirmText="确认要删除？",
-    #         api="delete:" + cls.name() + "/delete?" + cls.pks(),
-    #     )
+    async def get_update_one_button(self, request: Request):
+        body = [await i.get_control(request) for i in self.get_update_fields().values()]
+        return DrawerAction(
+            label="修改",
+            level=ButtonLevelEnum.link,
+            drawer=Drawer(
+                title="修改",
+                body=Form(
+                    reload=self.name(),
+                    title=f"修改{self.name()}",
+                    name=f"修改{self.name()}",
+                    body=body,
+                    api="put:" + self.name() + "/update/$pk",
+                    initApi="get:" + self.name() + "/update/$pk",
+                ),
+            ),
+        )
 
-    # @classmethod
-    # def get_update_one_button(cls):
-    #     return DialogAction(
-    #         label="修改",
-    #         dialog=Dialog(
-    #             title="修改",
-    #             body=Form(
-    #                 name=f"修改{cls.name()}",
-    #                 body=get_controls_from_model(cls.update_fields),
-    #                 api="put:" + cls.name() + "/update?" + cls.pks(),
-    #                 initApi="get:" + cls.name() + "/update?" + cls.pks(),
-    #             ),
-    #         ),
-    #     )
-
-    # @classmethod
-    # def get_operation(cls):
-    #     buttons = []
-    #     if "delete" in cls.methods:
-    #         buttons.append(cls.get_del_one_button())
-    #     if "put" in cls.methods and cls.update_fields:
-    #         buttons.append(cls.get_update_one_button())
-    #     return Operation(buttons=buttons)
+    async def get_operation(self, request: Request):
+        buttons = []
+        if "put" in self.methods and self.update_fields:
+            buttons.append(await self.get_update_one_button(request))
+        if "delete" in self.methods:
+            buttons.append(self.get_del_one_button())
+        return Operation(buttons=buttons)
 
     async def get_crud(self, request: Request):
         body = []
@@ -157,7 +154,7 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
             body.append(await self.get_create_dialogation_button(request))
         if "list" in self.methods and self.list_display:
             columns.extend(await self.get_list_page(request))
-        # columns.append(cls.get_operation())
+        columns.append(await self.get_operation(request))
         body.append(
             CRUD(
                 api=self.prefix + "/list",
@@ -179,6 +176,22 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
     async def get_app_page(self, request: Request):
         return Page(title=self.name(), body=await self.get_crud(request)).dict(exclude_none=True)
 
+    async def put(self, request: Request, pk: str, data: Dict[str, Any]) -> Model:
+        obj = await self.get_instance(request, pk)
+        for field_name in self.update_fields:
+            control = self.fields[field_name]
+            control.validate(data[field_name])
+            await control.set_value(request, obj, data[field_name])
+        await obj.save()
+        return obj
+
+    async def put_get(self, request: Request, pk: str) -> Any:
+        obj = await self.get_instance(request, pk)
+        ret = {}
+        for field_name, field in self.get_list_display_with_pk().items():
+            ret[field_name] = await field.get_value(request, obj)
+        return ret
+
     async def patch(self, request: Request, pk: str, data: Dict[str, Any]) -> Model:
         obj = await self.get_instance(request, pk)
         for field_name in self.inline:
@@ -196,11 +209,13 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
         await obj.save()
         return obj
 
-    def prefetch(self, request: Request, queryset: QuerySet) -> QuerySet:
+    def prefetch(
+        self, request: Request, queryset: QuerySet, fields: Dict[str, AbstractControl]
+    ) -> QuerySet:
         """
         判断是否需要额外预加载的数据
         """
-        for field_name, field in self.fields.items():
+        for field_name, field in fields.items():
             queryset = field.prefetch(request, queryset)
         return queryset
 
@@ -293,7 +308,7 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
 
     async def list(self, request: Request, limit: int = 10, offset: int = 0):
         base_queryset = self.queryset(request)
-        queryset = self.prefetch(request, base_queryset)
+        queryset = self.prefetch(request, base_queryset, self.get_list_distplay())
         datas = await queryset.limit(limit).offset(offset)
         res = []
         for i in datas:
@@ -305,7 +320,9 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
         return {"total": count, "items": res}
 
     async def get_instance(self, request: Request, pk: Any) -> Optional[Model]:
-        return await self.model.filter(pk=pk).first()
+        queryset = self.model.filter(pk=pk)
+        queryset = self.prefetch(request, queryset, self.get_update_fields())
+        return await queryset.first()
 
     #
     # @classmethod
@@ -318,16 +335,16 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
     def make_fields(self):
         if not self.fields.get("pk"):
             self.fields["pk"] = create_column("pk", self.model._meta.pk, self.prefix)
-
-        for field in self.list_display:
+        s = []
+        s.extend(self.list_display)
+        s.extend(self.create_fields)
+        s.extend(self.update_fields)
+        s = set(s)
+        for field in s:
             if not self.fields.get(field):
                 field_type = self.model._meta.fields_map.get(field)
                 if not field_type:
                     logger.error(f"can not found field {field} in {self.model.__name__}")
-                self.fields[field] = create_column(field, field_type, self.prefix)
-        for field in self.create_fields:
-            if not self.fields.get(field):
-                field_type = self.model._meta.fields_map.get(field)
                 self.fields[field] = create_column(field, field_type, self.prefix)
 
     def __init__(self, prefix: str = None):
@@ -336,12 +353,12 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
             self.prefix = prefix
         else:
             self.prefix = self.name()
-        inline_set = set(self.inline)
         self.make_fields()
         col_set = set(self.get_list_distplay())
-        for i in inline_set:
+        for i in self.inline:
             if i not in col_set:
                 logger.warning("inline field " + i + " not in list_display")
+
         # 同步select或其他接口
         self.selct_defs = {}
         for field_name, field in self.fields.items():

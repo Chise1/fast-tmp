@@ -7,6 +7,7 @@ from tortoise import ForeignKeyFieldInstance, Model, fields
 from tortoise.fields.data import CharEnumFieldInstance, IntEnumFieldInstance
 from tortoise.queryset import QuerySet
 
+from fast_tmp.amis.custom import Custom
 from fast_tmp.amis.forms import Column, ColumnInline, Control, ControlEnum, QuickEdit
 from fast_tmp.amis.forms.widgets import (
     DateItem,
@@ -460,7 +461,19 @@ class ForeignKeyControl(BaseAdminControl, SelectByApi):
     def prefetch(self, request: Request, queryset: QuerySet) -> QuerySet:
         return queryset.select_related(self._field_name)
 
-    async def get_column_inline(self, request: Request) -> Column:  # todo 之后想办法解决这个问题 也许默认把主键拼接上去？？
+    async def get_column(self, request: Request) -> Column:
+        if not self._column:
+            self._column = Custom(
+                label="作者",
+                name=self.name,
+                onMount=f"const text = document.createTextNode(value.label);dom.appendChild(text);${self.name}=value.pk;",
+                onUpdate=f"const value=data.{self.name};dom.current.firstChild.textContent=value.label;${self.name}=value.pk;",
+            )
+        return self._column
+
+    async def get_column_inline(
+        self, request: Request
+    ) -> Column:  # fixme 需要特殊amis模块侧in鞥进行处理，以后学习一下前段看能不能自己写
         raise AttributeError("foreignkey field can not be used in column inline.")
 
     async def get_control(self, request: Request) -> Control:
@@ -477,10 +490,12 @@ class ForeignKeyControl(BaseAdminControl, SelectByApi):
         return self._control
 
     def orm_2_amis(self, value: Any) -> Any:
-        return str(value)
+        return {"label": str(value), "pk": value.pk}
 
     async def set_value(self, request: Request, obj: Model, value: Any):
         if value is not None:
+            if isinstance(value, dict):
+                value = value.get("pk")
             value = await self._field.related_model.filter(pk=value).first()
         setattr(obj, self._field_name, value)
 
