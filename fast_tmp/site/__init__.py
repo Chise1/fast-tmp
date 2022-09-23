@@ -14,7 +14,7 @@ from ..amis.buttons import Operation
 from ..amis.enums import ButtonLevelEnum
 from ..amis.forms import Form
 from ..amis.frame import Dialog, Drawer
-from .util import AbstractControl, SelectByApi, create_column
+from .util import AbstractControl, BaseAdminControl, SelectByApi, create_column
 
 logger = logging.getLogger(__file__)
 
@@ -57,12 +57,11 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
     # exclude: Tuple[Union[str, BaseModel], ...] = ()
     # update ,如果为空则取create_fields
     update_fields: Tuple[str, ...] = ()
-    fields: Dict[str, AbstractControl] = None  # 存储字段名:control
-    __list_display: Dict[str, AbstractControl] = {}
-    __list_display_with_pk: Dict[str, AbstractControl] = {}
+    fields: Dict[str, BaseAdminControl] = None  # 存储字段名:control
+    __list_display: Dict[str, BaseAdminControl] = {}
+    __list_display_with_pk: Dict[str, BaseAdminControl] = {}
     methods: Tuple[str, ...] = (
         "list",
-        "retrieve",
         "create",
         "put",
         "delete",
@@ -79,10 +78,10 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
             self.__name = self.model.__name__
         return self.__name
 
-    def get_create_fields(self) -> Dict[str, AbstractControl]:
+    def get_create_fields(self) -> Dict[str, BaseAdminControl]:
         return {i: self.fields[i] for i in self.create_fields}
 
-    def get_update_fields(self) -> Dict[str, AbstractControl]:
+    def get_update_fields(self) -> Dict[str, BaseAdminControl]:
         return {i: self.fields[i] for i in self.update_fields}
 
     async def get_create_dialogation_button(self, request: Request):
@@ -163,10 +162,10 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
         )
         return body
 
-    def get_list_distplay(self) -> Dict[str, AbstractControl]:
+    def get_list_distplay(self) -> Dict[str, BaseAdminControl]:
         return {i: self.fields[i] for i in self.list_display}
 
-    def get_list_display_with_pk(self) -> Dict[str, AbstractControl]:
+    def get_list_display_with_pk(self) -> Dict[str, BaseAdminControl]:
         ret = self.get_list_distplay()
         ret["pk"] = self.fields["pk"]
         return ret
@@ -208,7 +207,7 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
         return obj
 
     def prefetch(
-        self, request: Request, queryset: QuerySet, fields: Dict[str, AbstractControl]
+        self, request: Request, queryset: QuerySet, fields: Dict[str, BaseAdminControl]
     ) -> QuerySet:
         """
         判断是否需要额外预加载的数据
