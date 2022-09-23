@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Type, TypeVar
+from typing import Any, Dict, List, Optional, Tuple, Type
 
 from starlette.requests import Request
 from tortoise.models import Model
@@ -14,7 +14,6 @@ from ..amis.buttons import Operation
 from ..amis.enums import ButtonLevelEnum
 from ..amis.forms import Form
 from ..amis.frame import Dialog, Drawer
-from ..amis.response import AmisStructError
 from .util import AbstractControl, SelectByApi, create_column
 
 logger = logging.getLogger(__file__)
@@ -96,7 +95,7 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
                 body=Form(
                     name=f"新增{self.name()}",
                     title=f"新增{self.name()}",
-                    body=[(await i.get_control(request)) for i in controls.values()],
+                    body=[(i.get_control(request)) for i in controls.values()],
                     api=f"post:{self.name()}/create",
                 ),
             ),
@@ -106,9 +105,9 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
         res = []
         for field_name, col in self.get_list_distplay().items():
             if field_name in self.inline:
-                res.append(await col.get_column_inline(request))
+                res.append(col.get_column_inline(request))
             else:
-                res.append(await col.get_column(request))
+                res.append(col.get_column(request))
         return res
 
     def get_del_one_button(self):
@@ -122,14 +121,13 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
 
     # @classmethod
     async def get_update_one_button(self, request: Request):
-        body = [await i.get_control(request) for i in self.get_update_fields().values()]
+        body = [i.get_control(request) for i in self.get_update_fields().values()]
         return DrawerAction(
             label="修改",
             level=ButtonLevelEnum.link,
             drawer=Drawer(
                 title="修改",
                 body=Form(
-                    reload=self.name(),
                     title=f"修改{self.name()}",
                     name=f"修改{self.name()}",
                     body=body,

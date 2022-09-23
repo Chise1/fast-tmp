@@ -30,6 +30,7 @@ class ControlEnum(str, Enum):
     transfer = "transfer"
     checkboxes = "checkboxes"
     picker = "picker"
+    custom = "custom"
 
 
 class ItemModel(str, Enum):

@@ -20,83 +20,10 @@ from fast_tmp.amis.forms.widgets import (
 from fast_tmp.amis.response import AmisStructError
 from fast_tmp.responses import ListDataWithPage, TmpValueError
 
-
-class AbstractControl(object):
-    """
-    用户自定义的column组件
-    """
-
-    _prefix: Optional[str]  # 网段
-    _field_name: Optional[str]
-
-    def list_queryset(self, queryset: QuerySet) -> QuerySet:  # 列表
-        """
-        主要考虑是否需要预加载
-        """
-        return queryset
-
-    def search_queryset(self, queryset: QuerySet, request: Request, search: Any) -> QuerySet:  # 搜索
-        """
-        是否需要增加额外的查询条件
-        值可以近似
-        """
-        raise AmisStructError("未构建")
-
-    def filter_queryset(self, queryset: QuerySet, request: Request, filter: Any) -> QuerySet:  # 列表
-        """
-        过滤规则，用于页面查询和过滤用
-        要求值必须相等
-        """
-        raise AmisStructError("未构建")
-
-    def prefetch(self, request: Request, queryset: QuerySet) -> QuerySet:  # 列表
-        """
-        过滤规则，用于页面查询和过滤用
-        要求值必须相等
-        """
-        return queryset
-
-    async def get_value(self, request: Request, obj: Model) -> Any:
-        """
-        获取值
-        """
-        return getattr(obj, self._field_name)
-
-    async def set_value(self, request: Request, obj: Model, Any):
-        """
-        设置值
-        """
-        pass
-
-    def validate(self, value: Any) -> Any:
-        """
-        对数据进行校验
-        """
-        return value
-
-    async def get_column(self, request: Request) -> Column:
-        """
-        获取column模型
-        """
-
-    async def get_column_inline(self, request: Request) -> Column:
-        """
-        获取内联修改的column
-        """
-
-    async def get_control(self, request: Request) -> Control:
-        """
-        获取内联修改的column
-        """
-
-    def __init__(self, _field_name: str, _prefix: str, **kwargs):
-        self._prefix = _prefix
-        if not _field_name:
-            raise AmisStructError("field_name can not be none")
-        self._field_name = _field_name
+from .base import AbstractAmisAdminDB, AbstractControl, AmisOrm
 
 
-class BaseAdminControl(AbstractControl):
+class BaseAdminControl(AbstractAmisAdminDB, AbstractControl, AmisOrm):
     """
     默认的将model字段转control的类
     """
@@ -109,12 +36,12 @@ class BaseAdminControl(AbstractControl):
     _column_inline: ColumnInline = None
     _control_type: ControlEnum = ControlEnum.input_text
 
-    async def get_column(self, request: Request) -> Column:
+    def get_column(self, request: Request) -> Column:
         if not self._column:
             self._column = Column(type=ControlEnum.text, name=self.name, label=self.label)
         return self._column
 
-    async def get_control(self, request: Request) -> Control:
+    def get_control(self, request: Request) -> Control:
         if not self._control:
             self._control = Control(type=self._control_type, name=self.name, label=self.label)
             if not self._field.null:
@@ -126,9 +53,9 @@ class BaseAdminControl(AbstractControl):
     def options(self):
         return None
 
-    async def get_column_inline(self, request: Request) -> Column:
+    def get_column_inline(self, request: Request) -> Column:
         if not self._column_inline:
-            column = await self.get_column(request)
+            column = self.get_column(request)
             self._column_inline = ColumnInline(
                 type=column.type,
                 name=self.name,
@@ -167,15 +94,6 @@ class BaseAdminControl(AbstractControl):
     def validate(self, value: Any):
         self._field.validate(self.amis_2_orm(value))
 
-    def orm_2_amis(self, value: Any) -> Any:
-        """
-        orm的值转成amis需要的值
-        """
-        return value
-
-    def amis_2_orm(self, value: Any) -> Any:
-        return value
-
 
 class StrControl(BaseAdminControl):
     """
@@ -194,9 +112,9 @@ class IntControl(BaseAdminControl):
 class IntEnumControl(BaseAdminControl):
     _control_type = ControlEnum.select
 
-    async def get_control(self, request: Request) -> Control:
+    def get_control(self, request: Request) -> Control:
         if not self._control:
-            await super().get_control(request)
+            super().get_control(request)
             d = self._control.dict(exclude_none=True)
             d.pop("type")
             if self._field.null:
@@ -224,19 +142,8 @@ class IntEnumControl(BaseAdminControl):
         return res
 
 
-class BooleanControl(BaseAdminControl):
+class BooleanControl(IntEnumControl):
     _control_type = ControlEnum.select
-
-    async def get_control(self, request: Request) -> Control:
-        if not self._control:
-            await super().get_control(request)
-            d = self._control.dict(exclude_none=True)
-            d.pop("type")
-            if self._field.null:
-                d["clearable"] = True
-            self._control = SelectItem(**d)
-            self._control.options = self.options()
-        return self._control
 
     def options(self) -> List[str]:
         return ["True", "False"]
@@ -248,7 +155,7 @@ class BooleanControl(BaseAdminControl):
             return True
         elif value == "False":
             return False
-        raise TmpValueError()
+        raise TmpValueError(f"{self.label} 不能为 {value}")
 
     def orm_2_amis(self, value: Any) -> Any:
         if value is None:
@@ -265,15 +172,15 @@ class StrEnumControl(IntEnumControl):
 class DateTimeControl(BaseAdminControl):
     _control_type = ControlEnum.datetime
 
-    async def get_control(self, request: Request) -> Control:
+    def get_control(self, request: Request) -> Control:
         if not self._control:
-            await super().get_control(request)
+            super().get_control(request)
             self._control = DatetimeItem.from_orm(self._control)
         return self._control
 
-    async def get_column_inline(self, request: Request) -> Column:
+    def get_column_inline(self, request: Request) -> Column:
         if not self._column_inline:
-            await super().get_column_inline(request)
+            super().get_column_inline(request)
             self._column_inline.quickEdit.format = "YYYY-MM-DD HH:mm:ss"
         return self._column_inline
 
@@ -291,15 +198,15 @@ class DateTimeControl(BaseAdminControl):
 class DateControl(BaseAdminControl):
     _control_type = ControlEnum.date
 
-    async def get_control(self, request: Request) -> Control:
+    def get_control(self, request: Request) -> Control:
         if not self._control:
-            await super().get_control(request)
+            super().get_control(request)
             self._control = DateItem.from_orm(self._control)
         return self._control
 
-    async def get_column_inline(self, request: Request) -> Column:
+    def get_column_inline(self, request: Request) -> Column:
         if not self._column_inline:
-            await super().get_column_inline(request)
+            super().get_column_inline(request)
             self._column_inline.quickEdit.format = "YYYY-MM-DD"
         return self._column_inline
 
@@ -318,15 +225,15 @@ class DateControl(BaseAdminControl):
 class TimeControl(BaseAdminControl):
     _control_type = ControlEnum.time
 
-    async def get_control(self, request: Request) -> Control:
+    def get_control(self, request: Request) -> Control:
         if not self._control:
-            await super().get_control(request)
+            super().get_control(request)
             self._control = TimeItem.from_orm(self._control)
         return self._control
 
-    async def get_column_inline(self, request: Request) -> Column:
+    def get_column_inline(self, request: Request) -> Column:
         if not self._column_inline:
-            await super().get_column_inline(request)
+            super().get_column_inline(request)
             self._column_inline.quickEdit.format = "HH:mm:ss"
             self._column_inline.quickEdit.inputFormat = "HH:mm:ss"
             self._column_inline.quickEdit.timeFormat = "HH:mm:ss"
@@ -350,15 +257,15 @@ class JsonControl(TextControl):  # fixme 用代码编辑器重构？
     def orm_2_amis(self, value: Any) -> Any:
         return json.dumps(value)
 
-    async def get_control(self, request: Request) -> Control:
+    def get_control(self, request: Request) -> Control:
         if not self._control:
-            await super().get_control(request)
+            super().get_control(request)
             self._control.validations = "isJson"
         return self._control
 
-    async def get_column_inline(self, request: Request) -> Column:
+    def get_column_inline(self, request: Request) -> Column:
         if not self._column_inline:
-            await super().get_column_inline(request)
+            super().get_column_inline(request)
             self._column_inline.quickEdit.validations = "isJson"
         return self._column_inline
 
@@ -406,10 +313,10 @@ class ForeignKeyPickerControl(BaseAdminControl, SelectByApi):  # todo 支持搜�
     def prefetch(self, request: Request, queryset: QuerySet) -> QuerySet:
         return queryset.select_related(self._field_name)
 
-    async def get_column_inline(self, request: Request) -> Column:
+    def get_column_inline(self, request: Request) -> Column:
         raise AttributeError("foreignkey field can not be used in column inline.")
 
-    async def get_control(self, request: Request) -> Control:
+    def get_control(self, request: Request) -> Control:
         if not self._control:
             self._control = PickerItem(
                 name=self.name,
@@ -461,7 +368,7 @@ class ForeignKeyControl(BaseAdminControl, SelectByApi):
     def prefetch(self, request: Request, queryset: QuerySet) -> QuerySet:
         return queryset.select_related(self._field_name)
 
-    async def get_column(self, request: Request) -> Column:
+    def get_column(self, request: Request) -> Column:
         if not self._column:
             self._column = Custom(
                 label="作者",
@@ -471,12 +378,12 @@ class ForeignKeyControl(BaseAdminControl, SelectByApi):
             )
         return self._column
 
-    async def get_column_inline(
+    def get_column_inline(
         self, request: Request
     ) -> Column:  # fixme 需要特殊amis模块侧in鞥进行处理，以后学习一下前段看能不能自己写
         raise AttributeError("foreignkey field can not be used in column inline.")
 
-    async def get_control(self, request: Request) -> Control:
+    def get_control(self, request: Request) -> Control:
         if not self._control:
             self._control = SelectItem(
                 name=self.name,
