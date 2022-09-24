@@ -88,11 +88,27 @@ class AbstractControl(object):
 
 class ModelFilter:
     name = ""
+    type: Optional[str] = None
+    label: Optional[str]
+    clearable: Optional[bool]
+    placeholder: Optional[str]
     _field: fields.Field = None
 
     def queryset(self, request: Request, queryset: QuerySet, val: Any) -> QuerySet:
         return queryset
 
-    def __init__(self, name: str, field: fields.Field = None):
+    def __init__(
+        self,
+        name: str,
+        type: str = "input-text",
+        label: str = None,
+        clearable=None,
+        placeholder=None,
+        field: fields.Field = None,
+    ):
         self.name = name
         self._field = field
+        self.type = type
+        self.label = label or self.name
+        self.clearable = clearable
+        self.placeholder = placeholder

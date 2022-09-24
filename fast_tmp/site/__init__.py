@@ -12,8 +12,10 @@ from fast_tmp.responses import not_found_model
 from ..amis.actions import AjaxAction, DialogAction, DrawerAction
 from ..amis.buttons import Operation
 from ..amis.enums import ButtonLevelEnum
+from ..amis.filter import Filter, FilterModel
 from ..amis.forms import Form
 from ..amis.frame import Dialog, Drawer
+from .base import ModelFilter
 from .util import AbstractControl, BaseAdminControl, RelationSelectApi, create_column
 
 logger = logging.getLogger(__file__)
@@ -55,8 +57,8 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
     inline: Tuple[str, ...] = ()
     prefix: str
     # search list
-    search_fields: Tuple[str, ...] = ()
-    filter_fields: Tuple[str, ...] = ()
+    searchs: Tuple[str, ...] = ()
+    filters: Tuple[ModelFilter, ...] = ()
     # create
     create_fields: Tuple[str, ...] = ()
     # exclude: Tuple[Union[str, BaseModel], ...] = ()
@@ -77,11 +79,28 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
     list_per_page: int = 10  # 每页多少数据
     list_max_show_all: int = 200  # 最多每页多少数据
     selct_defs = None
+    _filters = None
 
     def name(self) -> str:
         if self.__name is None:
             self.__name = self.model.__name__
         return self.__name
+
+    def get_filters(self):
+        if not self._filters:
+            self._filters = {i.name: i for i in self.filters}
+        return self._filters
+
+    def queryset_filter(self, request: Request, queryset: QuerySet):
+        query = request.query_params
+        filter_fs = self.get_filters()
+        for k, v in query.items():
+            if k in ("pk", "page", "perPage"):
+                continue
+            func = filter_fs.get(k)
+            if func is not None:
+                queryset = func.queryset(request, queryset, v)
+        return queryset
 
     def get_create_fields(self) -> Dict[str, BaseAdminControl]:
         return {i: self.fields[i] for i in self.create_fields}
@@ -94,7 +113,7 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
         ret["pk"] = self.fields["pk"]
         return ret
 
-    async def get_create_dialogation_button(self, request: Request):
+    def get_create_dialogation_button(self, request: Request):
         controls = self.get_create_fields()
 
         return DialogAction(
@@ -110,7 +129,7 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
             ),
         )
 
-    async def get_list_page(self, request: Request):
+    def get_list_page(self, request: Request):
         res = []
         for field_name, col in self.get_list_distplay().items():
             if field_name in self.inline:
@@ -128,7 +147,7 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
             api="delete:" + self.name() + "/delete/$pk",
         )
 
-    async def get_update_one_button(self, request: Request):
+    def get_update_one_button(self, request: Request):
         body = [i.get_control(request) for i in self.get_update_fields().values()]
         return DialogAction(
             label="修改",
@@ -145,30 +164,48 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
             ),
         )
 
-    async def get_operation(self, request: Request):
+    def get_operation(self, request: Request):
         buttons = []
         if "put" in self.methods and self.update_fields:
-            buttons.append(await self.get_update_one_button(request))
+            buttons.append(self.get_update_one_button(request))
         if "delete" in self.methods:
             buttons.append(self.get_del_one_button())
         return Operation(buttons=buttons)
 
-    async def get_crud(self, request: Request):
+    def get_filter_page(self, request: Request):
+        """
+        页面上的过滤框
+        """
+        return FilterModel(
+            body=[
+                Filter(
+                    type=v.type,
+                    name=v.name,
+                    label=v.label,
+                    clearable=v.clearable,
+                    placeholder=v.placeholder,
+                )
+                for v in self.get_filters().values()
+            ]
+        )
+
+    def get_crud(self, request: Request):
         body = []
         columns = []
         if "create" in self.methods and self.create_fields:
-            body.append(await self.get_create_dialogation_button(request))
+            body.append(self.get_create_dialogation_button(request))
         if "list" in self.methods and self.list_display:
-            columns.extend(await self.get_list_page(request))
-        columns.append(await self.get_operation(request))
-        body.append(
-            CRUD(
-                api=self.prefix + "/list",
-                columns=columns,
-                quickSaveItemApi=self.prefix + "/patch/" + "$pk",
-                syncLocation=False,
-            )
+            columns.extend(self.get_list_page(request))
+        columns.append(self.get_operation(request))
+        crud = CRUD(
+            api=self.prefix + "/list",
+            columns=columns,
+            quickSaveItemApi=self.prefix + "/patch/" + "$pk",
+            syncLocation=False,
         )
+        if len(self.get_filters()) > 0:
+            crud.filter = self.get_filter_page(request)
+        body.append(crud)
         return body
 
     def get_list_distplay(self) -> Dict[str, BaseAdminControl]:
@@ -182,8 +219,8 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
         ret["pk"] = self.fields["pk"]
         return ret
 
-    async def get_app_page(self, request: Request):
-        return Page(title=self.name(), body=await self.get_crud(request)).dict(exclude_none=True)
+    def get_app_page(self, request: Request):
+        return Page(title=self.name(), body=self.get_crud(request)).dict(exclude_none=True)
 
     async def put(self, request: Request, pk: str, data: Dict[str, Any]) -> Model:
         obj = await self.get_instance(request, pk)
@@ -228,87 +265,6 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
             queryset = field.prefetch(request, queryset)
         return queryset
 
-    # @classmethod
-    # def create_model(cls, data: dict, session: Session):
-    #     """
-    #     写入数据库之前调用
-    #     """
-    #     instance = cls.model()
-    #     for k, v in data.items():
-    #         field = getattr(cls.model, k)
-    #         if isinstance(field.property, RelationshipProperty):
-    #             if field.property.direction == MANYTOMANY:
-    #                 model = field.mapper.class_
-    #                 pk = list(get_pk(model).values())[0]
-    #                 childs = session.execute(select(model).where(pk.in_(v))).scalars().fetchall()
-    #                 setattr(instance, k, childs)
-    #                 # getattr(instance, k).append(*childs)
-    #             elif field.property.direction == MANYTOONE:
-    #                 field = get_real_column_field(field)
-    #                 setattr(instance, field.key, v)
-    #             elif field.property.direction == ONETOMANY:  # todo 暂时不考虑支持
-    #                 # onetoone
-    #                 if not getattr(field.property, "uselist"):
-    #                     pass
-    #                 else:
-    #                     pass
-    #             else:
-    #                 raise AttributeError(
-    #                     f"error relationshipfield: {cls.model}'s {field} relationship is not true."
-    #                 )
-    #         else:
-    #             setattr(instance, k, v)
-    #     return instance
-    #
-    # @classmethod
-    # def update_model(cls, instance: Any, data: dict, session: Session) -> Any:
-    #     """
-    #     更新数据之前调用
-    #     """
-    #     for k, v in data.items():
-    #         field = getattr(cls.model, k)
-    #         if isinstance(field.property, RelationshipProperty):
-    #             if field.property.direction == MANYTOMANY:
-    #                 model = field.mapper.class_
-    #                 pk = list(get_pk(model).values())[0]
-    #                 childs = session.execute(select(model).where(pk.in_(v))).scalars().fetchall()
-    #                 setattr(instance, k, childs)
-    #             elif field.property.direction == MANYTOONE:
-    #                 field = get_real_column_field(field)
-    #                 setattr(instance, field.key, v)
-    #             elif field.property.direction == ONETOMANY:  # todo 暂时不考虑支持
-    #                 # onetoone
-    #                 if not getattr(field.property, "uselist"):
-    #                     pass
-    #                 else:
-    #                     pass
-    #             else:
-    #                 raise AttributeError(
-    #                     f"error relationshipfield: {cls.model}'s {field} relationship is not true."
-    #                 )
-    #         else:
-    #             setattr(instance, k, v)
-    #     return instance
-
-    # @classmethod
-    # def get_clean_fields(cls, fields, need_many: bool = False):
-    #     """
-    #     获取对外键进行处理过的列表,该方法主要用于数据处理
-    #     """
-    #     res = []
-    #     for i in fields:
-    #         if hasattr(i.property, "direction"):
-    #             if i.property.direction in (MANYTOMANY, ONETOMANY):
-    #                 if need_many:
-    #                     res.append(i)
-    #                 else:
-    #                     continue
-    #             if i.property.direction == MANYTOONE:
-    #                 res.append(get_real_column_field(i))
-    #         else:
-    #             res.append(i)
-    #     return res
-
     __list_sql = None
 
     def queryset(self, request: Request):
@@ -322,6 +278,7 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
         page: int = 1,
     ):
         base_queryset = self.queryset(request)
+        base_queryset = self.queryset_filter(request, base_queryset)
         queryset = self.prefetch(request, base_queryset, self.get_list_distplay())
         datas = await queryset.limit(perPage).offset((page - 1) * perPage)
         res = []
@@ -340,13 +297,6 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
         queryset = self.prefetch(request, queryset, self.get_update_fields())
         return await queryset.first()
 
-    # @classmethod
-    # def get_one_sql(cls, pks: list, need_many: bool = False):
-    #     if cls.__one_sql is None:
-    #         __list_display = cls.get_clean_fields(cls.update_fields, need_many)
-    #         cls.__one_sql = select(__list_display)
-    #     return cls.__one_sql.where(*pks)
-    #
     def make_fields(self):
         if not self.fields.get("pk"):
             self.fields["pk"] = create_column("pk", self.model._meta.pk, self.prefix)
@@ -389,6 +339,9 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
         perPage: Optional[int],
         page: Optional[int],
     ):
+        """
+        外键的枚举获取值以及多对多获取对象列表
+        """
         return await self.selct_defs[name](request, pk, perPage, page)
 
 

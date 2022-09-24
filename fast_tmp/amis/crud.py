@@ -3,6 +3,7 @@ from typing import List, Optional, Union
 from fast_tmp.amis.abstract_schema import BaseAmisModel, _Action
 from fast_tmp.amis.buttons import Operation
 from fast_tmp.amis.enums import TypeEnum
+from fast_tmp.amis.filter import FilterModel
 from fast_tmp.amis.forms import Column
 
 
@@ -15,6 +16,7 @@ class CRUD(BaseAmisModel):
     affixHeader: bool = False
     quickSaveItemApi: Optional[str]  # 快速保存
     syncLocation: Optional[bool]
+    filter: Optional[FilterModel]
 
     class Config:
         arbitrary_types_allowed = True

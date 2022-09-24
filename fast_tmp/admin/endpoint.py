@@ -187,4 +187,4 @@ async def get_schema(
     page: ModelAdmin = Depends(get_model_site),
     user: Optional[User] = Depends(__get_user),
 ):
-    return BaseRes(data=await page.get_app_page(request))
+    return BaseRes(data=page.get_app_page(request))
