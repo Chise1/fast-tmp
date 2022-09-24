@@ -5,7 +5,7 @@ from typing import Optional
 from fastapi import Depends, FastAPI, Form, Request
 from fastapi.templating import Jinja2Templates
 from starlette import status
-from starlette.responses import JSONResponse, RedirectResponse
+from starlette.responses import RedirectResponse
 from tortoise.exceptions import BaseORMException
 
 from fast_tmp.admin.site import GroupAdmin, UserAdmin
@@ -36,11 +36,9 @@ admin.exception_handler(FastTmpError)(fasttmp_exception_handler)
 admin.exception_handler(BaseORMException)(tortoise_exception_handler)
 
 
-@admin.post("/", name="index")
-@admin.get("/", name="index")
-async def index(request: Request, user: Optional[User] = Depends(__get_user_or_none)):
-    if not user:
-        return RedirectResponse(request.url_for("admin:login"))
+@admin.post("/", name="index", dependencies=[Depends(__get_user_or_none)])
+@admin.get("/", name="index", dependencies=[Depends(__get_user_or_none)])
+async def index(request: Request):
     return templates.TemplateResponse(
         "index.html",
         {"request": request, "title": admin.title},

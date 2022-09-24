@@ -1,12 +1,8 @@
 from fastapi import FastAPI
-
-# from starlette.middleware.sessions import SessionMiddleware
 from starlette.middleware.cors import CORSMiddleware
 
-from fast_tmp.conf import settings  # 放第一个不要变
-
-settings._init_model()
 from fast_tmp.admin.server import admin
+from fast_tmp.conf import settings
 from fast_tmp.depends.auth import register_app
 
 

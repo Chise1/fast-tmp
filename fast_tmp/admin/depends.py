@@ -54,6 +54,7 @@ async def __get_user_or_none(access_token: Optional[str] = Cookie(None)) -> Opti
     return None
 
 
-async def __get_user(request: Request, user: Optional[User] = Depends(__get_user_or_none)):
-    if not user:
+async def get_user(request: Request, user: Optional[User] = Depends(__get_user_or_none)):
+    if not user or not user.is_active:
         raise NoAuthError
+    request.scope["user"] = user

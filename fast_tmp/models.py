@@ -1,4 +1,4 @@
-from typing import Sequence, Set, Tuple, Type, Union
+from typing import Set, Type
 
 from pydantic import BaseModel
 from tortoise import Model, fields

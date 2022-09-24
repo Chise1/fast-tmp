@@ -2,7 +2,6 @@ from typing import Any, List
 
 from fastapi import HTTPException
 from pydantic import BaseModel
-from starlette import status
 
 
 class ListDataWithPage(BaseModel):  # 带分页的数据

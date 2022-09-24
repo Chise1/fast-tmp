@@ -82,3 +82,4 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+settings._init_model()
