@@ -3,7 +3,7 @@ import json
 from typing import Any, List, Optional
 
 from starlette.requests import Request
-from tortoise import ForeignKeyFieldInstance, Model, fields
+from tortoise import ForeignKeyFieldInstance, ManyToManyFieldInstance, Model, fields
 from tortoise.fields.data import CharEnumFieldInstance, IntEnumFieldInstance
 from tortoise.queryset import QuerySet
 
@@ -16,10 +16,15 @@ from fast_tmp.amis.forms.widgets import (
     PickerSchema,
     SelectItem,
     TimeItem,
+    TransferItem,
 )
 from fast_tmp.amis.response import AmisStructError
 from fast_tmp.responses import ListDataWithPage, TmpValueError
 
+from ..amis.actions import DialogAction
+from ..amis.buttons import Operation
+from ..amis.crud import CRUD
+from ..amis.frame import Dialog
 from .base import AbstractAmisAdminDB, AbstractControl, AmisOrm
 
 
@@ -28,17 +33,17 @@ class BaseAdminControl(AbstractAmisAdminDB, AbstractControl, AmisOrm):
     默认的将model字段转control的类
     """
 
-    name: str
     label: str
     _field: fields.Field
     _control: Control = None
     _column: Column = None
     _column_inline: ColumnInline = None
-    _control_type: ControlEnum = ControlEnum.input_text
+    _control_type: Optional[ControlEnum] = ControlEnum.input_text
+    _many = False  # 多对多字段标记，查询的时候默认跳过
 
     def get_column(self, request: Request) -> Column:
         if not self._column:
-            self._column = Column(type=ControlEnum.text, name=self.name, label=self.label)
+            self._column = Column(name=self.name, label=self.label)
         return self._column
 
     def get_control(self, request: Request) -> Control:
@@ -70,29 +75,22 @@ class BaseAdminControl(AbstractAmisAdminDB, AbstractControl, AmisOrm):
         return self._column_inline
 
     async def set_value(self, request: Request, obj: Model, value: Any):
-        setattr(obj, self._field_name, self.amis_2_orm(value))
+        value = await self.validate(value)
+        setattr(obj, self.name, value)
 
     async def get_value(self, request: Request, obj: Model) -> Any:
-        return self.orm_2_amis(getattr(obj, self._field_name))
+        return self.orm_2_amis(getattr(obj, self.name))
 
-    def filter_queryset(self, queryset: QuerySet, request: Request, filter: str) -> QuerySet:  # 列表
-        return queryset.filter(**{self._field_name: filter})
-
-    def search_queryset(self, queryset: QuerySet, request: Request, search: Any) -> QuerySet:  # 搜索
-        """
-        是否需要增加额外的查询条件
-        值可以近似
-        """
-        return queryset.filter(**{self._field_name + "__contains": filter})
-
-    def __init__(self, _field_name: str, _field: fields.Field, _prefix: str, **kwargs):
-        super().__init__(_field_name, _prefix, **kwargs)
+    def __init__(self, name: str, _field: fields.Field, _prefix: str, **kwargs):
+        super().__init__(name, _prefix, **kwargs)
         self._field = _field
-        self.name = kwargs.get("name") or _field_name
+        self.name = name
         self.label = kwargs.get("label") or self.name
 
-    def validate(self, value: Any):
-        self._field.validate(self.amis_2_orm(value))
+    async def validate(self, value: Any) -> Any:
+        value = self.amis_2_orm(value)
+        self._field.validate(value)
+        return value
 
 
 class StrControl(BaseAdminControl):
@@ -147,6 +145,9 @@ class BooleanControl(IntEnumControl):
 
     def options(self) -> List[str]:
         return ["True", "False"]
+
+    async def validate(self, value: Any) -> Any:
+        return self.amis_2_orm(value)
 
     def amis_2_orm(self, value: Any) -> Any:
         if (value == "None" or not value) and self._field.null:
@@ -270,21 +271,22 @@ class JsonControl(TextControl):  # fixme 用代码编辑器重构？
         return self._column_inline
 
 
-class SelectByApi:
+class RelationSelectApi:
     """
-    增加一个查询返回数据的接口
+    增加一个查询foreign外键所有字段的接口
     """
 
     async def get_selects(
         self,
         request: Request,
+        pk: Optional[str],
         perPage: Optional[int],
         page: Optional[int],
     ) -> List[dict]:
         pass
 
 
-class ForeignKeyPickerControl(BaseAdminControl, SelectByApi):  # todo 支持搜索功能
+class ForeignKeyPickerControl(BaseAdminControl, RelationSelectApi):  # todo 支持搜索功能
     """
     当外键太多的时候可以使用这个来进行查看，这样可以更容易选择数据
     """
@@ -294,24 +296,25 @@ class ForeignKeyPickerControl(BaseAdminControl, SelectByApi):  # todo 支持搜�
     async def get_selects(
         self,
         request: Request,
+        pk: Optional[str],
         perPage: Optional[int],
         page: Optional[int],
     ):
         field_model_all = self._field.related_model.all()
         if perPage is not None and page is not None:
-            field_model = field_model_all.limit(perPage).offset(page - 1)
+            field_model = field_model_all.limit(perPage).offset((page - 1) * perPage)
             count = await field_model_all.count()
             data = await field_model
             return ListDataWithPage(
                 total=count,
-                items=[{"pk": i.pk, "name": str(i)} for i in data],
+                items=[{"value": i.pk, "label": str(i)} for i in data],
             )
         else:
             data = await field_model_all
-            return {"options": [{"pk": i.pk, "name": str(i)} for i in data]}
+            return {"options": [{"value": i.pk, "label": str(i)} for i in data]}
 
     def prefetch(self, request: Request, queryset: QuerySet) -> QuerySet:
-        return queryset.select_related(self._field_name)
+        return queryset.select_related(self.name)
 
     def get_column_inline(self, request: Request) -> Column:
         raise AttributeError("foreignkey field can not be used in column inline.")
@@ -324,10 +327,13 @@ class ForeignKeyPickerControl(BaseAdminControl, SelectByApi):  # todo 支持搜�
                 source=f"get:{self._prefix}/select/{self.name}",
                 pickerSchema=PickerSchema(
                     name=self.name,
-                    columns=[Column(label="pk", name="pk"), Column(label="name", name="name")],
+                    columns=[
+                        Column(label="label", name="label"),
+                        Column(label="value", name="value"),
+                    ],
                 ),
-                labelField="name",
-                valueField="pk",
+                labelField="label",
+                valueField="value",
             )
 
             if self._field.null:
@@ -337,44 +343,48 @@ class ForeignKeyPickerControl(BaseAdminControl, SelectByApi):  # todo 支持搜�
     def orm_2_amis(self, value: Any) -> Any:
         return str(value)
 
-    async def set_value(self, request: Request, obj: Model, value: Any):
+    async def validate(self, value: Any) -> Any:
         if value is not None:
-            value = await self._field.related_model.filter(pk=value).first()
-        setattr(obj, self._field_name, value)
+            return await self._field.related_model.filter(pk=value).first()
+
+    async def set_value(self, request: Request, obj: Model, value: Any):
+        value = await self.validate(value)
+        setattr(obj, self.name, value)
 
 
-class ForeignKeyControl(BaseAdminControl, SelectByApi):
+class ForeignKeyControl(BaseAdminControl, RelationSelectApi):
     _control_type = ControlEnum.select
 
     async def get_selects(
         self,
         request: Request,
+        pk: Optional[str],
         perPage: Optional[int],
         page: Optional[int],
     ):
         field_model_all = self._field.related_model.all()
         if perPage is not None and page is not None:
-            field_model = field_model_all.limit(perPage).offset(page - 1)
+            field_model = field_model_all.limit(perPage).offset((page - 1) * perPage)
             count = await field_model_all.count()
             data = await field_model
             return ListDataWithPage(
                 total=count,
-                items=[{"pk": i.pk, "name": str(i)} for i in data],
+                items=[{"value": i.pk, "label": str(i)} for i in data],
             )
         else:
             data = await field_model_all
-            return {"options": [{"pk": i.pk, "name": str(i)} for i in data]}
+            return {"options": [{"value": i.pk, "label": str(i)} for i in data]}
 
     def prefetch(self, request: Request, queryset: QuerySet) -> QuerySet:
-        return queryset.select_related(self._field_name)
+        return queryset.select_related(self.name)
 
     def get_column(self, request: Request) -> Column:
         if not self._column:
             self._column = Custom(
                 label="作者",
                 name=self.name,
-                onMount=f"const text = document.createTextNode(value.label);dom.appendChild(text);${self.name}=value.pk;",
-                onUpdate=f"const value=data.{self.name};dom.current.firstChild.textContent=value.label;${self.name}=value.pk;",
+                onMount=f"const text = document.createTextNode(value.label);dom.appendChild(text);${self.name}=value.value;",
+                onUpdate=f"const value=data.{self.name};dom.current.firstChild.textContent=value.label;${self.name}=value.value;",
             )
         return self._column
 
@@ -389,22 +399,128 @@ class ForeignKeyControl(BaseAdminControl, SelectByApi):
                 name=self.name,
                 label=self.label,
                 source=f"get:{self._prefix}/select/{self.name}",
-                labelField="name",
-                valueField="pk",
+                labelField="label",
+                valueField="value",
             )
             if self._field.null:
                 self._control.clearable = True
         return self._control
 
     def orm_2_amis(self, value: Any) -> Any:
-        return {"label": str(value), "pk": value.pk}
+        return {"label": str(value), "value": value.pk}
 
     async def set_value(self, request: Request, obj: Model, value: Any):
         if value is not None:
             if isinstance(value, dict):
-                value = value.get("pk")
+                value = value.get("value")
             value = await self._field.related_model.filter(pk=value).first()
-        setattr(obj, self._field_name, value)
+        setattr(obj, self.name, value)
+
+
+class ManyToManyControl(BaseAdminControl, RelationSelectApi):
+    _many = True
+    _control_type = ControlEnum.select
+
+    def prefetch(self, request: Request, queryset: QuerySet) -> QuerySet:
+        return queryset.prefetch_related(self.name)
+
+    def get_column(self, request: Request) -> Column:
+        if not self._column:
+            self._column = Operation(
+                label=self.name,
+                buttons=[
+                    DialogAction(
+                        label="查看",
+                        dialog=Dialog(
+                            title=self.label,
+                            body=CRUD(
+                                api="get:"
+                                + self._field.model.__name__
+                                + f"/select/{self.name}?pk=$pk",
+                                columns=[
+                                    Column(label="pk", name="pk"),
+                                    Column(label="label", name="label"),
+                                ],
+                            ),
+                        ),
+                    )
+                ],
+            )
+        return self._column
+
+    async def get_selects(
+        self,
+        request: Request,
+        pk: Optional[str],
+        perPage: Optional[int],
+        page: Optional[int],
+    ):
+        related_model = self._field.related_model
+        if pk is not None:
+            queryset = related_model.filter(**{self._field.related_name: pk})
+        else:
+            queryset = related_model.all()
+        if pk is not None:
+            count = await queryset.count()
+            data = await queryset
+            return ListDataWithPage(
+                total=count,
+                items=[{"value": i.pk, "label": str(i)} for i in data],
+            )
+        else:
+            data = await queryset
+            return {"options": [{"value": i.pk, "label": str(i)} for i in data]}
+
+    def get_control(self, request: Request) -> Control:
+        if not self._control:
+            self._control = TransferItem(
+                name=self.name,
+                label=self.label,
+                source=f"get:{self._prefix}/select/{self.name}",
+            )
+            if self._field.null:
+                self._control.clearable = True
+        return self._control
+
+    def amis_2_orm(self, value: Any) -> Any:
+        return value.split(",")
+
+    async def validate(self, value: Any) -> Any:
+        if value is not None:
+            pks = self.amis_2_orm(value)
+            if len(pks) > 0:
+                value = await self._field.related_model.filter(pk__in=pks)
+        return value
+
+    async def set_value(self, request: Request, obj: Model, value: Any):
+        value = await self.validate(value)
+        field: ManyToManyFieldInstance = getattr(obj, self.name)
+        add = set()
+        remove = set()
+        for i in field:
+            for j in value:
+                if j.pk == i.pk:
+                    break
+            else:
+                remove.add(i)
+        for j in value:
+            for i in field:
+                if j.pk == i.pk:
+                    break
+            else:
+                add.add(j)
+        if len(remove) > 0:
+            await field.remove(*remove)
+        if len(add) > 0:
+            await field.add(*add)
+
+    def get_column_inline(
+        self, request: Request
+    ) -> Column:  # fixme 需要特殊amis模块侧in鞥进行处理，以后学习一下前段看能不能自己写
+        raise AttributeError("manytomany field can not be used in column inline.")
+
+    def orm_2_amis(self, value: Any) -> Any:
+        return [{"label": str(i), "value": i.pk} for i in value]
 
 
 def create_column(
@@ -436,5 +552,7 @@ def create_column(
         return TimeControl(field_name, field_type, prefix)
     elif isinstance(field_type, ForeignKeyFieldInstance):
         return ForeignKeyControl(field_name, field_type, prefix)
+    elif isinstance(field_type, ManyToManyFieldInstance):
+        return ManyToManyControl(field_name, field_type, prefix)
     else:
         raise AmisStructError("create_column error:", type(field_type))

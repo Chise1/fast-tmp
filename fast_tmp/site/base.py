@@ -1,9 +1,7 @@
-import datetime
-import json
 from typing import Any, Optional
 
 from starlette.requests import Request
-from tortoise import Model
+from tortoise import Model, fields
 from tortoise.queryset import QuerySet
 
 from fast_tmp.amis.forms import Column, Control
@@ -16,27 +14,13 @@ class AbstractAmisAdminDB:
     """
 
     _prefix: Optional[str]  # 网段
-    _field_name: Optional[str]
+    name: Optional[str]
 
     def list_queryset(self, queryset: QuerySet) -> QuerySet:  # 列表
         """
         主要考虑是否需要预加载
         """
         return queryset
-
-    def search_queryset(self, queryset: QuerySet, request: Request, search: Any) -> QuerySet:  # 搜索
-        """
-        是否需要增加额外的查询条件
-        值可以近似
-        """
-        raise AmisStructError("未构建")
-
-    def filter_queryset(self, queryset: QuerySet, request: Request, filter: Any) -> QuerySet:  # 列表
-        """
-        过滤规则，用于页面查询和过滤用
-        要求值必须相等
-        """
-        raise AmisStructError("未构建")
 
     def prefetch(self, request: Request, queryset: QuerySet) -> QuerySet:  # 列表
         """
@@ -49,9 +33,9 @@ class AbstractAmisAdminDB:
         """
         获取值
         """
-        return getattr(obj, self._field_name)
+        return getattr(obj, self.name)
 
-    async def set_value(self, request: Request, obj: Model, Any):
+    async def set_value(self, request: Request, obj: Model, value: Any):
         """
         设置值
         """
@@ -67,7 +51,7 @@ class AbstractAmisAdminDB:
         self._prefix = _prefix
         if not _field_name:
             raise AmisStructError("field_name can not be none")
-        self._field_name = _field_name
+        self.name = _field_name
 
 
 class AmisOrm:
@@ -100,3 +84,15 @@ class AbstractControl(object):
         """
         获取内联修改的column
         """
+
+
+class ModelFilter:
+    name = ""
+    _field: fields.Field = None
+
+    def queryset(self, request: Request, queryset: QuerySet, val: Any) -> QuerySet:
+        return queryset
+
+    def __init__(self, name: str, field: fields.Field = None):
+        self.name = name
+        self._field = field

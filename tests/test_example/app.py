@@ -12,6 +12,14 @@ register_model_site({"fieldtesting": [FieldTestingModel(), BookModel(), AuthorMo
 app = create_app()
 app.title = "test_example"
 
+# @app.get("/perms")
+# async def get_perms(codename: str, user: Optional[User] = Depends(__get_user),
+#                     ):
+#     """
+#     测试权限
+#     """
+
+
 register_tortoise(app, config=settings.TORTOISE_ORM, generate_schemas=True)
 if settings.DEBUG:
     from starlette.staticfiles import StaticFiles

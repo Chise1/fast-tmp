@@ -18,7 +18,7 @@ class Column(BaseModel):
     用于列表等的显示
     """
 
-    type: Optional[ControlEnum]  # 把这个和schema获取的参数进行融合，保证schema获取的值可以使用
+    type: Optional[str]  # 把这个和schema获取的参数进行融合，保证schema获取的值可以使用
     name: str  # type: ignore
     label: str
 

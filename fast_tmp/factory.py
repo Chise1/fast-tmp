@@ -3,11 +3,11 @@ from fastapi import FastAPI
 # from starlette.middleware.sessions import SessionMiddleware
 from starlette.middleware.cors import CORSMiddleware
 
-from fast_tmp.admin.server import admin
 from fast_tmp.conf import settings  # 放第一个不要变
-from fast_tmp.depends.auth import register_app
 
 settings._init_model()
+from fast_tmp.admin.server import admin
+from fast_tmp.depends.auth import register_app
 
 
 def create_app() -> FastAPI:
@@ -30,4 +30,5 @@ def create_app() -> FastAPI:
     # app.add_middleware(SessionMiddleware, secret_key=settings.CAS_SESSION_SECRET)
 
     app.mount("/admin", admin, name="admin")
+
     return app

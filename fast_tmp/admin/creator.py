@@ -89,7 +89,7 @@ class AbstractCRUD:
                         body=Form(
                             name=f"新增{model.__name__}",
                             title=f"新增{model.__name__}",
-                            controls=get_controls_from_model(
+                            body=get_controls_from_model(
                                 model, include=create_include, exclude=create_exclude
                             ),
                             primaryField=model._meta.pk_attr,

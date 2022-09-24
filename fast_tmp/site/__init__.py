@@ -14,14 +14,19 @@ from ..amis.buttons import Operation
 from ..amis.enums import ButtonLevelEnum
 from ..amis.forms import Form
 from ..amis.frame import Dialog, Drawer
-from .util import AbstractControl, BaseAdminControl, SelectByApi, create_column
+from .util import AbstractControl, BaseAdminControl, RelationSelectApi, create_column
 
 logger = logging.getLogger(__file__)
 
 
 # 操作数据库的方法
 class DbSession:
-    async def list(self, request: Request, limit: int = 10, offset: int = 0):
+    async def list(
+        self,
+        request: Request,
+        perPage: int = 10,
+        page: int = 1,
+    ):
         """
         获取列表
         """
@@ -84,6 +89,11 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
     def get_update_fields(self) -> Dict[str, BaseAdminControl]:
         return {i: self.fields[i] for i in self.update_fields}
 
+    def get_update_fields_with_pk(self) -> Dict[str, BaseAdminControl]:
+        ret = self.get_update_fields()
+        ret["pk"] = self.fields["pk"]
+        return ret
+
     async def get_create_dialogation_button(self, request: Request):
         controls = self.get_create_fields()
 
@@ -115,16 +125,15 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
             level=ButtonLevelEnum.link,
             className="text-danger",
             confirmText="确认要删除？",
-            api="delete:" + self.name() + "/delete?pk=$pk",
+            api="delete:" + self.name() + "/delete/$pk",
         )
 
-    # @classmethod
     async def get_update_one_button(self, request: Request):
         body = [i.get_control(request) for i in self.get_update_fields().values()]
-        return DrawerAction(
+        return DialogAction(
             label="修改",
             level=ButtonLevelEnum.link,
-            drawer=Drawer(
+            dialog=Dialog(
                 title="修改",
                 body=Form(
                     title=f"修改{self.name()}",
@@ -166,6 +175,9 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
         return {i: self.fields[i] for i in self.list_display}
 
     def get_list_display_with_pk(self) -> Dict[str, BaseAdminControl]:
+        """
+        去除多对多字段
+        """
         ret = self.get_list_distplay()
         ret["pk"] = self.fields["pk"]
         return ret
@@ -177,7 +189,6 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
         obj = await self.get_instance(request, pk)
         for field_name in self.update_fields:
             control = self.fields[field_name]
-            control.validate(data[field_name])
             await control.set_value(request, obj, data[field_name])
         await obj.save()
         return obj
@@ -185,7 +196,7 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
     async def put_get(self, request: Request, pk: str) -> Any:
         obj = await self.get_instance(request, pk)
         ret = {}
-        for field_name, field in self.get_list_display_with_pk().items():
+        for field_name, field in self.get_update_fields_with_pk().items():
             ret[field_name] = await field.get_value(request, obj)
         return ret
 
@@ -193,7 +204,6 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
         obj = await self.get_instance(request, pk)
         for field_name in self.inline:
             control = self.fields[field_name]
-            control.validate(data[field_name])
             await control.set_value(request, obj, data[field_name])
         await obj.save()
         return obj
@@ -201,10 +211,12 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
     async def create(self, request: Request, data: Dict[str, Any]) -> Model:
         obj = self.model()
         for field_name, field in self.get_create_fields().items():
-            field.validate(data.get(field_name))
-            await field.set_value(request, obj, data.get(field_name))
+            await field.set_value(request, obj, data[field_name])
         await obj.save()
         return obj
+
+    async def delete(self, request: Request, pk: str):
+        await self.model.filter(pk=pk).delete()
 
     def prefetch(
         self, request: Request, queryset: QuerySet, fields: Dict[str, BaseAdminControl]
@@ -303,14 +315,21 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
         ret = self.model.all()
         return ret
 
-    async def list(self, request: Request, limit: int = 10, offset: int = 0):
+    async def list(
+        self,
+        request: Request,
+        perPage: int = 10,
+        page: int = 1,
+    ):
         base_queryset = self.queryset(request)
         queryset = self.prefetch(request, base_queryset, self.get_list_distplay())
-        datas = await queryset.limit(limit).offset(offset)
+        datas = await queryset.limit(perPage).offset((page - 1) * perPage)
         res = []
         for i in datas:
             ret = {}
             for field_name, field in self.get_list_display_with_pk().items():
+                if field._many:
+                    continue
                 ret[field_name] = await field.get_value(request, i)
             res.append(ret)
         count = await base_queryset.count()
@@ -321,7 +340,6 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
         queryset = self.prefetch(request, queryset, self.get_update_fields())
         return await queryset.first()
 
-    #
     # @classmethod
     # def get_one_sql(cls, pks: list, need_many: bool = False):
     #     if cls.__one_sql is None:
@@ -342,6 +360,7 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
                 field_type = self.model._meta.fields_map.get(field)
                 if not field_type:
                     logger.error(f"can not found field {field} in {self.model.__name__}")
+                    continue
                 self.fields[field] = create_column(field, field_type, self.prefix)
 
     def __init__(self, prefix: str = None):
@@ -359,13 +378,18 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
         # 同步select或其他接口
         self.selct_defs = {}
         for field_name, field in self.fields.items():
-            if isinstance(field, SelectByApi):
+            if isinstance(field, RelationSelectApi):
                 self.selct_defs[field_name] = field.get_selects
 
     async def select_options(
-        self, name: str, request: Request, perPage: Optional[int], page: Optional[int]
+        self,
+        request: Request,
+        name: str,
+        pk: Optional[str],
+        perPage: Optional[int],
+        page: Optional[int],
     ):
-        return await self.selct_defs[name](request, perPage, page)
+        return await self.selct_defs[name](request, pk, perPage, page)
 
 
 # TModelAdmin=TypeVar("TModelAdmin",bound=ModelAdmin)

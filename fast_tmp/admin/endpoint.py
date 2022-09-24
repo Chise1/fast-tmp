@@ -1,11 +1,8 @@
-from datetime import datetime
 from typing import Any, List, Optional
 
 from fastapi import APIRouter, Depends
-from fastapi.params import Path
 from pydantic import BaseModel
 from starlette.requests import Request
-from starlette.responses import RedirectResponse
 
 from fast_tmp.depends.auth import get_current_active_user
 from fast_tmp.site import ModelAdmin, get_model_site
@@ -32,7 +29,7 @@ async def list_view(
     page: int = 1,
     user: Optional[User] = Depends(__get_user),
 ):
-    datas = await page_model.list(request, perPage, page - 1)
+    datas = await page_model.list(request, perPage, page)
     return BaseRes(
         data=ListDataWithPage(
             total=datas["total"],
@@ -41,16 +38,37 @@ async def list_view(
     )
 
 
-@router.get("/{resource}/select/{field_name}")
-async def list_view(
+@router.get("/{resource}/prefetch/{field_name}")
+async def prefetch_view(
     request: Request,
     field_name: str,
+    pk: Optional[str] = None,
     perPage: Optional[int] = None,
     page: Optional[int] = None,
     page_model: ModelAdmin = Depends(get_model_site),
     user: Optional[User] = Depends(__get_user),
 ):
-    datas = await page_model.select_options(field_name, request, perPage, page)
+    """
+    对多对多外键进行额外的加载
+    """
+    datas = await page_model.select_options(request, field_name, pk, perPage, page)
+    return BaseRes(data=datas)
+
+
+@router.get("/{resource}/select/{field_name}")
+async def select_view(
+    request: Request,
+    field_name: str,
+    pk: Optional[str] = None,
+    perPage: Optional[int] = None,
+    page: Optional[int] = None,
+    page_model: ModelAdmin = Depends(get_model_site),
+    user: Optional[User] = Depends(__get_user),
+):
+    """
+    枚举字段的额外加载，主要用于外键
+    """
+    datas = await page_model.select_options(request, field_name, pk, perPage, page)
     return BaseRes(data=datas)
 
 
@@ -61,6 +79,9 @@ async def patch_data(
     page_model: ModelAdmin = Depends(get_model_site),
     user: Optional[User] = Depends(__get_user),
 ):
+    """
+    内联模式快速修改需要的接口
+    """
     data = await request.json()
     await page_model.patch(request, pk, data)
     return BaseRes().dict()
@@ -100,24 +121,15 @@ async def create(
     return BaseRes(data=data)
 
 
-#
-#
-# @router.delete("/{resource}/delete")
-# def delete_one(
-#     request: Request,
-#     page_model: ModelAdmin = Depends(get_model_site),
-#     session: Session = Depends(get_db_session),
-#     user: Optional[User] = Depends(decode_access_token_from_data),
-# ):
-#     if not user:
-#         return RedirectResponse(request.url_for("admin:login"))
-#
-#     w = search_pk_list(page_model.model, request)
-#     if isinstance(w, BaseRes):
-#         return w
-#     session.execute(delete(page_model.model).where(*w))
-#     session.commit()
-#     return BaseRes()
+@router.delete("/{resource}/delete/{pk}")
+async def delete_func(
+    request: Request,
+    pk: str,
+    page_model: ModelAdmin = Depends(get_model_site),
+    user: Optional[User] = Depends(__get_user),
+):
+    await page_model.delete(request, pk)
+    return BaseRes()
 
 
 # def clean_param(field_type, param: str):
@@ -176,81 +188,3 @@ async def get_schema(
     user: Optional[User] = Depends(__get_user),
 ):
     return BaseRes(data=await page.get_app_page(request))
-
-
-# @router.get("/{resource}/selects/{field}")
-# def get_selects(
-#     request: Request,
-#     field: str = Path(...),  # type: ignore
-#     page_model: ModelAdmin = Depends(get_model_site),
-#     user: Optional[User] = Depends(decode_access_token_from_data),
-#     session: Session = Depends(get_db_session),
-#     perPage: int = 10,
-#     page: int = 1,
-# ):
-#     items = []
-#     total = 0
-#     for attr in page_model.mapper().attrs:
-#         if attr.key == field:
-#             relation_model = attr.entity.class_
-#             secondary = attr.secondary
-#             for col in secondary.foreign_key_constraints:
-#                 if col.referred_table in page_model.mapper().tables:
-#                     params = dict(request.query_params)
-#                     if len(params) > 1:
-#                         raise single_pk
-#                     col_name = col.column_keys[0]
-#                     for c in secondary.c:
-#                         if c.key == col_name:
-#                             clean_value = clean_param(c.type, list(params.values())[0])
-#                             sql = (
-#                                 select(*list(get_pk(relation_model).values()))
-#                                 .join(secondary)
-#                                 .where(c == clean_value)
-#                                 .limit(perPage)
-#                                 .offset((page - 1) * perPage)
-#                             )
-#                             datas = session.execute(sql)
-#                             total_f = session.execute(
-#                                 select(func.count())
-#                                 .select_from(relation_model)
-#                                 .join(secondary)
-#                                 .where(col == list(params.values())[0])
-#                             ).fetchone()
-#                             if total_f is not None:
-#                                 total = total_f[0]
-#                             for data in datas:
-#                                 items.append(dict(data))
-#     return BaseRes(data={"total": total, "rows": items})
-#
-#
-# @router.get("/{resource}/picks/{field}")
-# def get_picks(
-#     request: Request,
-#     field: str = Path(...),  # type: ignore
-#     page_model: ModelAdmin = Depends(get_model_site),
-#     user: Optional[User] = Depends(decode_access_token_from_data),
-#     session: Session = Depends(get_db_session),
-#     perPage: int = 10,
-#     page: int = 1,
-# ):
-#     """
-#     枚举选择
-#     """
-#     source_field = getattr(page_model.model, field)
-#     if isinstance(source_field.property, RelationshipProperty):
-#         relation_model = source_field.property.mapper.class_
-#
-#     else:
-#         relation_model = source_field.property.mapper.class_
-#     datas = session.execute(
-#         select(list(get_pk(relation_model).values())).limit(perPage).offset((page - 1) * perPage)
-#     )
-#     items = []
-#     for data in datas:
-#         items.append(dict(data))
-#     s = session.execute(select(func.count()).select_from(relation_model))
-#     total = 0
-#     for i in s:
-#         total = i[0]
-#     return BaseRes(data={"total": total, "rows": items})

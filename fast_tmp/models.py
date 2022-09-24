@@ -1,7 +1,8 @@
-from typing import Sequence, Tuple, Type, Union
+from typing import Sequence, Set, Tuple, Type, Union
 
 from pydantic import BaseModel
 from tortoise import Model, fields
+from tortoise.expressions import Q
 
 from fast_tmp.conf import settings
 
@@ -10,6 +11,7 @@ class Permission(Model):
     label = fields.CharField(max_length=128)
     codename = fields.CharField(max_length=128, unique=True)
     groups: fields.ManyToManyRelation["Group"]
+    users: fields.ManyToManyRelation[f"User"]
 
     @classmethod
     def make_permission(
@@ -67,6 +69,7 @@ class User(Model):
     is_active = fields.BooleanField(default=True)
     is_superuser = fields.BooleanField(default=False)
     groups: fields.ManyToManyRelation["Group"]
+    permissions = fields.ManyToManyField(f"fast_tmp.Permission", related_name="users")
 
     class Meta:
         abstract = settings.AUTH_USER_MODEL_NAME != "User"
@@ -87,40 +90,37 @@ class User(Model):
 
         return verify_password(raw_password, self.password)
 
-    @property
-    async def perms(self) -> Sequence[str]:
-        if not hasattr(self, "__perms"):
-            permission_instances = await Permission.filter(groups__users=self.pk)
-            self.__perms = [permission.codename for permission in permission_instances]
-        return self.__perms  # mypy:ignore
-
-    async def has_perm(self, perm: Union[Permission, str]) -> bool:
+    async def has_perm(self, codename: str) -> bool:
         """
         判定用户是否有权限
         """
         if self.is_superuser:
             return True
-        for permission_instance in await self.perms:
-            if permission_instance == perm:
-                return True
+        if (
+            await Permission.filter(Q(users__pk=self.pk) | Q(groups__users__pk=self.pk))
+            .filter(codename=codename)
+            .exists()
+        ):
+            return True
+        # if await Group.filter(users__pk=self.pk, permissions__codename=codename).exists():
+        #     return True
         return False
 
-    async def has_perms(self, perms: Tuple[Union[Permission, str], ...]) -> bool:
+    async def has_perms(self, codenames: Set[str]) -> bool:
         """
         根据permission的codename进行判定
         """
         if self.is_superuser:
             return True
-        for perm in perms:
-            for perm_instance_codename in await self.perms:
-                if perm == perm_instance_codename:
-                    continue
-            else:
-                return False
-        return True
-
-    async def get_perms(self):
-        return self.perms
+        perms = (
+            await Permission.filter(Q(users__pk=self.pk) | Q(groups__users__pk=self.pk))
+            .filter(codename__in=codenames)
+            .distinct()
+            .values("codename")
+        )
+        if codenames == perms:
+            return True
+        return False
 
     def __str__(self):
         return self.username
@@ -128,12 +128,8 @@ class User(Model):
 
 class Group(Model):
     name = fields.CharField(max_length=128, unique=True)
-    permissions = fields.ManyToManyField(
-        f"{settings.AUTH_APP_NAME}.Permission", related_name="groups"
-    )
-    users = fields.ManyToManyField(
-        f"{settings.AUTH_APP_NAME}.{settings.AUTH_USER_MODEL_NAME}", related_name="groups"
-    )
+    permissions = fields.ManyToManyField(f"fast_tmp.Permission", related_name="groups")
+    users = fields.ManyToManyField(f"fast_tmp.User", related_name="groups")
 
     def __str__(self):
         return self.name

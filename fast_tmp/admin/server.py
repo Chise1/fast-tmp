@@ -5,34 +5,35 @@ from typing import Optional
 from fastapi import Depends, FastAPI, Form, Request
 from fastapi.templating import Jinja2Templates
 from starlette import status
-from starlette.responses import RedirectResponse
+from starlette.responses import JSONResponse, RedirectResponse
+from tortoise.exceptions import BaseORMException
 
 from fast_tmp.admin.site import GroupAdmin, UserAdmin
 from fast_tmp.conf import settings
 from fast_tmp.models import User
-from fast_tmp.responses import BaseRes
+from fast_tmp.responses import BaseRes, FastTmpError
 from fast_tmp.site import model_list, register_model_site
 from fast_tmp.utils.token import create_access_token
 
 from ..jinja_extension.tags import register_tags
 from .depends import __get_user_or_none
 from .endpoint import router
-from .middware import check_error_middle, no_auth_middle
+from .exception_handlers import (
+    fasttmp_exception_handler,
+    no_auth_middle,
+    tortoise_exception_handler,
+)
 
 base_path = os.path.dirname(__file__)
 templates = Jinja2Templates(directory=base_path + "/templates")
 register_tags(templates)
 admin = FastAPI(title="fast-tmp")
-register_model_site(
-    {
-        "Auth": [
-            UserAdmin(),
-        ]
-    }
-)
+register_model_site({"Auth": [UserAdmin(), GroupAdmin()]})
 admin.include_router(router)
-# admin.middleware("http")(check_error_middle)
 admin.middleware("http")(no_auth_middle)
+
+admin.exception_handler(FastTmpError)(fasttmp_exception_handler)
+admin.exception_handler(BaseORMException)(tortoise_exception_handler)
 
 
 @admin.post("/", name="index")

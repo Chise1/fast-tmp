@@ -13,9 +13,11 @@ from pydantic import BaseModel
 
 from fast_tmp.amis.abstract_schema import _Action
 from fast_tmp.amis.enums import TypeEnum
+from fast_tmp.amis.forms import Column
 
 
-class Operation(BaseModel):
+class Operation(Column):
     type = TypeEnum.operation
     label = "操作"
     buttons: List[_Action] = []
+    name: str = ""
