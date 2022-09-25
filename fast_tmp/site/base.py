@@ -22,12 +22,12 @@ class AbstractAmisAdminDB:
         """
         return queryset
 
-    def prefetch(self, request: Request, queryset: QuerySet) -> QuerySet:  # 列表
+    def prefetch(self) -> Optional[str]:  # 列表
         """
         过滤规则，用于页面查询和过滤用
         要求值必须相等
         """
-        return queryset
+        return None
 
     async def get_value(self, request: Request, obj: Model) -> Any:
         """

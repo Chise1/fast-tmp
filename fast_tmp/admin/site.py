@@ -6,12 +6,8 @@ class UserAdmin(ModelAdmin):
     model = User
     list_display = ("id", "username", "is_active")
     inline = ("is_active",)
-    create_fields = (
-        "username",
-        "password",
-        "groups",
-    )
-    update_fields = ("groups",)
+    create_fields = ("username", "password", "groups", "permissions")
+    update_fields = ("groups", "permissions")
     # create_fields = (User.username, User.password)
     # update_fields = (User.password,)
 
@@ -30,7 +26,8 @@ class UserAdmin(ModelAdmin):
 
 class GroupAdmin(ModelAdmin):
     model = Group
-    list_display = ("id", "name", "users")
-    create_fields = ("name",)
+    list_display = ("id", "name", "users", "permissions")
+    create_fields = ("name", "permissions")
+    update_fields = ("name", "permissions")
     # create_fields = (Group.name, Group.users)
     # update_fields = (Group.name, Group.users)

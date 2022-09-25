@@ -96,13 +96,10 @@ class User(Model):
         if self.is_superuser:
             return True
         if (
-            await Permission.filter(Q(users__pk=self.pk) | Q(groups__users__pk=self.pk))
-            .filter(codename=codename)
-            .exists()
+            await Permission.filter(users__pk=self.pk).filter(codename=codename).exists()
+            or await Permission.filter(groups__users__pk=self.pk).filter(codename=codename).exists()
         ):
             return True
-        # if await Group.filter(users__pk=self.pk, permissions__codename=codename).exists():
-        #     return True
         return False
 
     async def has_perms(self, codenames: Tuple[str, ...]) -> bool:
@@ -111,15 +108,16 @@ class User(Model):
         """
         if self.is_superuser:
             return True
-        perms = (
-            await Permission.filter(Q(users__pk=self.pk) | Q(groups__users__pk=self.pk))
-            .filter(codename__in=codenames)
-            .distinct()
-            .values("codename")
-        )
-        if codenames == perms:
-            return True
-        return False
+        perms1 = await Permission.filter(users__pk=self.pk)
+        perms2 = await Permission.filter(groups__users__pk=self.pk)
+        s = set([i.codename for i in perms2])
+        for i in perms1:
+            s.add(i.codename)
+
+        for i in codenames:
+            if not i in s:
+                return False
+        return True
 
     def __str__(self):
         return self.username

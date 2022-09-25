@@ -81,10 +81,7 @@ def make_password(password, salt=None, hasher="default"):
 
 @functools.lru_cache(maxsize=None)
 def get_hashers():
-    hashers = []
-    hashers.append(PBKDF2PasswordHasher())
-    hashers.append(PBKDF2SHA1PasswordHasher)
-    hashers.append(MD5PasswordHasher)
+    hashers = [PBKDF2PasswordHasher(), PBKDF2SHA1PasswordHasher, MD5PasswordHasher]
     return hashers
 
 
@@ -476,10 +473,10 @@ class BCryptSHA256PasswordHasher(BasePasswordHasher):
     def safe_summary(self, encoded):
         decoded = self.decode(encoded)
         return {
-            ("algorithm"): decoded["algorithm"],
-            ("work factor"): decoded["work_factor"],
-            ("salt"): mask_hash(decoded["salt"]),
-            ("checksum"): mask_hash(decoded["checksum"]),
+            "algorithm": decoded["algorithm"],
+            "work factor": decoded["work_factor"],
+            "salt": mask_hash(decoded["salt"]),
+            "checksum": mask_hash(decoded["checksum"]),
         }
 
     def must_update(self, encoded):
@@ -569,12 +566,12 @@ class ScryptPasswordHasher(BasePasswordHasher):
     def safe_summary(self, encoded):
         decoded = self.decode(encoded)
         return {
-            ("algorithm"): decoded["algorithm"],
-            ("work factor"): decoded["work_factor"],
-            ("block size"): decoded["block_size"],
-            ("parallelism"): decoded["parallelism"],
-            ("salt"): mask_hash(decoded["salt"]),
-            ("hash"): mask_hash(decoded["hash"]),
+            "algorithm": decoded["algorithm"],
+            "work factor": decoded["work_factor"],
+            "block size": decoded["block_size"],
+            "parallelism": decoded["parallelism"],
+            "salt": mask_hash(decoded["salt"]),
+            "hash": mask_hash(decoded["hash"]),
         }
 
     def must_update(self, encoded):
@@ -620,9 +617,9 @@ class MD5PasswordHasher(BasePasswordHasher):
     def safe_summary(self, encoded):
         decoded = self.decode(encoded)
         return {
-            ("algorithm"): decoded["algorithm"],
-            ("salt"): mask_hash(decoded["salt"], show=2),
-            ("hash"): mask_hash(decoded["hash"]),
+            "algorithm": decoded["algorithm"],
+            "salt": mask_hash(decoded["salt"], show=2),
+            "hash": mask_hash(decoded["hash"]),
         }
 
     def must_update(self, encoded):

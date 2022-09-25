@@ -28,7 +28,31 @@ async def create_superuser(username: str, password: str):
     user = User(username=username, is_superuser=True)
     user.set_password(password)
     await user.save()
-    print(f"创建{username}成功")
+    sys.stdout.write(f"创建{username}成功")
+
+
+@async_to_sync
+async def make_permissions():
+    from tortoise import Tortoise
+    from fast_tmp.utils.model import get_all_models
+    from fast_tmp.models import Permission
+    await Tortoise.init(config=settings.TORTOISE_ORM)
+    all_model = get_all_models()
+    for model in all_model:
+        model_name=model.__name__.lower()
+        await Permission.get_or_create(codename=model_name + "_create", defaults={"label": f"{model_name}__创建"})
+        await Permission.get_or_create(codename=model_name + "_update", defaults={"label": f"{model_name}__更新"})
+        await Permission.get_or_create(codename=model_name + "_delete", defaults={"label": f"{model_name}__删除"})
+        await Permission.get_or_create(codename=model_name + "_list", defaults={"label": f"{model_name}__修改"})
+    sys.stdout.write("构建权限表完成")
+
+
+@app.command()
+def make_perm():
+    """
+    同步所有model的权限
+    """
+    make_permissions()
 
 
 @app.command()

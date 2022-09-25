@@ -55,7 +55,7 @@ async def authenticate_user(username: str, password: str) -> Optional[User]:
 
 async def authenticate_active_user(username: str, password: str) -> Optional[User]:
     """
-    验证密码
+    验证密码且用户为活跃用户
     """
     user = await get_user(username)
     if not user or not user.is_active or not user.check_password(password):
@@ -113,12 +113,15 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
 
 
 async def get_superuser(current_user: User = Depends(get_current_active_user)):
+    """
+    获取超级用户
+    """
     if not current_user.is_superuser:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
     return current_user
 
 
-def get_user_has_perms(perms: Optional[Tuple[str, ...]]):
+async def get_user_has_perms(perms: Optional[Tuple[str, ...]]):
     """
     判定用户是否具有相关权限
     """

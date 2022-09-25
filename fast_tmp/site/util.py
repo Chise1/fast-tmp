@@ -314,8 +314,8 @@ class ForeignKeyPickerControl(BaseAdminControl, RelationSelectApi):  # todo æ”¯æ
             data = await field_model_all
             return {"options": [{"value": i.pk, "label": str(i)} for i in data]}
 
-    def prefetch(self, request: Request, queryset: QuerySet) -> QuerySet:
-        return queryset.select_related(self.name)
+    def prefetch(self) -> Optional[str]:
+        return "select"
 
     def get_column_inline(self, request: Request) -> Column:
         raise AttributeError("foreignkey field can not be used in column inline.")
@@ -376,8 +376,8 @@ class ForeignKeyControl(BaseAdminControl, RelationSelectApi):
             data = await field_model_all
             return {"options": [{"value": i.pk, "label": str(i)} for i in data]}
 
-    def prefetch(self, request: Request, queryset: QuerySet) -> QuerySet:
-        return queryset.select_related(self.name)
+    def prefetch(self) -> Optional[str]:
+        return "select"
 
     def get_column(self, request: Request) -> Column:
         if not self._column:
@@ -422,8 +422,8 @@ class ManyToManyControl(BaseAdminControl, RelationSelectApi):
     _many = True
     _control_type = ControlEnum.select
 
-    def prefetch(self, request: Request, queryset: QuerySet) -> QuerySet:
-        return queryset.prefetch_related(self.name)
+    def prefetch(self) -> Optional[str]:
+        return "prefetch"
 
     def get_column(self, request: Request) -> Column:
         if not self._column:
@@ -483,8 +483,10 @@ class ManyToManyControl(BaseAdminControl, RelationSelectApi):
                 self._control.clearable = True
         return self._control
 
-    def amis_2_orm(self, value: Any) -> Any:
-        return value.split(",")
+    def amis_2_orm(self, value: List[dict]) -> Any:
+        if isinstance(value, str):
+            return value.split(",")
+        return [i["value"] for i in value]
 
     async def validate(self, value: Any) -> Any:
         if value is not None:
@@ -496,26 +498,26 @@ class ManyToManyControl(BaseAdminControl, RelationSelectApi):
     async def set_value(self, request: Request, obj: Model, value: Any):
         value = await self.validate(value)
         field: fields.ManyToManyRelation = getattr(obj, self.name)
-        if not field:
-            raise NotFoundError()
-        add = set()
-        remove = set()
+        # if not field:
+        #     raise NotFoundError()
+        add_field = []
+        remove_field = []
         for i in field:
             for j in value:
                 if j.pk == i.pk:
                     break
             else:
-                remove.add(i)
+                remove_field.append(i)
         for j in value:
             for i in field:
                 if j.pk == i.pk:
                     break
             else:
-                add.add(j)
-        if len(remove) > 0:
-            await field.remove(*remove)
-        if len(add) > 0:
-            await field.add(*add)
+                add_field.append(j)
+        if len(remove_field) > 0:
+            await field.remove(*remove_field)
+        if len(add_field) > 0:
+            await field.add(*add_field)
 
     def get_column_inline(
         self, request: Request

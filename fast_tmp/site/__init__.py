@@ -264,11 +264,19 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
         """
         判断是否需要额外预加载的数据
         """
+        select_list = []
+        prefeth_list = []
         for field_name, field in fields.items():
-            queryset = field.prefetch(request, queryset)
+            d = field.prefetch()
+            if d == "select":
+                select_list.append(field_name)
+            elif d == "prefetch":
+                prefeth_list.append(field_name)
+        if len(select_list) > 0:
+            queryset = queryset.select_related(*select_list)
+        elif len(prefeth_list) > 0:
+            queryset = queryset.prefetch_related(*prefeth_list)
         return queryset
-
-    __list_sql = None
 
     def queryset(self, request: Request):
         ret = self.model.all()
@@ -299,8 +307,9 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
         queryset = self.model.filter(pk=pk)
         queryset = self.prefetch(request, queryset, self.get_update_fields())
         instance = await queryset.first()
+
         if instance is None:
-            raise NotFoundError()
+            raise NotFoundError("can not found instance:" + str(pk))
         return instance
 
     def make_fields(self):
@@ -322,7 +331,7 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
     def get_control_field(self, name: str) -> BaseAdminControl:
         ret = self.fields.get(name)
         if ret is None:
-            raise NotFoundError()
+            raise NotFoundError("can not found field:" + name)
         return ret
 
     def __init__(self, prefix: str = None):
