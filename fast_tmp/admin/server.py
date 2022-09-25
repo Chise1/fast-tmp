@@ -59,7 +59,7 @@ async def login(
         context["password_err"] = True
         return templates.TemplateResponse("login.html", context)
     user = await User.filter(username=username).first()
-    if not user or not user.verify_password(password) or not user.is_active:
+    if not user or not user.check_password(password) or not user.is_active:
         context["errinfo"] = "username or password error!"
         return templates.TemplateResponse("login.html", context)
 

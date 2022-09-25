@@ -1,8 +1,8 @@
-import asyncio
 import importlib
 import os
 import typer
 import sys
+from asgiref.sync import async_to_sync
 
 app = typer.Typer()
 for path in sys.path:
@@ -17,13 +17,18 @@ except Exception as e:
     settings = None
 
 
+@async_to_sync
 async def create_superuser(username: str, password: str):
     from tortoise import Tortoise
     await Tortoise.init(config=settings.TORTOISE_ORM)
     from fast_tmp.models import User
+    if User.filter(username=username).exists():
+        print(f"{username} 已经存在了")
+        exit(1)
     user = User(username=username, is_superuser=True)
     user.set_password(password)
     await user.save()
+    print(f"创建{username}成功")
 
 
 @app.command()
@@ -31,19 +36,7 @@ def createsuperuser(username: str, password: str):
     """
     创建超级用户
     """
-
-    asyncio.run(create_superuser(username, password))
-    print(f"创建{username}成功")
-
-
-@app.command()
-def startapp():
-    """
-    创建app
-    """
-    basedir = os.path.abspath(os.path.dirname(__file__))
-    from cookiecutter.main import cookiecutter
-    cookiecutter(basedir + "/tpl/app/")
+    create_superuser(username, password)
 
 
 @app.command()

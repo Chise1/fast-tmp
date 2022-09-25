@@ -48,7 +48,7 @@ async def authenticate_user(username: str, password: str) -> Optional[User]:
     user = await get_user(username)
     if not user:
         return None
-    if not user.verify_password(password):
+    if not user.check_password(password):
         return None
     return user
 
@@ -58,7 +58,7 @@ async def authenticate_active_user(username: str, password: str) -> Optional[Use
     验证密码
     """
     user = await get_user(username)
-    if not user or not user.is_active or not user.verify_password(password):
+    if not user or not user.is_active or not user.check_password(password):
         return None
     return user
 
