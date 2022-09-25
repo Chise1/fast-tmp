@@ -44,7 +44,7 @@ class NativeNumber(Control):
 
 class SelectItem(Control):
     type: ControlEnum = ControlEnum.select
-    options: Optional[List[Union[SelectOption, str, int]]]
+    options: Optional[Union[List[str], List[int], List[SelectOption]]]
     source: Optional[str]  # 通过数据源里面获取，也可以配置地址从远程获取，值格式为:options:[{label:..,value:...,}]
     # children: Optional[List[Union[SelectOption, str, int]]]  # 这个在树结构在考虑
     multiple: Optional[bool]  # 是否多选

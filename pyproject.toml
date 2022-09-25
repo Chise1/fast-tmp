@@ -15,7 +15,7 @@ repository = "https://github.com/Chise1/fast-tmp"
 python = "^3.7"
 cookiecutter = "^1.7.2"
 typer = "^0.3.2"
-fastapi = {extras = ["all"], version = "^0.83.0"}
+fastapi = { extras = ["all"], version = "^0.83.0" }
 
 [tool.poetry.dev-dependencies]
 tortoise-orm = "^0.19.2"
@@ -44,3 +44,8 @@ default = true
 
 [tool.poetry.scripts]
 fast-tmp = "fastapi_cli:main"
+
+[tool.bandit]
+exclude_dirs = ["tests","fastapi_cli/tpl"]
+tests = ["B201", "B301"]
+skips = ["B101", "B601"]

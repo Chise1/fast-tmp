@@ -25,6 +25,10 @@ def offline_swagger(app: FastAPI):
             swagger_css_url="/static/swagger-ui.css",
         )
 
+    assert (
+        app.swagger_ui_oauth2_redirect_url is not None
+    ), "swagger_ui_oauth2_redirect_url can not be none"
+
     @app.get(app.swagger_ui_oauth2_redirect_url, include_in_schema=False)
     async def swagger_ui_redirect():
         return get_swagger_ui_oauth2_redirect_html()

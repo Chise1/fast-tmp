@@ -1,9 +1,9 @@
 from datetime import timedelta
-from typing import Any, Optional, Tuple
+from typing import Optional, Tuple
 
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from jose import JWTError
+from jose import JWTError  # type:ignore
 
 from fast_tmp.conf import settings
 from fast_tmp.models import User
@@ -88,21 +88,17 @@ async def get_current_active_user_or_none(
     """
     获取active为true的用户，否则返回none
     """
-    print("1")
-    try:
-        print("2")
-
-        payload = decode_access_token(token)
-        username: str = payload.get("sub")
-        if username is None:
+    if token:
+        try:
+            payload = decode_access_token(token)
+            username: str = payload.get("sub")
+            if username is None:
+                return None
+        except JWTError:
             return None
-    except JWTError:
-        print("1")
-        return None
-    user = await get_user(username=username)
-    if user is not None and user.is_active:
-        return user
-    print("4")
+        user = await get_user(username=username)
+        if user is not None and user.is_active:
+            return user
 
     return None
 
@@ -122,7 +118,7 @@ async def get_superuser(current_user: User = Depends(get_current_active_user)):
     return current_user
 
 
-def get_user_has_perms(perms: Optional[Tuple[Any, ...]]):
+def get_user_has_perms(perms: Optional[Tuple[str, ...]]):
     """
     判定用户是否具有相关权限
     """

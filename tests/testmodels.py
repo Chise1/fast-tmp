@@ -18,13 +18,17 @@ class Author(Model):
 
 class Book(Model):
     name = fields.CharField(max_length=255)
-    author = fields.ForeignKeyField("models.Author", related_name="books")
+    author: fields.ForeignKeyRelation[Author] = fields.ForeignKeyField(
+        "models.Author", related_name="books"
+    )
     rating = fields.FloatField()
 
 
 class BookNoConstraint(Model):
     name = fields.CharField(max_length=255)
-    author = fields.ForeignKeyField("models.Author", db_constraint=False)
+    author: fields.ForeignKeyRelation[Author] = fields.ForeignKeyField(
+        "models.Author", db_constraint=False
+    )
     rating = fields.FloatField()
 
 
@@ -86,8 +90,12 @@ class Node(Model):
 
 
 class Tree(Model):
-    parent = fields.ForeignKeyField("models.Node", related_name="parent_trees")
-    child = fields.ForeignKeyField("models.Node", related_name="children_trees")
+    parent: fields.ForeignKeyRelation[Node] = fields.ForeignKeyField(
+        "models.Node", related_name="parent_trees"
+    )
+    child: fields.ForeignKeyRelation[Node] = fields.ForeignKeyField(
+        "models.Node", related_name="children_trees"
+    )
 
 
 class Address(Model):

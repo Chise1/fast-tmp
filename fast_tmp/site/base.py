@@ -13,8 +13,8 @@ class AbstractAmisAdminDB:
     admin访问model的数据库指令
     """
 
-    _prefix: Optional[str]  # 网段
-    name: Optional[str]
+    _prefix: str  # 网段
+    name: str
 
     def list_queryset(self, queryset: QuerySet) -> QuerySet:  # 列表
         """
@@ -65,7 +65,7 @@ class AmisOrm:
         return value
 
 
-class AbstractControl(object):
+class AbstractControl:
     """
     用户自定义的column组件
     """
@@ -92,7 +92,7 @@ class ModelFilter:
     label: Optional[str]
     clearable: Optional[bool]
     placeholder: Optional[str]
-    _field: fields.Field = None
+    _field: Optional[fields.Field] = None
 
     def queryset(self, request: Request, queryset: QuerySet, val: Any) -> QuerySet:
         return queryset

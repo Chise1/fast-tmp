@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Type
+from typing import Any, Callable, Coroutine, Dict, List, Optional, Tuple, Type
 
 from starlette.requests import Request
 from tortoise.models import Model
@@ -13,7 +13,7 @@ from fast_tmp.amis.filter import Filter, FilterModel
 from fast_tmp.amis.forms import Form
 from fast_tmp.amis.frame import Dialog
 from fast_tmp.amis.page import Page
-from fast_tmp.responses import not_found_model
+from fast_tmp.responses import NotFoundError, not_found_model
 from fast_tmp.site.base import ModelFilter
 from fast_tmp.site.util import BaseAdminControl, RelationSelectApi, create_column
 
@@ -63,7 +63,7 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
     # exclude: Tuple[Union[str, BaseModel], ...] = ()
     # update ,如果为空则取create_fields
     update_fields: Tuple[str, ...] = ()
-    fields: Dict[str, BaseAdminControl] = None  # 存储字段名:control
+    fields: Dict[str, BaseAdminControl] = None  # type: ignore
     __list_display: Dict[str, BaseAdminControl] = {}
     __list_display_with_pk: Dict[str, BaseAdminControl] = {}
     methods: Tuple[str, ...] = (
@@ -77,7 +77,12 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
     __get_pks: Any = None
     list_per_page: int = 10  # 每页多少数据
     list_max_show_all: int = 200  # 最多每页多少数据
-    selct_defs = None
+    selct_defs: Dict[
+        str,
+        Callable[
+            [Request, Optional[str], Optional[int], Optional[int]], Coroutine[Any, Any, List[dict]]
+        ],
+    ]
     _filters = None
 
     def name(self) -> str:
@@ -102,14 +107,14 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
         return queryset
 
     def get_create_fields(self) -> Dict[str, BaseAdminControl]:
-        return {i: self.fields[i] for i in self.create_fields}
+        return {i: self.get_control_field(i) for i in self.create_fields}
 
     def get_update_fields(self) -> Dict[str, BaseAdminControl]:
-        return {i: self.fields[i] for i in self.update_fields}
+        return {i: self.get_control_field(i) for i in self.update_fields}
 
     def get_update_fields_with_pk(self) -> Dict[str, BaseAdminControl]:
         ret = self.get_update_fields()
-        ret["pk"] = self.fields["pk"]
+        ret["pk"] = self.get_control_field("pk")
         return ret
 
     def get_create_dialogation_button(self, request: Request):
@@ -208,14 +213,14 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
         return body
 
     def get_list_distplay(self) -> Dict[str, BaseAdminControl]:
-        return {i: self.fields[i] for i in self.list_display}
+        return {i: self.get_control_field(i) for i in self.list_display}
 
     def get_list_display_with_pk(self) -> Dict[str, BaseAdminControl]:
         """
         去除多对多字段
         """
         ret = self.get_list_distplay()
-        ret["pk"] = self.fields["pk"]
+        ret["pk"] = self.get_control_field("pk")
         return ret
 
     def get_app_page(self, request: Request):
@@ -224,25 +229,24 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
     async def put(self, request: Request, pk: str, data: Dict[str, Any]) -> Model:
         obj = await self.get_instance(request, pk)
         for field_name in self.update_fields:
-            control = self.fields[field_name]
+            control = self.get_control_field(field_name)
             await control.set_value(request, obj, data[field_name])
         await obj.save()
         return obj
 
-    async def put_get(self, request: Request, pk: str) -> Any:
+    async def put_get(self, request: Request, pk: str) -> dict:
         obj = await self.get_instance(request, pk)
         ret = {}
         for field_name, field in self.get_update_fields_with_pk().items():
             ret[field_name] = await field.get_value(request, obj)
         return ret
 
-    async def patch(self, request: Request, pk: str, data: Dict[str, Any]) -> Model:
+    async def patch(self, request: Request, pk: str, data: Dict[str, Any]):
         obj = await self.get_instance(request, pk)
         for field_name in self.inline:
-            control = self.fields[field_name]
+            control = self.get_control_field(field_name)
             await control.set_value(request, obj, data[field_name])
         await obj.save()
-        return obj
 
     async def create(self, request: Request, data: Dict[str, Any]) -> Model:
         obj = self.model()
@@ -291,10 +295,13 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
         count = await base_queryset.count()
         return {"total": count, "items": res}
 
-    async def get_instance(self, request: Request, pk: Any) -> Optional[Model]:
+    async def get_instance(self, request: Request, pk: Any) -> Model:
         queryset = self.model.filter(pk=pk)
         queryset = self.prefetch(request, queryset, self.get_update_fields())
-        return await queryset.first()
+        instance = await queryset.first()
+        if instance is None:
+            raise NotFoundError()
+        return instance
 
     def make_fields(self):
         if not self.fields.get("pk"):
@@ -312,8 +319,15 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
                     continue
                 self.fields[field] = create_column(field, field_type, self.prefix)
 
+    def get_control_field(self, name: str) -> BaseAdminControl:
+        ret = self.fields.get(name)
+        if ret is None:
+            raise NotFoundError()
+        return ret
+
     def __init__(self, prefix: str = None):
-        self.fields = {}
+        if not self.fields:
+            self.fields = {}
         if prefix:
             self.prefix = prefix
         else:

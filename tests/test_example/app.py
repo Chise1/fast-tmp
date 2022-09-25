@@ -27,6 +27,6 @@ if settings.DEBUG:
     app.mount("/static", StaticFiles(directory="static"), name="static")  # 注册admin页面需要的静态文件，
 
 if __name__ == "__main__":
-    import uvicorn
+    import uvicorn  # type:ignore
 
     uvicorn.run(app, debug=True, port=8000, lifespan="on")

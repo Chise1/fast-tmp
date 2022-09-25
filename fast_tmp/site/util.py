@@ -19,7 +19,7 @@ from fast_tmp.amis.forms.widgets import (
     TransferItem,
 )
 from fast_tmp.amis.response import AmisStructError
-from fast_tmp.responses import ListDataWithPage, TmpValueError
+from fast_tmp.responses import ListDataWithPage, NotFoundError, TmpValueError
 
 from ..amis.actions import DialogAction
 from ..amis.buttons import Operation
@@ -35,10 +35,10 @@ class BaseAdminControl(AbstractAmisAdminDB, AbstractControl, AmisOrm):
 
     label: str
     _field: fields.Field
-    _control: Control = None
-    _column: Column = None
-    _column_inline: ColumnInline = None
-    _control_type: Optional[ControlEnum] = ControlEnum.input_text
+    _control: Control = None  # type: ignore
+    _column: Column = None  # type: ignore
+    _column_inline: ColumnInline = None  # type: ignore
+    _control_type: ControlEnum = ControlEnum.input_text
     _many = False  # 多对多字段标记，查询的时候默认跳过
 
     def get_column(self, request: Request) -> Column:
@@ -49,10 +49,10 @@ class BaseAdminControl(AbstractAmisAdminDB, AbstractControl, AmisOrm):
     def get_control(self, request: Request) -> Control:
         if not self._control:
             self._control = Control(type=self._control_type, name=self.name, label=self.label)
-            if not self._field.null:
+            if not self._field.null:  # type: ignore
                 self._control.required = True
-            if self._field.default is not None:
-                self._control.value = self.orm_2_amis(self._field.default)
+            if self._field.default is not None:  # type: ignore
+                self._control.value = self.orm_2_amis(self._field.default)  # type: ignore
         return self._control
 
     def options(self):
@@ -70,7 +70,7 @@ class BaseAdminControl(AbstractAmisAdminDB, AbstractControl, AmisOrm):
             options = self.options()
             if options:
                 self._column_inline.quickEdit.options = options
-                if self._field.null:
+                if self._field.null:  # type: ignore
                     self._column_inline.quickEdit.clearable = True
         return self._column_inline
 
@@ -83,13 +83,13 @@ class BaseAdminControl(AbstractAmisAdminDB, AbstractControl, AmisOrm):
 
     def __init__(self, name: str, _field: fields.Field, _prefix: str, **kwargs):
         super().__init__(name, _prefix, **kwargs)
-        self._field = _field
+        self._field = _field  # type: ignore
         self.name = name
         self.label = kwargs.get("label") or self.name
 
     async def validate(self, value: Any) -> Any:
         value = self.amis_2_orm(value)
-        self._field.validate(value)
+        self._field.validate(value)  # type: ignore
         return value
 
 
@@ -115,7 +115,7 @@ class IntEnumControl(BaseAdminControl):
             super().get_control(request)
             d = self._control.dict(exclude_none=True)
             d.pop("type")
-            if self._field.null:
+            if self._field.null:  # type: ignore
                 d["clearable"] = True
             self._control = SelectItem(**d)
             self._control.options = self.options()
@@ -126,16 +126,16 @@ class IntEnumControl(BaseAdminControl):
             return value.name
 
     def amis_2_orm(self, value: Any) -> Any:
-        if value is None and self._field.null:
+        if value is None and self._field.null:  # type: ignore
             return None
-        for i in self._field.enum_type:
+        for i in self._field.enum_type:  # type: ignore
             if i.name == value:
                 return i.value
         raise TmpValueError(f"{self.label} 不能为 {value}")
 
     def options(self) -> List[str]:
         res = []
-        for i in self._field.enum_type:
+        for i in self._field.enum_type:  # type: ignore
             res.append(i.name)
         return res
 
@@ -150,7 +150,7 @@ class BooleanControl(IntEnumControl):
         return self.amis_2_orm(value)
 
     def amis_2_orm(self, value: Any) -> Any:
-        if (value == "None" or not value) and self._field.null:
+        if (value == "None" or not value) and self._field.null:  # type: ignore
             return None
         if value == "True":
             return True
@@ -186,7 +186,7 @@ class DateTimeControl(BaseAdminControl):
         return self._column_inline
 
     def amis_2_orm(self, value: Any) -> Any:
-        if (value == "None" or not value) and self._field.null:
+        if (value == "None" or not value) and self._field.null:  # type: ignore
             return None
         return datetime.datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
 
@@ -212,7 +212,7 @@ class DateControl(BaseAdminControl):
         return self._column_inline
 
     def amis_2_orm(self, value: Any) -> Any:
-        if (value == "None" or not value) and self._field.null:
+        if (value == "None" or not value) and self._field.null:  # type: ignore
             return None
         year, month, day = value.split("-")
         return datetime.date(int(year), int(month), int(day))
@@ -292,6 +292,7 @@ class ForeignKeyPickerControl(BaseAdminControl, RelationSelectApi):  # todo 支�
     """
 
     _control_type = ControlEnum.select
+    _field: fields.ForeignKeyRelation
 
     async def get_selects(
         self,
@@ -300,7 +301,7 @@ class ForeignKeyPickerControl(BaseAdminControl, RelationSelectApi):  # todo 支�
         perPage: Optional[int],
         page: Optional[int],
     ):
-        field_model_all = self._field.related_model.all()
+        field_model_all = self._field.related_model.all()  # type: ignore
         if perPage is not None and page is not None:
             field_model = field_model_all.limit(perPage).offset((page - 1) * perPage)
             count = await field_model_all.count()
@@ -336,7 +337,7 @@ class ForeignKeyPickerControl(BaseAdminControl, RelationSelectApi):  # todo 支�
                 valueField="value",
             )
 
-            if self._field.null:
+            if self._field.null:  # type: ignore
                 self._control.clearable = True
         return self._control
 
@@ -345,7 +346,7 @@ class ForeignKeyPickerControl(BaseAdminControl, RelationSelectApi):  # todo 支�
 
     async def validate(self, value: Any) -> Any:
         if value is not None:
-            return await self._field.related_model.filter(pk=value).first()
+            return await self._field.related_model.filter(pk=value).first()  # type: ignore
 
     async def set_value(self, request: Request, obj: Model, value: Any):
         value = await self.validate(value)
@@ -362,7 +363,7 @@ class ForeignKeyControl(BaseAdminControl, RelationSelectApi):
         perPage: Optional[int],
         page: Optional[int],
     ):
-        field_model_all = self._field.related_model.all()
+        field_model_all = self._field.related_model.all()  # type: ignore
         if perPage is not None and page is not None:
             field_model = field_model_all.limit(perPage).offset((page - 1) * perPage)
             count = await field_model_all.count()
@@ -402,7 +403,7 @@ class ForeignKeyControl(BaseAdminControl, RelationSelectApi):
                 labelField="label",
                 valueField="value",
             )
-            if self._field.null:
+            if self._field.null:  # type: ignore
                 self._control.clearable = True
         return self._control
 
@@ -413,7 +414,7 @@ class ForeignKeyControl(BaseAdminControl, RelationSelectApi):
         if value is not None:
             if isinstance(value, dict):
                 value = value.get("value")
-            value = await self._field.related_model.filter(pk=value).first()
+            value = await self._field.related_model.filter(pk=value).first()  # type: ignore
         setattr(obj, self.name, value)
 
 
@@ -435,7 +436,7 @@ class ManyToManyControl(BaseAdminControl, RelationSelectApi):
                             title=self.label,
                             body=CRUD(
                                 api="get:"
-                                + self._field.model.__name__
+                                + self._field.model.__name__  # type: ignore
                                 + f"/select/{self.name}?pk=$pk",
                                 columns=[
                                     Column(label="pk", name="pk"),
@@ -455,9 +456,9 @@ class ManyToManyControl(BaseAdminControl, RelationSelectApi):
         perPage: Optional[int],
         page: Optional[int],
     ):
-        related_model = self._field.related_model
+        related_model = self._field.related_model  # type: ignore
         if pk is not None:
-            queryset = related_model.filter(**{self._field.related_name: pk})
+            queryset = related_model.filter(**{self._field.related_name: pk})  # type: ignore
         else:
             queryset = related_model.all()
         if pk is not None:
@@ -478,7 +479,7 @@ class ManyToManyControl(BaseAdminControl, RelationSelectApi):
                 label=self.label,
                 source=f"get:{self._prefix}/select/{self.name}",
             )
-            if self._field.null:
+            if self._field.null:  # type: ignore
                 self._control.clearable = True
         return self._control
 
@@ -489,12 +490,14 @@ class ManyToManyControl(BaseAdminControl, RelationSelectApi):
         if value is not None:
             pks = self.amis_2_orm(value)
             if len(pks) > 0:
-                value = await self._field.related_model.filter(pk__in=pks)
+                value = await self._field.related_model.filter(pk__in=pks)  # type: ignore
         return value
 
     async def set_value(self, request: Request, obj: Model, value: Any):
         value = await self.validate(value)
-        field: ManyToManyFieldInstance = getattr(obj, self.name)
+        field: fields.ManyToManyRelation = getattr(obj, self.name)
+        if not field:
+            raise NotFoundError()
         add = set()
         remove = set()
         for i in field:

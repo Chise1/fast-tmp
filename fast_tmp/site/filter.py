@@ -8,7 +8,7 @@ from .base import ModelFilter
 
 class EqualFilter(ModelFilter):
     def queryset(self, request: Request, queryset: QuerySet, val: Any) -> QuerySet:
-        return queryset.filter(**{{self.name}: val})
+        return queryset.filter(**{self.name: val})
 
 
 class ContainsFilter(ModelFilter):

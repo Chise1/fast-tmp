@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel
 
@@ -30,7 +30,7 @@ class QuickEdit(BaseModel):
     options: Optional[List[Union[SelectOption, str, int]]]
     clearable: Optional[bool]
     format: Optional[str]
-    validations: Optional[Dict[str, Union[int, str]]]  # 注意，键值对请参考ValidateEnum
+    validations: Optional[Any]  # 注意，键值对请参考ValidateEnum
     timeFormat: Optional[str]  # = "HH:mm:ss"  # 时间选择器值格式，更多格式类型请参考 moment
     inputFormat: Optional[str]  # "HH:mm:ss"  # 时间选择器显示格式，即时间戳格式，更多格式类型请参考 moment
 
@@ -38,7 +38,7 @@ class QuickEdit(BaseModel):
 class ColumnInline(Column):
     """带内联的功能"""
 
-    quickEdit: Optional[QuickEdit]  # can not be none
+    quickEdit: QuickEdit  # can not be none
 
     class Config:
         orm_mode = True
@@ -90,7 +90,7 @@ class Control(AbstractControl):
     requiredOn: Optional[str]
     hidden: Optional[bool]  # 可使用条件配置如 this.number>1
     hiddenOn: Optional[str]  # 配置判定逻辑
-    validations: Optional[Dict[str, Union[int, str]]]  # 注意，键值对请参考ValidateEnum
+    validations: Optional[Any]  # 注意，键值对请参考ValidateEnum
     validationErrors: Optional[
         Dict[str, str]  # todo tortoise-orm的校验转这里
     ]  # 注意，键值对请参考ValidateEnum，举例："minimum": "同学，最少输入$1以上的数字哈",其中$1为该错误的数据

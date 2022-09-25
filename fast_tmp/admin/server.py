@@ -16,13 +16,9 @@ from fast_tmp.site import model_list, register_model_site
 from fast_tmp.utils.token import create_access_token
 
 from ..jinja_extension.tags import register_tags
-from .depends import __get_user_or_none
+from .depends import get_user
 from .endpoint import router
-from .exception_handlers import (
-    fasttmp_exception_handler,
-    no_auth_middle,
-    tortoise_exception_handler,
-)
+from .exception_handlers import fasttmp_exception_handler, tortoise_exception_handler
 
 base_path = os.path.dirname(__file__)
 templates = Jinja2Templates(directory=base_path + "/templates")
@@ -30,14 +26,13 @@ register_tags(templates)
 admin = FastAPI(title="fast-tmp")
 register_model_site({"Auth": [UserAdmin(), GroupAdmin()]})
 admin.include_router(router)
-admin.middleware("http")(no_auth_middle)
 
 admin.exception_handler(FastTmpError)(fasttmp_exception_handler)
 admin.exception_handler(BaseORMException)(tortoise_exception_handler)
 
 
-@admin.post("/", name="index", dependencies=[Depends(__get_user_or_none)])
-@admin.get("/", name="index", dependencies=[Depends(__get_user_or_none)])
+@admin.post("/", name="index", dependencies=[Depends(get_user)])
+@admin.get("/", name="index", dependencies=[Depends(get_user)])
 async def index(request: Request):
     return templates.TemplateResponse(
         "index.html",
@@ -104,10 +99,8 @@ def logout(request: Request):
     return res
 
 
-@admin.get("/site")
-def get_site(request: Request, user: Optional[User] = Depends(__get_user_or_none)):
-    if not user:
-        return RedirectResponse(request.url_for("admin:login"))
+@admin.get("/site", dependencies=[Depends(get_user)])
+def get_site(request: Request):
     pages = []
     for name, ml in model_list.items():  # todo add home page
         pages.append(  # todo 增加权限控制，确认对应的页面

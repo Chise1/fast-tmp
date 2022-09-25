@@ -1,14 +1,11 @@
-from typing import Any, List, Optional
+from typing import Optional
 
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel
 from starlette.requests import Request
 
+from fast_tmp.admin.depends import get_user
+from fast_tmp.responses import BaseRes, ListDataWithPage
 from fast_tmp.site import ModelAdmin, get_model_site
-
-from ..models import User
-from ..responses import BaseRes, ListDataWithPage
-from .depends import get_user
 
 router = APIRouter()
 

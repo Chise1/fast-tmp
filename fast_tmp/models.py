@@ -1,6 +1,5 @@
-from typing import Set, Type
+from typing import Tuple
 
-from pydantic import BaseModel
 from tortoise import Model, fields
 from tortoise.expressions import Q
 
@@ -11,45 +10,45 @@ class Permission(Model):
     label = fields.CharField(max_length=128)
     codename = fields.CharField(max_length=128, unique=True)
     groups: fields.ManyToManyRelation["Group"]
-    users: fields.ManyToManyRelation[f"User"]
+    users: fields.ManyToManyRelation["User"]
 
-    @classmethod
-    def make_permission(
-        cls,
-        model: Type[BaseModel],
-    ):
-        """
-        生成model对应的权限
-        """
-        model_name = model.__name__
-        Permission.get_or_create(
-            defaults={
-                "label": "can read " + model_name,
-                "model": model_name,
-                "codename": "can_read_" + model_name,
-            }
-        )
-        Permission.get_or_create(
-            defaults={
-                "label": "can create " + model_name,
-                "model": model_name,
-                "codename": "can_create_" + model_name,
-            }
-        )
-        Permission.get_or_create(
-            defaults={
-                "label": "can update " + model_name,
-                "model": model_name,
-                "codename": "can_update_" + model_name,
-            }
-        )
-        Permission.get_or_create(
-            defaults={
-                "label": "can delete " + model_name,
-                "model": model_name,
-                "codename": "can_delete_" + model_name,
-            }
-        )
+    # @classmethod
+    # def make_permission(
+    #     cls,
+    #     model: Type[BaseModel],
+    # ):
+    #     """
+    #     生成model对应的权限
+    #     """
+    #     model_name = model.__name__
+    #     Permission.get_or_create(
+    #         defaults={
+    #             "label": "can read " + model_name,
+    #             "model": model_name,
+    #             "codename": "can_read_" + model_name,
+    #         }
+    #     )
+    #     Permission.get_or_create(
+    #         defaults={
+    #             "label": "can create " + model_name,
+    #             "model": model_name,
+    #             "codename": "can_create_" + model_name,
+    #         }
+    #     )
+    #     Permission.get_or_create(
+    #         defaults={
+    #             "label": "can update " + model_name,
+    #             "model": model_name,
+    #             "codename": "can_update_" + model_name,
+    #         }
+    #     )
+    #     Permission.get_or_create(
+    #         defaults={
+    #             "label": "can delete " + model_name,
+    #             "model": model_name,
+    #             "codename": "can_delete_" + model_name,
+    #         }
+    #     )
 
     def __eq__(self, other) -> bool:
         if other == self.codename or getattr(other, "codename", None) == self.codename:
@@ -69,7 +68,9 @@ class User(Model):
     is_active = fields.BooleanField(default=True)
     is_superuser = fields.BooleanField(default=False)
     groups: fields.ManyToManyRelation["Group"]
-    permissions = fields.ManyToManyField(f"fast_tmp.Permission", related_name="users")
+    permissions: fields.ManyToManyRelation[Permission] = fields.ManyToManyField(
+        "fast_tmp.Permission", related_name="users"
+    )
 
     class Meta:
         abstract = settings.AUTH_USER_MODEL_NAME != "User"
@@ -106,7 +107,7 @@ class User(Model):
         #     return True
         return False
 
-    async def has_perms(self, codenames: Set[str]) -> bool:
+    async def has_perms(self, codenames: Tuple[str, ...]) -> bool:
         """
         根据permission的codename进行判定
         """
@@ -128,8 +129,12 @@ class User(Model):
 
 class Group(Model):
     name = fields.CharField(max_length=128, unique=True)
-    permissions = fields.ManyToManyField(f"fast_tmp.Permission", related_name="groups")
-    users = fields.ManyToManyField(f"fast_tmp.User", related_name="groups")
+    permissions: fields.ManyToManyRelation[Permission] = fields.ManyToManyField(
+        "fast_tmp.Permission", related_name="groups"
+    )
+    users: fields.ManyToManyRelation[User] = fields.ManyToManyField(
+        "fast_tmp.User", related_name="groups"
+    )
 
     def __str__(self):
         return self.name

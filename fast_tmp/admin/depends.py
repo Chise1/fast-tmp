@@ -1,8 +1,7 @@
 from typing import Optional
 
-from fastapi import Cookie, Depends, Header, HTTPException
+from fastapi import Cookie, Depends, HTTPException
 from starlette.requests import Request
-from starlette.responses import RedirectResponse
 from starlette.status import HTTP_404_NOT_FOUND
 from tortoise import Tortoise
 
@@ -41,20 +40,24 @@ async def __get_user_or_none(access_token: Optional[str] = Cookie(None)) -> Opti
     """
     获取active为true的用户，否则返回none
     """
-    try:
-        payload = decode_access_token(access_token)
-        username: str = payload.get("sub")
-        if username is None:
+    if access_token is not None:
+        try:
+            payload = decode_access_token(access_token)
+            username: str = payload.get("sub")
+            if username is None:
+                return None
+        except Exception:
             return None
-    except Exception:
-        return None
-    user = await User.filter(username=username).first()
-    if user is not None and user.is_active:
-        return user
+        user = await User.filter(username=username).first()
+        if user is not None and user.is_active:
+            return user
     return None
 
 
 async def get_user(request: Request, user: Optional[User] = Depends(__get_user_or_none)):
+    """
+    found user and write to request
+    """
     if not user or not user.is_active:
-        raise NoAuthError
+        raise NoAuthError()
     request.scope["user"] = user

@@ -1,4 +1,5 @@
 import os
+from typing import List
 
 import dotenv
 
@@ -23,7 +24,7 @@ TORTOISE_ORM = {
 }
 STATIC_ROOT = "static"
 STATIC_PATH = "static"
-EXTRA_SCRIPT = []  # 自定义执行脚本
+EXTRA_SCRIPT: List[str] = []  # 自定义执行脚本
 # redis配置
 # REDIS_HOST = os.getenv("REDIS_HOST", "127.0.0.1")
 # REDIS_PORT = os.getenv("REDIS_PORT", 6379)
