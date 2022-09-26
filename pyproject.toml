@@ -15,12 +15,13 @@ repository = "https://github.com/Chise1/fast-tmp"
 python = "^3.8"
 cookiecutter = "^2.1.1"
 typer = "^0.6.1"
-fastapi = { extras = ["all"], version = "^0.85.0" }
+fastapi =  "^0.85.0"
 python-jose = "^3.3.0"
 asgiref = "^3.5.2"
+jinja2 = "3.1.0"
+tortoise-orm = "^0.19.2"
 
 [tool.poetry.dev-dependencies]
-tortoise-orm = "^0.19.2"
 flake8 = "*"
 isort = "*"
 black = "22.8.0"
