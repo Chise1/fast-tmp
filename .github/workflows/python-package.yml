@@ -26,7 +26,6 @@ jobs:
       run: |
         pip install -U pip poetry
         poetry config virtualenvs.create false
-        poetry install
     - name: Install requirements
       run: make deps
     - name: Style
