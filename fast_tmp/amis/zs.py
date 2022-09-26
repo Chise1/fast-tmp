@@ -5,7 +5,7 @@ from typing import List
 
 from pydantic import BaseModel
 
-from fast_tmp.admin.schema.forms import Column
+from fast_tmp.amis.forms import Column
 
 
 class ZSTable(BaseModel):

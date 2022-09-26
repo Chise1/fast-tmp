@@ -1,9 +1,0 @@
-site_name: fast-tmp
-site_url: https://github.com/Chise1/fast-tmp
-nav:
-  - 主页: index.md
-  - 设置: setting.md
-  - 模块:
-      'ModelAdmin': 'ModelAdmin.md'
-      'cli': 'cli.md'
-theme: readthedocs

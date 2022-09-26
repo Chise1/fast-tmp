@@ -1,10 +1,10 @@
-checkfiles = {{cookiecutter.project_slug}}/ tests/ conftest.py
+checkfiles = test_example/ tests/ conftest.py
 black_opts = -l 100 -t py38
 py_warn = PYTHONDEVMODE=1
 test_settings = SETTINGS_MODULE=tests.settings
 
 help:
-	@echo "{{cookiecutter.project_name}} development makefile"
+	@echo "test-example development makefile"
 	@echo
 	@echo  "usage: make <target>"
 	@echo  "Targets:"

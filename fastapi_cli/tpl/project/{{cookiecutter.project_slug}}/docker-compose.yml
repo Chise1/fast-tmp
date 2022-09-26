@@ -1,0 +1,15 @@
+version: '3'
+services:
+  app:
+    build: .
+    env_file:
+      - .env
+    environment:
+      MODULE_NAME: {{cookiecutter.project_slug}}/app.py
+      VARIABLE_NAME: "app"
+      APP_MODULE: {{cookiecutter.project_slug}}.app:app
+      PORT: 8000
+    ports:
+      - '8000:8000'
+    image: {{cookiecutter.project_slug}}
+    command: "/start.sh"
