@@ -1,5 +1,8 @@
 import binascii
+import datetime
 import os
+import uuid
+from enum import Enum, IntEnum
 
 from tortoise import fields
 from tortoise.models import Model
@@ -120,3 +123,36 @@ class Team(Model):
 
     def __str__(self):
         return self.name
+
+
+class Gender(str, Enum):
+    male = "male"
+    womale = "womale"
+
+
+class Degree(IntEnum):
+    unknow = 0
+    bachelor = 1  # 学士
+    master = 2  # 硕士
+    doctor = 3  # 博士
+
+
+class Role(Model):
+    name = fields.CharField(max_length=32)
+    age = fields.IntField()
+    desc = fields.TextField()
+    birthday = fields.DateField(null=True)
+    money = fields.DecimalField(max_digits=10, decimal_places=2, null=True)
+    height = fields.FloatField(null=True)
+    married = fields.BooleanField(default=False)
+    gender = fields.CharEnumField(Gender)
+    degree = fields.IntEnumField(Degree, default=Degree.unknow)
+    game_length = fields.BigIntField(default=0)  # 游戏时长，按秒计算
+    avator = fields.BinaryField(null=True)  # 头像
+    config = fields.JSONField(null=True)
+    waiting_length = fields.TimeDeltaField(null=True)  # 等待时长
+    max_time_length = fields.TimeField(default=datetime.time)  # 最长游戏时长
+    uuid = fields.UUIDField(default=uuid.uuid4)
+    level = fields.SmallIntField(default=0)
+    creat_time = fields.DatetimeField(auto_now_add=True)
+    update_time = fields.DatetimeField(auto_now=True)  # todo 这个是否有默认值？？？
