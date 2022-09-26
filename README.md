@@ -85,10 +85,3 @@ fast-tmp createsuperuser
 from fast_tmp.conf import settings
 ...
 ```
-### crud生成器
-crud生成器可以对大部分crud自动化生成（不包括文件或二进制流）。
-
-crud一共有三个版本，目前最常用的是```utils.crud2```，crud3是类似于django的基于类的视图，但是个人感觉不灵活，目前用的不多。
-
-crud1是以前的版本，现在不怎么用了，0.3.0之前会删掉。
-具体的使用方法下次在写。。。
