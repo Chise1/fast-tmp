@@ -1,7 +1,6 @@
 from typing import Tuple
 
 from tortoise import Model, fields
-from tortoise.expressions import Q
 
 from fast_tmp.conf import settings
 from fast_tmp.contrib.auth.hashers import check_password, make_password
@@ -114,8 +113,8 @@ class User(Model):
         for i in perms1:
             s.add(i.codename)
 
-        for i in codenames:
-            if not i in s:
+        for codename in codenames:
+            if not (codename in s):
                 return False
         return True
 

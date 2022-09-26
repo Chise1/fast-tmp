@@ -521,7 +521,7 @@ class ScryptPasswordHasher(BasePasswordHasher):
     block_size = 8
     maxmem = 0
     parallelism = 1
-    work_factor = 2 ** 14
+    work_factor = 2**14
 
     def encode(self, password, salt, n=None, r=None, p=None):
         self._check_encode_args(password, salt)

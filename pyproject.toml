@@ -17,6 +17,7 @@ cookiecutter = "^2.1.1"
 typer = "^0.6.1"
 fastapi = { extras = ["all"], version = "^0.85.0" }
 python-jose = "^3.3.0"
+asgiref = "^3.5.2"
 
 [tool.poetry.dev-dependencies]
 tortoise-orm = "^0.19.2"
@@ -30,6 +31,10 @@ pytest-asyncio = "*"
 asynctest = "*"
 bandit = "*"
 mypy = "*"
+
+[tool.poetry.group.dev.dependencies]
+httpx = "^0.23.0"
+toml = "^0.10.2"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

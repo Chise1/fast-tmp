@@ -5,7 +5,6 @@ from typing import Any, List, Optional
 from starlette.requests import Request
 from tortoise import ForeignKeyFieldInstance, ManyToManyFieldInstance, Model, fields
 from tortoise.fields.data import CharEnumFieldInstance, IntEnumFieldInstance
-from tortoise.queryset import QuerySet
 
 from fast_tmp.amis.custom import Custom
 from fast_tmp.amis.forms import Column, ColumnInline, Control, ControlEnum, QuickEdit
@@ -19,7 +18,7 @@ from fast_tmp.amis.forms.widgets import (
     TransferItem,
 )
 from fast_tmp.amis.response import AmisStructError
-from fast_tmp.responses import ListDataWithPage, NotFoundError, TmpValueError
+from fast_tmp.responses import ListDataWithPage, TmpValueError
 
 from ..amis.actions import DialogAction
 from ..amis.buttons import Operation

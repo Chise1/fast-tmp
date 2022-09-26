@@ -2,6 +2,7 @@ checkfiles = fast_tmp/ tests/ conftest.py
 black_opts = -l 100 -t py38
 py_warn = PYTHONDEVMODE=1
 test_settings = SETTINGS_MODULE=tests.settings
+pytest_opts = -n auto --cov=fast_tmp --tb=native -q
 
 help:
 	@echo "fastapi-cli development makefile"
@@ -31,11 +32,11 @@ check: deps
 	mypy fast_tmp/
 
 
-test_sqlite:
-	$(py_warn) FASTAPI_SETTINGS_MODULE=tests.settings TORTOISE_TEST_DB=sqlite://:memory: pytest --cov-report=
+test: deps
+	$(py_warn) FASTAPI_SETTINGS_MODULE=tests.settings TORTOISE_TEST_DB=sqlite://:memory: pytest --cov-report html $(pytest_opts)
 
-test: deps test_sqlite
-	coverage report
+test_sqlite:
+	$(py_warn) FASTAPI_SETTINGS_MODULE=tests.settings TORTOISE_TEST_DB=sqlite://:memory: pytest --cov-report= $(pytest_opts)
 
 publish: check
 	poetry publish
