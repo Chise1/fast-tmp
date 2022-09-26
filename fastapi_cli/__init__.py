@@ -70,8 +70,8 @@ def startproject():
     """
     basedir = os.path.abspath(os.path.dirname(__file__))
     from cookiecutter.main import cookiecutter
-    cookiecutter(basedir + "/tpl/project")
-
+    print(basedir)
+    cookiecutter(os.path.join(basedir,"tpl/project"))
 
 @app.command()
 def staticfile():

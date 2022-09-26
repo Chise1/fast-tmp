@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     LOGIN_URL: str = "/api-token-auth"
     STATIC_ROOT = "static"
     STATIC_PATH = "static"
-    LOCAL_FILE: bool = True
+    LOCAL_FILE: bool = False  # 是否使用本地amis静态文件
 
     @validator("DEBUG", pre=True, allow_reuse=True)
     def get_debug(cls, v: str) -> bool:
@@ -39,13 +39,9 @@ class Settings(BaseSettings):
             return v
         raise ValueError(v)
 
-    DB_TYPE: str = "mysql"
     TORTOISE_ORM: Optional[Dict[str, Any]] = None
     # 额外的配置信息
     EXTRA_SETTINGS: Dict[str, Any] = {}
-
-    # cas相关配置
-    CAS_SERVER_URL: str = "/cas/"
 
     class Config:
         case_sensitive = True
