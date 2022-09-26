@@ -1,5 +1,5 @@
 [![security: bandit](https://img.shields.io/badge/security-bandit-yellow.svg)](https://github.com/PyCQA/bandit)
-[![Python package](https://github.com/Chise1/fast-tmp/actions/workflows/test.yml/badge.svg)](https://github.com/Chise1/fast-tmp/actions/workflows/test.yml)
+[![Python package](https://github.com/Chise1/fast-tmp/actions/workflows/python-package.yml/badge.svg)](https://github.com/Chise1/fast-tmp/actions/workflows/python-package.yml)
 [![codecov](https://codecov.io/gh/Chise1/fast-tmp/branch/main/graph/badge.svg?token=7CZE532R0H)](https://codecov.io/gh/Chise1/fast-tmp)
 [![Documentation Status](https://readthedocs.org/projects/fast-tmp/badge/?version=latest)](https://fast-tmp.readthedocs.io/?badge=latest)
 ![GitHub](https://img.shields.io/github/license/Chise1/fast-tmp)
