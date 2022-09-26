@@ -1,25 +1,63 @@
+from test_example.models import Author, Book, FieldTesting
+
 from fast_tmp.site import ModelAdmin
-from .models import UserInfo, Author, Book
 
 
-class UserInfoAdmin(ModelAdmin):
-    model = UserInfo
-    create_fields = [UserInfo.name, UserInfo.age, UserInfo.birthday, UserInfo.money, UserInfo.height, UserInfo.info,
-                     UserInfo.tag, UserInfo.is_superuser]
-    update_fields = create_fields
-    list_display = [UserInfo.id, UserInfo.name, UserInfo.age, UserInfo.birthday, UserInfo.money, UserInfo.height,
-                    UserInfo.info,
-                    UserInfo.tag, UserInfo.is_superuser]
+class FieldTestingModel(ModelAdmin):
+    model = FieldTesting
+    list_display = (
+        "name",
+        "age",
+        "name_inline",
+        "age_inline",
+        "married",
+        "married_inline",
+        "degree",
+        "degree_inline",
+        "created_time",
+        "birthday",
+        "config",
+        "max_time_length",
+    )
+    inline = (
+        "name_inline",
+        "age_inline",
+        "married",
+        "married_inline",
+        "degree_inline",
+        "birthday",
+        "config",
+        "max_time_length",
+    )
+    create_fields = (
+        "name",
+        "age",
+        "desc",
+        "married",
+        "degree",
+        "degree_inline",
+        "gender",
+        "created_time",
+        "birthday",
+        "config",
+        "max_time_length",
+    )
 
 
-class AuthorAdmin(ModelAdmin):
-    model = Author
-    create_fields = [Author.name, Author.books]
-    list_display = create_fields
+from fast_tmp.site.filter import ContainsFilter
 
 
-class BookAdmin(ModelAdmin):
+class BookModel(ModelAdmin):
     model = Book
-    create_fields = [Book.name, Book.author]  # todo 增加提醒，可以为关系，可以为id
-    list_display = [Book.id, Book.name, Book.author]  # todo 增加检查，必须在listplay里面带主键
-    update_fields = create_fields
+    list_display = ("name", "author", "rating")
+    create_fields = ("name", "author", "rating")
+    update_fields = ("name", "author")
+    filters = (ContainsFilter("name"),)
+
+
+class AuthorModel(ModelAdmin):
+    model = Author
+    list_display = ("name",)
+    create_fields = ("name",)
+    inline = ("name",)
+    update_fields = ("name",)

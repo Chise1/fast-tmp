@@ -1,13 +1,13 @@
 import os
-from fastapi import FastAPI
 
-from fast_tmp.admin.server import admin
+from tortoise.contrib.fastapi import register_tortoise
 
 os.environ.setdefault("FASTAPI_SETTINGS_MODULE", '{{cookiecutter.project_slug}}.settings')
-from fast_tmp.site import register_model_site
+from fast_tmp.factory import create_app
+from fast_tmp.conf import settings
 
-app =FastAPI(title='{{cookiecutter.project_slug}}')
-app.mount("/admin", admin, name="admin", )
+app = create_app()
+register_tortoise(app, config=settings.TORTOISE_ORM)
 
 if __name__ == '__main__':
     import uvicorn

@@ -1,0 +1,2 @@
+class AmisStructError(Exception):
+    pass

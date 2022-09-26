@@ -1,4 +1,6 @@
 import os
+from typing import List
+
 import dotenv
 
 dotenv.load_dotenv()
@@ -7,10 +9,26 @@ dotenv.load_dotenv()
 # from sentry_sdk.integrations.redis import RedisIntegration
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SECRET_KEY = "awdfawfqergqreef"
 
-DEBUG = os.getenv("DEBUG") == "True"
-
-EXTRA_SCRIPT = []  # 自定义执行脚本
+TORTOISE_ORM = {
+    "connections": {
+        "default": "sqlite://test_example.sqlite3",
+    },
+    "apps": {
+        "fast_tmp": {
+            "models": [
+                "test_example.models",
+                "fast_tmp.models",
+                # "aerich.models",
+            ],  # 注册app.models
+            "default_connection": "default",
+        }
+    },
+}
+STATIC_ROOT = "static"
+STATIC_PATH = "static"
+EXTRA_SCRIPT: List[str] = []  # 自定义执行脚本
 # redis配置
 # REDIS_HOST = os.getenv("REDIS_HOST", "127.0.0.1")
 # REDIS_PORT = os.getenv("REDIS_PORT", 6379)

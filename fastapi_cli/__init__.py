@@ -1,8 +1,8 @@
-import datetime
 import importlib
 import os
 import typer
 import sys
+from asgiref.sync import async_to_sync
 
 app = typer.Typer()
 for path in sys.path:
@@ -17,32 +17,50 @@ except Exception as e:
     settings = None
 
 
+@async_to_sync
+async def create_superuser(username: str, password: str):
+    from tortoise import Tortoise
+    await Tortoise.init(config=settings.TORTOISE_ORM)
+    from fast_tmp.models import User
+    if User.filter(username=username).exists():
+        print(f"{username} 已经存在了")
+        exit(1)
+    user = User(username=username, is_superuser=True)
+    user.set_password(password)
+    await user.save()
+    sys.stdout.write(f"创建{username}成功")
+
+
+@async_to_sync
+async def make_permissions():
+    from tortoise import Tortoise
+    from fast_tmp.utils.model import get_all_models
+    from fast_tmp.models import Permission
+    await Tortoise.init(config=settings.TORTOISE_ORM)
+    all_model = get_all_models()
+    for model in all_model:
+        model_name=model.__name__.lower()
+        await Permission.get_or_create(codename=model_name + "_create", defaults={"label": f"{model_name}__创建"})
+        await Permission.get_or_create(codename=model_name + "_update", defaults={"label": f"{model_name}__更新"})
+        await Permission.get_or_create(codename=model_name + "_delete", defaults={"label": f"{model_name}__删除"})
+        await Permission.get_or_create(codename=model_name + "_list", defaults={"label": f"{model_name}__修改"})
+    sys.stdout.write("构建权限表完成")
+
+
+@app.command()
+def make_perm():
+    """
+    同步所有model的权限
+    """
+    make_permissions()
+
+
 @app.command()
 def createsuperuser(username: str, password: str):
     """
     创建超级用户
     """
-    import os
-    project_slug = os.path.split(os.getcwd())[1]
-    os.environ.setdefault('FASTAPI_SETTINGS_MODULE', project_slug + ".settings")
-    from fast_tmp.models import User
-    from fast_tmp.db import engine
-    from sqlalchemy.orm import Session
-    with Session(engine) as session:
-        user = User(
-            username=username, is_superuser=True)
-        user.set_password(password)
-        session.add(user)
-        session.commit()
-    print(f"创建{username}成功")
-
-
-@app.command()
-def downlocalstatic():# todo need finish
-    """
-    下载amis所需的静态文件(未完成)
-    """
-    pass
+    create_superuser(username, password)
 
 
 @app.command()
@@ -73,21 +91,6 @@ if settings and settings.EXTRA_SETTINGS.get("EXTRA_SCRIPT"):
         for k, v in mod.__dict__.items():
             if k == path_list[-1]:
                 app.command()(v)
-
-
-@app.command()
-def access_token(username: str):
-    """
-    创建一个测试token
-    """
-    from fast_tmp.utils.token import create_access_token
-
-    print(create_access_token(
-        data={"sub": username},
-        expires_delta=datetime.timedelta(
-            hours=30
-        )
-    ))
 
 
 def main():

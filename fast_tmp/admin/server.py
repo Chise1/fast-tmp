@@ -4,69 +4,47 @@ from typing import Optional
 
 from fastapi import Depends, FastAPI, Form, Request
 from fastapi.templating import Jinja2Templates
-from sqlalchemy.orm import Session
+from starlette import status
 from starlette.responses import RedirectResponse
-from starlette.staticfiles import StaticFiles
+from tortoise.exceptions import BaseORMException
 
-from fast_tmp.admin.depends import authenticate_user, decode_access_token_from_data
+from fast_tmp.admin.site import GroupAdmin, UserAdmin
 from fast_tmp.conf import settings
-from fast_tmp.db import get_db_session
 from fast_tmp.models import User
-from fast_tmp.models.site import GroupAdmin, UserAdmin
-from fast_tmp.responses import BaseRes
+from fast_tmp.responses import BaseRes, FastTmpError
 from fast_tmp.site import model_list, register_model_site
 from fast_tmp.utils.token import create_access_token
 
 from ..jinja_extension.tags import register_tags
-from .constant import crud_root_rooter, model_router
+from .depends import get_user
 from .endpoint import router
+from .exception_handlers import fasttmp_exception_handler, tortoise_exception_handler
 
 base_path = os.path.dirname(__file__)
 templates = Jinja2Templates(directory=base_path + "/templates")
 register_tags(templates)
 admin = FastAPI(title="fast-tmp")
-if settings.LOCAL_STATIC:
-    admin.mount("/static", app=StaticFiles(directory=os.getcwd() + "/static"), name="static")
-else:
-    admin.mount("/static", app=StaticFiles(directory=base_path + "/static"), name="static")
+register_model_site({"Auth": [UserAdmin(), GroupAdmin()]})
+admin.include_router(router)
 
-register_model_site({"Auth": [UserAdmin, GroupAdmin]})
-admin.include_router(router, prefix=model_router)
+admin.exception_handler(FastTmpError)(fasttmp_exception_handler)
+admin.exception_handler(BaseORMException)(tortoise_exception_handler)
 
 
-@admin.get(
-    "/",
-    name="index",
-)
-def index(request: Request, user: Optional[User] = Depends(decode_access_token_from_data)):
-    if not user:
-        return RedirectResponse(request.url_for("admin:login"))
+@admin.post("/", name="index", dependencies=[Depends(get_user)])
+@admin.get("/", name="index", dependencies=[Depends(get_user)])
+async def index(request: Request):
     return templates.TemplateResponse(
         "index.html",
         {"request": request, "title": admin.title},
     )
 
 
-@admin.post(
-    "/",
-    name="index",
-)  # bug:can not use admin.route .It can't check depends.
-def index_post(request: Request, user: Optional[User] = Depends(decode_access_token_from_data)):
-    if not user:
-        return RedirectResponse(request.url_for("admin:login"))
-
-    return templates.TemplateResponse(
-        "index.html",
-        {"request": request, "title": admin.title},
-    )
-
-
-@admin.post("/login")
-def login(
+@admin.post("/login", name="login")
+async def login(
     request: Request,
     username: Optional[str] = Form(None),
     password: Optional[str] = Form(None),
-    session: Session = Depends(get_db_session),
 ):
     context = {
         "request": request,
@@ -80,20 +58,18 @@ def login(
     if not password:
         context["password_err"] = True
         return templates.TemplateResponse("login.html", context)
-
-    user = authenticate_user(username, password, session)
-    if not user:
-        context["errinfo"] = "e"
+    user = await User.filter(username=username).first()
+    if not user or not user.check_password(password) or not user.is_active:
+        context["errinfo"] = "username or password error!"
         return templates.TemplateResponse("login.html", context)
 
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user.username, "id": user.id}, expires_delta=access_token_expires
+        data={"sub": user.username, "id": user.pk}, expires_delta=access_token_expires
     )
     res = RedirectResponse(
-        request.url_for(
-            "admin:index",
-        ),
+        request.url_for("admin:index"),
+        status_code=status.HTTP_302_FOUND,
     )
     res.set_cookie("access_token", access_token, expires=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60)
     return res
@@ -123,20 +99,18 @@ def logout(request: Request):
     return res
 
 
-@admin.get("/site")
-def get_site(request: Request, user: Optional[User] = Depends(decode_access_token_from_data)):
-    if not user:
-        return RedirectResponse(request.url_for("admin:login"))
+@admin.get("/site", dependencies=[Depends(get_user)])
+def get_site(request: Request):
     pages = []
     for name, ml in model_list.items():  # todo add home page
-        pages.append(
+        pages.append(  # todo 增加权限控制，确认对应的页面
             {
                 "label": name,
                 "children": [
                     {
                         "label": model.name(),
                         "url": model.name(),
-                        "schemaApi": crud_root_rooter + model.name() + "/schema",
+                        "schemaApi": model.name() + "/schema",
                     }
                     for model in ml
                 ],

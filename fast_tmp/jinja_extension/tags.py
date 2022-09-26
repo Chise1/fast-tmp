@@ -1,3 +1,5 @@
+import os.path
+
 import jinja2
 from pydantic import typing
 
@@ -9,9 +11,7 @@ def register_tags(templates):
 
     @jinja2.pass_context
     def static(context: dict, **path_params: typing.Any) -> str:
-        request = context["request"]
-        path = "admin"
-        return request.url_for(path, **path_params)
+        return "/" + os.path.join(settings.STATIC_PATH, path_params["path"])
 
     env.globals["static"] = static
 
@@ -21,6 +21,6 @@ def register_tags(templates):
     def local_file(
         context: dict,
     ) -> bool:
-        return settings.LOCAL_STATIC
+        return settings.LOCAL_FILE
 
     env.globals["local_file"] = local_file
