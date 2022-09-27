@@ -59,6 +59,8 @@ class AmisOrm:
         """
         orm的值转成amis需要的值
         """
+        if callable(value):
+            return value()
         return value
 
     def amis_2_orm(self, value: Any) -> Any:

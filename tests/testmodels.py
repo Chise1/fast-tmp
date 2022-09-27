@@ -127,7 +127,7 @@ class Team(Model):
 
 class Gender(str, Enum):
     male = "male"
-    womale = "womale"
+    female = "female"
 
 
 class Degree(IntEnum):
@@ -154,5 +154,5 @@ class Role(Model):
     max_time_length = fields.TimeField(default=datetime.time)  # 最长游戏时长
     uuid = fields.UUIDField(default=uuid.uuid4)
     level = fields.SmallIntField(default=0)
-    creat_time = fields.DatetimeField(auto_now_add=True)
+    create_time = fields.DatetimeField(auto_now_add=True)
     update_time = fields.DatetimeField(auto_now=True)  # todo 这个是否有默认值？？？

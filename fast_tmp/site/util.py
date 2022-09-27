@@ -244,9 +244,11 @@ class TimeControl(BaseAdminControl):
             return None
         return datetime.time.fromisoformat(value)
 
-    def orm_2_amis(self, value: datetime.date) -> Any:
+    def orm_2_amis(self, value: datetime.time) -> Any:
         if value is None:
             return None
+        if callable(value):
+            return value().strftime("%H:%M:%S")
         return value.strftime("%H:%M:%S")
 
 
