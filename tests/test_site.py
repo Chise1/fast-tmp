@@ -43,3 +43,4 @@ class TestColumnField(BaseSite):
         assert data["status"] == 0
         assert data["data"]["total"] == 1
         assert data["data"]["items"][0]["name"] == "John"
+        # update

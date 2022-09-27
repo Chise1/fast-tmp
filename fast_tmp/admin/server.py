@@ -108,9 +108,9 @@ def get_site(request: Request):
                 "label": name,
                 "children": [
                     {
-                        "label": model.name(),
-                        "url": model.name(),
-                        "schemaApi": model.name() + "/schema",
+                        "label": model.name,
+                        "url": model.prefix,
+                        "schemaApi": model.prefix + "/schema",
                     }
                     for model in ml
                 ],

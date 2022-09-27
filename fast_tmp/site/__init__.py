@@ -51,10 +51,10 @@ class DbSession:
 
 class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
     model: Type[Model]  # model
-    __name: Optional[str] = None
+    _name: Optional[str] = None
     list_display: Tuple[str, ...] = ()
     inline: Tuple[str, ...] = ()
-    prefix: str
+    _prefix: str
     # search list
     searchs: Tuple[str, ...] = ()
     filters: Tuple[ModelFilter, ...] = ()
@@ -85,12 +85,17 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
     ]
     _filters = None
 
+    @property
     def name(self) -> str:
-        if self.__name is None:
-            self.__name = self.model.__name__
-        return self.__name
+        if self._name is None:
+            self._name = self.model.__name__
+        return self._name
 
-    def get_filters(self):
+    @property
+    def prefix(self):
+        return self._prefix
+
+    def get_filters(self) -> Dict[str, ModelFilter]:
         if not self._filters:
             self._filters = {i.name: i for i in self.filters}
         return self._filters
@@ -125,10 +130,10 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
             dialog=Dialog(
                 title="新增",
                 body=Form(
-                    name=f"新增{self.name()}",
-                    title=f"新增{self.name()}",
+                    name=f"新增{self.name}",
+                    title=f"新增{self.name}",
                     body=[(i.get_control(request)) for i in controls.values()],
-                    api=f"post:{self.name()}/create",
+                    api=f"post:{self.prefix}/create",
                 ),
             ),
         )
@@ -148,7 +153,7 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
             level=ButtonLevelEnum.link,
             className="text-danger",
             confirmText="确认要删除？",
-            api="delete:" + self.name() + "/delete/$pk",
+            api="delete:" + self.prefix + "/delete/$pk",
         )
 
     def get_update_one_button(self, request: Request):
@@ -159,11 +164,11 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
             dialog=Dialog(
                 title="修改",
                 body=Form(
-                    title=f"修改{self.name()}",
-                    name=f"修改{self.name()}",
+                    title=f"修改{self.name}",
+                    name=f"修改{self.name}",
                     body=body,
-                    api="put:" + self.name() + "/update/$pk",
-                    initApi="get:" + self.name() + "/update/$pk",
+                    api="put:" + self.prefix + "/update/$pk",
+                    initApi="get:" + self.prefix + "/update/$pk",
                 ),
             ),
         )
@@ -202,9 +207,9 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
             columns.extend(self.get_list_page(request))
         columns.append(self.get_operation(request))
         crud = CRUD(
-            api=self.prefix + "/list",
+            api=self._prefix + "/list",
             columns=columns,
-            quickSaveItemApi=self.prefix + "/patch/" + "$pk",
+            quickSaveItemApi=self._prefix + "/patch/" + "$pk",
             syncLocation=False,
         )
         if len(self.get_filters()) > 0:
@@ -224,7 +229,7 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
         return ret
 
     def get_app_page(self, request: Request):
-        return Page(title=self.name(), body=self.get_crud(request)).dict(exclude_none=True)
+        return Page(title=self.name, body=self.get_crud(request)).dict(exclude_none=True)
 
     async def put(self, request: Request, pk: str, data: Dict[str, Any]) -> Model:
         obj = await self.get_instance(request, pk)
@@ -314,7 +319,7 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
 
     def make_fields(self):
         if not self.fields.get("pk"):
-            self.fields["pk"] = create_column("pk", self.model._meta.pk, self.prefix)
+            self.fields["pk"] = create_column("pk", self.model._meta.pk, self._prefix)
         s = []
         s.extend(self.list_display)
         s.extend(self.create_fields)
@@ -326,7 +331,7 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
                 if not field_type:
                     logger.error(f"can not found field {field} in {self.model.__name__}")
                     continue
-                self.fields[field] = create_column(field, field_type, self.prefix)
+                self.fields[field] = create_column(field, field_type, self._prefix)
 
     def get_control_field(self, name: str) -> BaseAdminControl:
         ret = self.fields.get(name)
@@ -338,9 +343,9 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
         if not self.fields:
             self.fields = {}
         if prefix:
-            self.prefix = prefix
+            self._prefix = prefix
         else:
-            self.prefix = self.name()
+            self._prefix = self.model.__name__
         self.make_fields()
         col_set = set(self.get_list_distplay())
         for i in self.inline:
@@ -378,6 +383,6 @@ def register_model_site(model_group: Dict[str, List[ModelAdmin]]):
 def get_model_site(resource: str) -> Optional[ModelAdmin]:
     for m_l in model_list.values():
         for i in m_l:
-            if i.name() == resource:
+            if i.prefix == resource:
                 return i
     raise not_found_model
