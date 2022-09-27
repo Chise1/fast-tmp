@@ -6,17 +6,18 @@
 
 # fast-tmp
 
-项目模板
-
 ## 概述
-本项目主要是方便快速构建fastapi的后端开发环境，依赖于```cookiecutter```，并提供方便快捷的生成路由的方法。
-主要使用的开发包：
+fast-tmp项目是基于fastapi+tortoise-orm而构建的后台管理系统，类似于django-admin。
+依赖于amis低代码平台，后台可以很方便的通过json构建前台页面。
+主要支持如下功能：
+1. 完善的后台管理页面
+2. 方便的脚本支撑功能
 
-1. fastapi
-2. tortoise-orm
-3. cookiecutter
 
-整个项目在开发过程中参考了django的一些实现方式，尽量做到简洁明了。
+整个项目在开发过程中参考了django的一些实现方式。
+
+## 演示
+由于笔者比较穷租不起服务器给你们演示，所以你们可以自己拉个容器启动即可
 
 ## 安装fast-tmp
 使用pip
