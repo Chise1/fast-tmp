@@ -13,7 +13,6 @@ TORTOISE_ORM = {
             "models": [
                 "test_example.models",
                 "fast_tmp.models",
-                # "aerich.models",
             ],  # 注册app.models
             "default_connection": "default",
         }

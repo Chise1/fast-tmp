@@ -80,9 +80,9 @@ class BaseAdminControl(AbstractAmisAdminDB, AbstractControl, AmisOrm):
     async def get_value(self, request: Request, obj: Model) -> Any:
         return self.orm_2_amis(getattr(obj, self.name))
 
-    def __init__(self, name: str, _field: fields.Field, _prefix: str, **kwargs):
-        super().__init__(name, _prefix, **kwargs)
-        self._field = _field  # type: ignore
+    def __init__(self, name: str, field: fields.Field, prefix: str, **kwargs):
+        super().__init__(name, prefix, **kwargs)
+        self._field = field  # type: ignore
         self.name = name
         self.label = kwargs.get("label") or self.name
 

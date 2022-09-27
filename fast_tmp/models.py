@@ -65,7 +65,9 @@ class Permission(Model):
 class User(Model):
     username = fields.CharField(max_length=128, unique=True)
     password = fields.CharField(max_length=255)
+    name = fields.CharField(max_length=128)
     is_active = fields.BooleanField(default=True)
+    is_staff = fields.BooleanField(default=False)  # todo 为true才可以访问后台
     is_superuser = fields.BooleanField(default=False)
     groups: fields.ManyToManyRelation["Group"]
     permissions: fields.ManyToManyRelation[Permission] = fields.ManyToManyField(
@@ -119,7 +121,7 @@ class User(Model):
         return True
 
     def __str__(self):
-        return self.username
+        return self.name
 
 
 class Group(Model):

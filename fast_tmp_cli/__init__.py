@@ -20,12 +20,15 @@ except Exception as e:
 @async_to_sync
 async def create_superuser(username: str, password: str):
     from tortoise import Tortoise
-    await Tortoise.init(config=settings.TORTOISE_ORM)
+    try:
+        await Tortoise.init(config=settings.TORTOISE_ORM)
+    except AttributeError as e:
+        raise ValueError("may not config FASTAPI_SETTINGS_MODULE or "+str(e))
     from fast_tmp.models import User
     if await User.filter(username=username).exists():
         print(f"{username} 已经存在了")
         exit(1)
-    user = User(username=username, is_superuser=True)
+    user = User(username=username, is_superuser=True,is_staff=True,name=username)
     user.set_password(password)
     await user.save()
     sys.stdout.write(f"创建{username}成功\n")

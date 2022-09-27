@@ -132,6 +132,7 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
                 body=Form(
                     name=f"新增{self.name}",
                     title=f"新增{self.name}",
+                    # fixme 你的field字段传实例了吗？
                     body=[(i.get_control(request)) for i in controls.values()],
                     api=f"post:{self.prefix}/create",
                 ),
@@ -326,12 +327,20 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
         s.extend(self.update_fields)
         s = set(s)
         for field in s:
-            if not self.fields.get(field):
+            field_ = self.fields.get(field)
+            if not field_:
                 field_type = self.model._meta.fields_map.get(field)
                 if not field_type:
                     logger.error(f"can not found field {field} in {self.model.__name__}")
                     continue
                 self.fields[field] = create_column(field, field_type, self._prefix)
+            else:
+                if callable(field_):
+                    field_type = self.model._meta.fields_map.get(field)
+                    if not field_type:
+                        logger.error(f"can not found field {field} in {self.model.__name__}")
+                        continue
+                    self.fields[field] = field_(name=field, field=field_type, prefix=self.prefix)
 
     def get_control_field(self, name: str) -> BaseAdminControl:
         ret = self.fields.get(name)
