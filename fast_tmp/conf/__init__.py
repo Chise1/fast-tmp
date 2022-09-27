@@ -1,4 +1,5 @@
 import importlib
+import logging
 import os
 import sys
 from typing import Any, Dict, List, Optional, Union
@@ -8,6 +9,7 @@ from pydantic import AnyHttpUrl, BaseSettings, validator
 from fast_tmp.utils.db import init_model
 
 FASTAPI_VARIABLE = "FASTAPI_SETTINGS_MODULE"
+logger = logging.Logger(__file__)
 
 
 class Settings(BaseSettings):
@@ -43,12 +45,10 @@ class Settings(BaseSettings):
     # 额外的配置信息
     EXTRA_SETTINGS: Dict[str, Any] = {}
 
-    class Config:
-        case_sensitive = True
-        env_file = ".env"
-
     def __init__(self):
         super(Settings, self).__init__()
+        if not self.FASTAPI_SETTINGS_MODULE:
+            logger.warning("envirment FASTAPI_SETTINGS_MODULE is null")
         try:
             workdir = os.getcwd()  # 把工作路径加入到代码执行里面
             for path in sys.path:

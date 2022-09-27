@@ -1,13 +1,6 @@
 import os
 from typing import List
 
-import dotenv
-
-dotenv.load_dotenv()
-
-# import sentry_sdk
-# from sentry_sdk.integrations.redis import RedisIntegration
-
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = "awdfawfqergqreef"
 
