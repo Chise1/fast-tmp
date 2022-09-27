@@ -6,7 +6,7 @@ authors = ["Chise1 <chise123@live.com>"]
 include = ["LICENSE", "README.md"]
 license = "Apache-2.0"
 packages = [
-    { include = "fastapi_cli" },
+    { include = "fast_tmp_cli" },
     { include = "fast_tmp" }
 ]
 repository = "https://github.com/Chise1/fast-tmp"
@@ -51,9 +51,9 @@ default = true
 
 
 [tool.poetry.scripts]
-fast-tmp = "fastapi_cli:main"
+fast-tmp = "fast_tmp_cli:main"
 
 [tool.bandit]
-exclude_dirs = ["tests","fastapi_cli/tpl"]
+exclude_dirs = ["tests","fast_tmp_cli/tpl"]
 tests = ["B201", "B301"]
 skips = ["B101", "B601"]
