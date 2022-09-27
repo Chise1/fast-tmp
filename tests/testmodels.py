@@ -155,4 +155,4 @@ class Role(Model):
     uuid = fields.UUIDField(default=uuid.uuid4)
     level = fields.SmallIntField(default=0)
     create_time = fields.DatetimeField(auto_now_add=True)
-    update_time = fields.DatetimeField(auto_now=True)  # todo 这个是否有默认值？？？
+    update_time = fields.DatetimeField(auto_now=True)

@@ -113,20 +113,6 @@ async def delete_func(
     return BaseRes()
 
 
-# class DIDS(BaseModel):
-#     ids: List[int]
-
-
-#  todo next version
-# @router.post("/{resource}/deleteMany/")
-# def bulk_delete(request: Request, ids: DIDS,
-#                 model_site: Optional[ModelAdmin] = Depends(get_model_site),
-#
-#                 ):
-#     # await model.filter(pk__in=ids.ids).delete()
-#     return BaseRes()
-
-
 @router.get("/{resource}/schema", dependencies=[Depends(get_user)])
 async def get_schema(
     request: Request,
