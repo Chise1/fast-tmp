@@ -31,6 +31,7 @@ class ControlEnum(str, Enum):
     checkboxes = "checkboxes"
     picker = "picker"
     custom = "custom"
+    input_password = "input-password"
 
 
 class ItemModel(str, Enum):

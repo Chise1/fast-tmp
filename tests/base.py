@@ -22,7 +22,7 @@ class BaseSite(SimpleTestCase):
         self.client = AsyncClient(app=self.app, base_url="http://test")
         await self.client.__aenter__()
         await Tortoise.init(settings.TORTOISE_ORM, _create_db=True)
-        await Tortoise.generate_schemas(False)
+        await Tortoise.generate_schemas(True)
         await self.create_superuser("admin", "admin")
 
     async def asyncTearDown(self) -> None:
@@ -33,7 +33,9 @@ class BaseSite(SimpleTestCase):
     async def create_superuser(cls, username, password):
         if await User.filter(username=username).exists():
             return
-        user = User(username=username, is_superuser=True)
+        user = User(
+            username=username, is_superuser=True, is_active=True, is_staff=True, name=username
+        )
         user.set_password(password)
         await user.save()
 

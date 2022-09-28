@@ -58,7 +58,7 @@ async def login(
     if not password:
         context["password_err"] = True
         return templates.TemplateResponse("login.html", context)
-    user = await User.filter(username=username).first()
+    user = await User.filter(username=username, is_staff=True, is_active=True).first()
     if not user or not user.check_password(password) or not user.is_active:
         context["errinfo"] = "username or password error!"
         return templates.TemplateResponse("login.html", context)
@@ -106,7 +106,7 @@ async def get_site(request: Request):
     if not user.is_superuser:
         perms = [
             i.codename
-            for i in await Permission.filter(groups__user=user, codename__endswith="list")
+            for i in await Permission.filter(groups__users=user, codename__endswith="list")
         ]
     else:
         perms = [i.codename for i in await Permission.filter(codename__endswith="list")]
