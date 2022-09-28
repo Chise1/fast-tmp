@@ -33,7 +33,7 @@ check: deps
 
 
 test: deps
-	$(py_warn) FASTAPI_SETTINGS_MODULE=tests.settings TORTOISE_TEST_DB=sqlite://:memory: pytest --cov-report= $(pytest_opts)
+	$(py_warn) FASTAPI_SETTINGS_MODULE=tests.settings TORTOISE_TEST_DB=sqlite://:memory: pytest  $(pytest_opts)
 
 test_sqlite:
 	$(py_warn) FASTAPI_SETTINGS_MODULE=tests.settings TORTOISE_TEST_DB=sqlite://:memory: pytest --cov-report html $(pytest_opts)

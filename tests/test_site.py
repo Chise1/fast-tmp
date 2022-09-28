@@ -20,7 +20,7 @@ class TestColumnField(BaseSite):
         # todo 增加数据验证
         assert data["status"] == 0
         # 测试写入数据
-        data = {
+        role_data = {
             "name": "John",
             "age": 18,
             "desc": "My name is John",
@@ -32,7 +32,7 @@ class TestColumnField(BaseSite):
             "config": '{"color":"green"}',
             "max_time_length": "00:23:19",
         }
-        response = await self.client.post("/admin/Role/create", json=data)
+        response = await self.client.post("/admin/Role/create", json=role_data)
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == 0
@@ -44,3 +44,17 @@ class TestColumnField(BaseSite):
         assert data["data"]["total"] == 1
         assert data["data"]["items"][0]["name"] == "John"
         # update
+        pk = data["data"]["items"][0]["pk"]
+        response = await self.client.get(f"/admin/Role/update/{pk}")
+        assert response.status_code == 200
+        assert response.json()["status"] == 0
+        role_data["name"]="Amd"
+        response = await self.client.put(f"/admin/Role/update/{pk}",json=role_data)
+        assert response.status_code == 200
+        assert response.json()["status"] == 0
+        response = await self.client.get("/admin/Role/list")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == 0
+        assert data["data"]["total"] == 1
+        assert data["data"]["items"][0]["name"] == "Amd"

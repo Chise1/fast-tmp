@@ -17,7 +17,6 @@ except Exception as e:
     settings = None
 
 
-@async_to_sync
 async def create_superuser(username: str, password: str):
     from tortoise import Tortoise
     try:
@@ -34,7 +33,6 @@ async def create_superuser(username: str, password: str):
     sys.stdout.write(f"创建{username}成功\n")
 
 
-@async_to_sync
 async def make_permissions():
     from tortoise import Tortoise
     from fast_tmp.utils.model import get_all_models
@@ -43,7 +41,10 @@ async def make_permissions():
     all_model = get_all_models()
     for model in all_model:
         model_name=model.__name__.lower()
-        await Permission.get_or_create(codename=model_name + "_create", defaults={"label": f"{model_name}_创建"})
+        try:
+            await Permission.get_or_create(codename=model_name + "_create", defaults={"label": f"{model_name}_创建"})
+        except Exception as e:
+            print(e)
         await Permission.get_or_create(codename=model_name + "_update", defaults={"label": f"{model_name}_更新"})
         await Permission.get_or_create(codename=model_name + "_delete", defaults={"label": f"{model_name}_删除"})
         await Permission.get_or_create(codename=model_name + "_list", defaults={"label": f"{model_name}_查看"})
@@ -55,7 +56,7 @@ def make_perm():
     """
     同步所有model的权限
     """
-    make_permissions()
+    async_to_sync(make_permissions)()
 
 
 @app.command()
@@ -63,7 +64,7 @@ def createsuperuser(username: str, password: str):
     """
     创建超级用户
     """
-    create_superuser(username, password)
+    async_to_sync(create_superuser)(username, password)
 
 
 @app.command()

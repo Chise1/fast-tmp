@@ -28,6 +28,18 @@ class RoleModel(ModelAdmin):
         "config",
         "max_time_length",
     )
+    update_fields = (
+        "name",
+        "age",
+        "desc",
+        "married",
+        "degree",
+        "gender",
+        "create_time",
+        "birthday",
+        "config",
+        "max_time_length",
+    )
 
 
 class RoleModel2(ModelAdmin):
@@ -64,7 +76,18 @@ class RoleModel2(ModelAdmin):
         "config",
         "max_time_length",
     )
-
+    update_fields = (
+        "name",
+        "age",
+        "desc",
+        "married",
+        "degree",
+        "gender",
+        "create_time",
+        "birthday",
+        "config",
+        "max_time_length",
+    )
 
 class BookModel(ModelAdmin):
     model = Book
