@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Callable, Coroutine, Dict, List, Optional, Tuple, Type, Set
+from typing import Any, Callable, Coroutine, Dict, List, Optional, Set, Tuple, Type
 
 from starlette.requests import Request
 from tortoise.models import Model
@@ -15,47 +15,16 @@ from fast_tmp.amis.frame import Dialog
 from fast_tmp.amis.page import Page
 from fast_tmp.models import Permission
 from fast_tmp.responses import NotFoundError, not_found_model
-from fast_tmp.site.base import ModelFilter, RegisterRouter
+from fast_tmp.site.base import DbSession, ModelFilter, RegisterRouter
 from fast_tmp.site.util import BaseAdminControl, RelationSelectApi, create_column
 
 logger = logging.getLogger(__file__)
 
 
-# 操作数据库的方法
-class DbSession:
-    async def list(
-        self,
-        request: Request,
-        perPage: int = 10,
-        page: int = 1,
-    ):
-        """
-        获取列表
-        """
-        pass
-
-    async def get_instance(self, request: Request, pk: Any) -> Optional[Model]:
-        """
-        根据pk获取一个实例
-        """
-        pass
-
-    async def patch(self, request: Request, pk: str, data: Dict[str, Any]) -> Model:
-        """
-        对inline的数据进行更新
-        """
-        pass
-
-    async def create(self, request: Request, data: Dict[str, Any]) -> Model:
-        pass
-
-
-class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
+class ModelAdmin(DbSession, RegisterRouter):  # todo inline字段必须都在update_fields内
     model: Type[Model]  # model
-    _name: Optional[str] = None
     list_display: Tuple[str, ...] = ()
     inline: Tuple[str, ...] = ()
-    _prefix: str
     # search list
     searchs: Tuple[str, ...] = ()
     filters: Tuple[ModelFilter, ...] = ()
@@ -82,16 +51,6 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
         ],
     ]
     _filters = None
-
-    @property
-    def name(self) -> str:
-        if self._name is None:
-            self._name = self.model.__name__.lower()
-        return self._name
-
-    @property
-    def prefix(self):
-        return self._prefix
 
     def get_filters(self) -> Dict[str, ModelFilter]:
         if not self._filters:
@@ -373,12 +332,11 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
         return ret
 
     def __init__(self, prefix: str = None):
+        if not prefix:
+            prefix = self.model.__name__
+        super().__init__(prefix, self.model.__name__.lower())
         if not self.fields:
             self.fields = {}
-        if prefix:
-            self._prefix = prefix
-        else:
-            self._prefix = self.model.__name__
         self.make_fields()
         col_set = set(self.get_list_distplay())
         for i in self.inline:
@@ -406,33 +364,23 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
 
 
 # TModelAdmin=TypeVar("TModelAdmin",bound=ModelAdmin)
-model_list: Dict[str, List[ModelAdmin]] = {}
+model_list: Dict[str, List[RegisterRouter]] = {}
 resources: Set[str] = set()
-home: Optional[ModelAdmin] = None
 
 
-def register_model_site(model_group: Dict[str, List[ModelAdmin]]):
+def register_model_site(model_group: Dict[str, List[RegisterRouter]]):
     for models in model_group.values():
         for model in models:
             if model.prefix in resources:
-                raise ValueError("prefix can not be same!")
+                raise ValueError(f"prefix {model.prefix} can not be same!")
         else:
             resources.add(model.prefix)
     model_list.update(model_group)
 
 
-def register_home(model: RegisterRouter):
-    global home
-    home = model
-
-
-def get_model_site(resource: str) -> Optional[ModelAdmin]:
+def get_model_site(resource: str) -> Optional[RegisterRouter]:
     for m_l in model_list.values():
         for i in m_l:
             if i.prefix == resource:
                 return i
     raise not_found_model
-
-
-def get_home_site():
-    return home

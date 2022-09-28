@@ -1,9 +1,4 @@
-from fast_tmp.site import register_model_site
-
-from .admin import RoleModel
 from .base import BaseSite
-
-register_model_site({"fieldtesting": [RoleModel()]})
 
 
 class TestColumnField(BaseSite):
@@ -48,8 +43,8 @@ class TestColumnField(BaseSite):
         response = await self.client.get(f"/admin/Role/update/{pk}")
         assert response.status_code == 200
         assert response.json()["status"] == 0
-        role_data["name"]="Amd"
-        response = await self.client.put(f"/admin/Role/update/{pk}",json=role_data)
+        role_data["name"] = "Amd"
+        response = await self.client.put(f"/admin/Role/update/{pk}", json=role_data)
         assert response.status_code == 200
         assert response.json()["status"] == 0
         response = await self.client.get("/admin/Role/list")

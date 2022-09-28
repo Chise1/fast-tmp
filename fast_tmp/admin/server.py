@@ -12,21 +12,18 @@ from fast_tmp.admin.site import GroupAdmin, PermissionAdmin, UserAdmin
 from fast_tmp.conf import settings
 from fast_tmp.models import Permission, User
 from fast_tmp.responses import BaseRes, FastTmpError
-from fast_tmp.site import model_list, register_model_site, get_home_site, register_home
+from fast_tmp.site import model_list, register_model_site
 from fast_tmp.utils.token import create_access_token
 
 from ..jinja_extension.tags import register_tags
 from .depends import get_staff
 from .endpoint import router
 from .exception_handlers import fasttmp_exception_handler, tortoise_exception_handler
-from ..site.page import IndexPage
 
 base_path = os.path.dirname(__file__)
 templates = Jinja2Templates(directory=base_path + "/templates")
 register_tags(templates)
 admin = FastAPI(title="fast-tmp")
-register_home(IndexPage("home","home",admin))
-
 register_model_site({"Auth": [UserAdmin(), GroupAdmin(), PermissionAdmin()]})
 admin.include_router(router)
 
@@ -45,9 +42,9 @@ async def index(request: Request):
 
 @admin.post("/login", name="login")
 async def login(
-        request: Request,
-        username: Optional[str] = Form(None),
-        password: Optional[str] = Form(None),
+    request: Request,
+    username: Optional[str] = Form(None),
+    password: Optional[str] = Form(None),
 ):
     context = {
         "request": request,
@@ -105,7 +102,7 @@ def logout(request: Request):
 @admin.get("/site", dependencies=[Depends(get_staff)])
 async def get_site(request: Request):
     pages = []
-    home_flag=None
+    index_page = None
     user = request.user
     if not user.is_superuser:
         perms = [
@@ -118,16 +115,12 @@ async def get_site(request: Request):
         ml_p = []
         for model in ml:
             if model.name + "_list" in perms:
+                if not index_page:
+                    index_page = model
                 ml_p.append(model)
-                if model.is_home:
-                    home_flag={
-                        "label":model.name,
-                        "url":"/",
-                        "redirect":model.prefix
-                    }
         if len(ml_p) == 0:
             continue
-        pages.append(  # todo 增加权限控制，确认对应的页面
+        pages.append(
             {
                 "label": name,
                 "children": [
@@ -140,6 +133,6 @@ async def get_site(request: Request):
                 ],
             }
         )
-    if home_flag:
-        pages.append(home_flag)
+    if index_page:
+        pages.insert(0, {"label": index_page.name, "url": "/", "redirect": index_page.prefix})
     return BaseRes(data={"pages": pages})

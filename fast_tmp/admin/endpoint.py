@@ -5,7 +5,7 @@ from starlette.requests import Request
 
 from fast_tmp.admin.depends import get_staff
 from fast_tmp.responses import BaseRes, ListDataWithPage
-from fast_tmp.site import ModelAdmin, get_model_site
+from fast_tmp.site import DbSession, RegisterRouter, get_model_site
 
 router = APIRouter()
 
@@ -13,7 +13,7 @@ router = APIRouter()
 @router.get("/{resource}/list", dependencies=[Depends(get_staff)])
 async def list_view(
     request: Request,
-    page_model: ModelAdmin = Depends(get_model_site),
+    page_model: DbSession = Depends(get_model_site),
     perPage: int = 10,
     page: int = 1,
 ):
@@ -33,7 +33,7 @@ async def prefetch_view(
     pk: Optional[str] = None,
     perPage: Optional[int] = None,
     page: Optional[int] = None,
-    page_model: ModelAdmin = Depends(get_model_site),
+    page_model: DbSession = Depends(get_model_site),
 ):
     """
     对多对多外键进行额外的加载
@@ -49,7 +49,7 @@ async def select_view(
     pk: Optional[str] = None,
     perPage: Optional[int] = None,
     page: Optional[int] = None,
-    page_model: ModelAdmin = Depends(get_model_site),
+    page_model: DbSession = Depends(get_model_site),
 ):
     """
     枚举字段的额外加载，主要用于外键
@@ -62,7 +62,7 @@ async def select_view(
 async def patch_data(
     request: Request,
     pk: str,
-    page_model: ModelAdmin = Depends(get_model_site),
+    page_model: DbSession = Depends(get_model_site),
 ):
     """
     内联模式快速修改需要的接口
@@ -76,7 +76,7 @@ async def patch_data(
 async def update_data(
     request: Request,
     pk: str,
-    page_model: ModelAdmin = Depends(get_model_site),
+    page_model: DbSession = Depends(get_model_site),
 ):
     data = await request.json()
     data = await page_model.put(request, pk, data)
@@ -87,7 +87,7 @@ async def update_data(
 async def update_view(
     request: Request,
     pk: str,
-    page_model: ModelAdmin = Depends(get_model_site),
+    page_model: DbSession = Depends(get_model_site),
 ):
     data = await page_model.put_get(request, pk)
     return BaseRes(data=data)
@@ -96,7 +96,7 @@ async def update_view(
 @router.post("/{resource}/create", dependencies=[Depends(get_staff)])
 async def create(
     request: Request,
-    page_model: ModelAdmin = Depends(get_model_site),
+    page_model: DbSession = Depends(get_model_site),
 ):
     data = await request.json()
     await page_model.create(request, data)
@@ -107,7 +107,7 @@ async def create(
 async def delete_func(
     request: Request,
     pk: str,
-    page_model: ModelAdmin = Depends(get_model_site),
+    page_model: DbSession = Depends(get_model_site),
 ):
     await page_model.delete(request, pk)
     return BaseRes()
@@ -116,6 +116,6 @@ async def delete_func(
 @router.get("/{resource}/schema", dependencies=[Depends(get_staff)])
 async def get_schema(
     request: Request,
-    page: ModelAdmin = Depends(get_model_site),
+    page: RegisterRouter = Depends(get_model_site),
 ):
     return BaseRes(data=await page.get_app_page(request))

@@ -1,7 +1,9 @@
-from typing import Optional, Any
+from typing import Any, Optional
 
 from pydantic import BaseModel
+
 from fast_tmp.amis.base import BaseAmisModel
+
 
 class CardHeader(BaseModel):
     title: str
