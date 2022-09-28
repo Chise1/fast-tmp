@@ -10,7 +10,7 @@ class BaseAmisModel(BaseModel):
     所有amis类的父类
     """
 
-    type: TypeEnum
+    type: str
 
 
 AmisModel = TypeVar("AmisModel", bound=BaseAmisModel)

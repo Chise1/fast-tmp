@@ -3,7 +3,7 @@ from typing import List, Optional, Union
 
 from pydantic.main import BaseModel
 
-from .abstract_schema import _Action
+from .base import _Action
 from .enums import DialogSize
 
 

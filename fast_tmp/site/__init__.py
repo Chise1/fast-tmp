@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Callable, Coroutine, Dict, List, Optional, Tuple, Type
+from typing import Any, Callable, Coroutine, Dict, List, Optional, Tuple, Type, Set
 
 from starlette.requests import Request
 from tortoise.models import Model
@@ -15,7 +15,7 @@ from fast_tmp.amis.frame import Dialog
 from fast_tmp.amis.page import Page
 from fast_tmp.models import Permission
 from fast_tmp.responses import NotFoundError, not_found_model
-from fast_tmp.site.base import ModelFilter
+from fast_tmp.site.base import ModelFilter, RegisterRouter
 from fast_tmp.site.util import BaseAdminControl, RelationSelectApi, create_column
 
 logger = logging.getLogger(__file__)
@@ -407,10 +407,23 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
 
 # TModelAdmin=TypeVar("TModelAdmin",bound=ModelAdmin)
 model_list: Dict[str, List[ModelAdmin]] = {}
+resources: Set[str] = set()
+home: Optional[ModelAdmin] = None
 
 
 def register_model_site(model_group: Dict[str, List[ModelAdmin]]):
+    for models in model_group.values():
+        for model in models:
+            if model.prefix in resources:
+                raise ValueError("prefix can not be same!")
+        else:
+            resources.add(model.prefix)
     model_list.update(model_group)
+
+
+def register_home(model: RegisterRouter):
+    global home
+    home = model
 
 
 def get_model_site(resource: str) -> Optional[ModelAdmin]:
@@ -419,3 +432,7 @@ def get_model_site(resource: str) -> Optional[ModelAdmin]:
             if i.prefix == resource:
                 return i
     raise not_found_model
+
+
+def get_home_site():
+    return home

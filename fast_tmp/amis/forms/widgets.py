@@ -4,8 +4,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from pydantic import HttpUrl
 from pydantic.main import BaseModel
 
-# from fast_tmp.amis.abstract_schema import Action
-from fast_tmp.amis.forms import Column, Control, SelectOption  # , Limit
+from fast_tmp.amis.forms import Column, Control, SelectOption
 from fast_tmp.amis.forms.enums import ControlEnum
 
 

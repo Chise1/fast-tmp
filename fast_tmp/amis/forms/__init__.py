@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel
 
-from fast_tmp.amis.abstract_schema import BaseAmisModel
+from fast_tmp.amis.base import BaseAmisModel
 from fast_tmp.amis.enums import TypeEnum
 from fast_tmp.amis.forms.enums import ControlEnum, FormWidgetSize, ItemModel
 

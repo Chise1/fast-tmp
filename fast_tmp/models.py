@@ -24,6 +24,7 @@ class User(Model):
     username = fields.CharField(max_length=128, unique=True)
     password = fields.CharField(max_length=255)
     name = fields.CharField(max_length=128)
+    avatar = fields.CharField(max_length=128,null=True)
     is_active = fields.BooleanField(default=True)
     is_staff = fields.BooleanField(default=False)
     is_superuser = fields.BooleanField(default=False)

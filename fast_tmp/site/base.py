@@ -1,11 +1,18 @@
-from typing import Any, Coroutine, Optional
+import logging
 
-from starlette.requests import Request
-from tortoise import Model, fields
-from tortoise.queryset import QuerySet
+from fastapi import FastAPI, APIRouter
+from tortoise import fields
 
 from fast_tmp.amis.forms import Column, Control
 from fast_tmp.amis.response import AmisStructError
+from typing import Any, Coroutine, Dict,  Optional
+from starlette.requests import Request
+from tortoise.models import Model
+from tortoise.queryset import QuerySet
+
+from fast_tmp.amis.page import Page
+
+logger = logging.getLogger(__file__)
 
 
 class AbstractAmisAdminDB:
@@ -100,13 +107,13 @@ class ModelFilter:
         return queryset
 
     def __init__(
-        self,
-        name: str,
-        type: str = "input-text",
-        label: str = None,
-        clearable=None,
-        placeholder=None,
-        field: fields.Field = None,
+            self,
+            name: str,
+            type: str = "input-text",
+            label: str = None,
+            clearable=None,
+            placeholder=None,
+            field: fields.Field = None,
     ):
         self.name = name
         self._field = field
@@ -114,3 +121,52 @@ class ModelFilter:
         self.label = label or self.name
         self.clearable = clearable
         self.placeholder = placeholder
+
+
+# 操作数据库的方法
+class ModelSession:
+    async def list(
+            self,
+            request: Request,
+            perPage: int = 10,
+            page: int = 1,
+    ):
+        """
+        获取列表
+        """
+        pass
+
+    async def get_instance(self, request: Request, pk: Any) -> Optional[Model]:
+        """
+        根据pk获取一个实例
+        """
+        pass
+
+    async def patch(self, request: Request, pk: str, data: Dict[str, Any]) -> Model:
+        """
+        对inline的数据进行更新
+        """
+        pass
+
+    async def create(self, request: Request, data: Dict[str, Any]) -> Model:
+        pass
+
+
+class RegisterRouter:
+    _name: str
+    _prefix: str
+    _app: Optional[FastAPI]
+    _router: Optional[APIRouter]
+
+    async def get_app_page(self, request: Request) -> Page:
+        pass
+
+    def registe_router(self, ):
+        if self._app is not None and self._router is not None:
+            self._app.include_router(self._router, prefix=self._prefix)
+
+    def __init__(self, prefix: str, name: str, app: Optional[FastAPI] = None,router:Optional[APIRouter]=None):
+        self._name = name
+        self._prefix = prefix
+        self._app = app
+        self._router=router

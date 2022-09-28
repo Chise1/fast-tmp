@@ -3,7 +3,7 @@ from typing import Optional, Union
 from pydantic import HttpUrl
 from pydantic.main import BaseModel
 
-from .abstract_schema import _Action
+from .base import _Action
 from .enums import ActionTypeEnum, ButtonLevelEnum, TypeEnum
 from .frame import Dialog, Drawer
 

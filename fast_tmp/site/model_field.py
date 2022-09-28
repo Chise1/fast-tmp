@@ -24,8 +24,6 @@ from fast_tmp.amis.actions import DialogAction
 from fast_tmp.amis.buttons import Operation
 from fast_tmp.amis.crud import CRUD
 from fast_tmp.amis.frame import Dialog
-from fast_tmp.site.base import AbstractAmisAdminDB, AbstractControl, AmisOrm
-
 
 class BaseAdminControl(AbstractAmisAdminDB, AbstractControl, AmisOrm):
     """
@@ -90,7 +88,19 @@ class BaseAdminControl(AbstractAmisAdminDB, AbstractControl, AmisOrm):
         value = self.amis_2_orm(value)
         self._field.validate(value)  # type: ignore
         return value
+class RelationSelectApi:
+    """
+    增加一个查询foreign外键所有字段的接口
+    """
 
+    async def get_selects(
+        self,
+        request: Request,
+        pk: Optional[str],
+        perPage: Optional[int],
+        page: Optional[int],
+    ) -> List[dict]:
+        pass
 
 class StrControl(BaseAdminControl):
     """
@@ -271,20 +281,6 @@ class JsonControl(TextControl):  # fixme 用代码编辑器重构？
             self._column_inline.quickEdit.validations = "isJson"
         return self._column_inline
 
-
-class RelationSelectApi:
-    """
-    增加一个查询foreign外键所有字段的接口
-    """
-
-    async def get_selects(
-        self,
-        request: Request,
-        pk: Optional[str],
-        perPage: Optional[int],
-        page: Optional[int],
-    ) -> List[dict]:
-        pass
 
 
 class ForeignKeyPickerControl(BaseAdminControl, RelationSelectApi):  # todo 支持搜索功能
