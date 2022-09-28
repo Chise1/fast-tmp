@@ -13,6 +13,7 @@ from fast_tmp.amis.filter import Filter, FilterModel
 from fast_tmp.amis.forms import Form
 from fast_tmp.amis.frame import Dialog
 from fast_tmp.amis.page import Page
+from fast_tmp.models import Permission
 from fast_tmp.responses import NotFoundError, not_found_model
 from fast_tmp.site.base import ModelFilter
 from fast_tmp.site.util import BaseAdminControl, RelationSelectApi, create_column
@@ -60,19 +61,16 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
     filters: Tuple[ModelFilter, ...] = ()
     # create
     create_fields: Tuple[str, ...] = ()
-    # exclude: Tuple[Union[str, BaseModel], ...] = ()
-    # update ,如果为空则取create_fields
     update_fields: Tuple[str, ...] = ()
     fields: Dict[str, BaseAdminControl] = None  # type: ignore
-    __list_display: Dict[str, BaseAdminControl] = {}
-    __list_display_with_pk: Dict[str, BaseAdminControl] = {}
+    _permissions: Optional[List[str]] = None  # 设置为 ()即可不验证权限
     methods: Tuple[str, ...] = (
         "list",
         "create",
         "put",
         "delete",
         # "deleteMany",
-    )  # todo 需要retrieve
+    )  # todo 需要retrieve？
     # 页面相关的东西
     __get_pks: Any = None
     list_per_page: int = 10  # 每页多少数据
@@ -88,7 +86,7 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
     @property
     def name(self) -> str:
         if self._name is None:
-            self._name = self.model.__name__
+            self._name = self.model.__name__.lower()
         return self._name
 
     @property
@@ -174,13 +172,15 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
             ),
         )
 
-    def get_operation(self, request: Request):
+    def get_operation(self, request: Request, codenames: List[str]):
         buttons = []
-        if "put" in self.methods and self.update_fields:
+        if "put" in self.methods and self.update_fields and self.name + "_update" in codenames:
             buttons.append(self.get_update_one_button(request))
-        if "delete" in self.methods:
+        if "delete" in self.methods and self.name + "delete" in codenames:
             buttons.append(self.get_del_one_button())
-        return Operation(buttons=buttons)
+        if len(buttons) > 0:
+            return Operation(buttons=buttons)
+        return None
 
     def get_filter_page(self, request: Request):
         """
@@ -199,21 +199,23 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
             ]
         )
 
-    def get_crud(self, request: Request):
+    def get_crud(self, request: Request, codenames: List[str]):
         body = []
         columns = []
-        if "create" in self.methods and self.create_fields:
+        if "create" in self.methods and self.create_fields and self.name + "_create" in codenames:
             body.append(self.get_create_dialogation_button(request))
-        if "list" in self.methods and self.list_display:
+        if "list" in self.methods and self.list_display and self.name + "_list" in codenames:
             columns.extend(self.get_list_page(request))
-        columns.append(self.get_operation(request))
+        buttons = self.get_operation(request, codenames)
+        if buttons:
+            columns.append(buttons)
         crud = CRUD(
             api=self._prefix + "/list",
             columns=columns,
             quickSaveItemApi=self._prefix + "/patch/" + "$pk",
             syncLocation=False,
         )
-        if len(self.get_filters()) > 0:
+        if len(self.get_filters()) > 0 and self.name + "_list" in codenames:
             crud.filter = self.get_filter_page(request)
         body.append(crud)
         return body
@@ -229,8 +231,9 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
         ret["pk"] = self.get_control_field("pk")
         return ret
 
-    def get_app_page(self, request: Request):
-        return Page(title=self.name, body=self.get_crud(request)).dict(exclude_none=True)
+    async def get_app_page(self, request: Request):
+        codenames = await self.permission_code(request)
+        return Page(title=self.name, body=self.get_crud(request, codenames)).dict(exclude_none=True)
 
     async def put(self, request: Request, pk: str, data: Dict[str, Any]) -> Model:
         obj = await self.get_instance(request, pk)
@@ -256,9 +259,14 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
 
     async def create(self, request: Request, data: Dict[str, Any]) -> Model:
         obj = self.model()
+        cors = []
         for field_name, field in self.get_create_fields().items():
-            await field.set_value(request, obj, data[field_name])
+            cor = await field.set_value(request, obj, data.get(field_name))  # 只有create可能有返回协程
+            if cor:
+                cors.append(cor)
         await obj.save()
+        for cor in cors:
+            await cor
         return obj
 
     async def delete(self, request: Request, pk: str):
@@ -317,6 +325,22 @@ class ModelAdmin(DbSession):  # todo inline字段必须都在update_fields内
         if instance is None:
             raise NotFoundError("can not found instance:" + str(pk))
         return instance
+
+    async def permission_code(self, request: Request):
+        if self._permissions is None:
+            self._permissions = [
+                self.name + "_list",
+                self.name + "_create",
+                self.name + "_update",
+                self.name + "delete",
+            ]
+        user = request.user
+        if user.is_superuser:
+            return self._permissions
+        return [
+            i.codename
+            for i in await Permission.filter(groups__users=user, codename__in=self._permissions)
+        ]
 
     def make_fields(self):
         if not self.fields.get("pk"):

@@ -48,16 +48,14 @@ async def __get_user_or_none(access_token: Optional[str] = Cookie(None)) -> Opti
                 return None
         except Exception:
             return None
-        user = await User.filter(username=username).first()
-        if user is not None and user.is_active:
-            return user
+        return await User.filter(username=username).first()
     return None
 
 
-async def get_user(request: Request, user: Optional[User] = Depends(__get_user_or_none)):
+async def get_staff(request: Request, user: Optional[User] = Depends(__get_user_or_none)):
     """
     found user and write to request
     """
-    if not user or not user.is_active:
+    if not user or not user.is_active or not user.is_staff:
         raise NoAuthError()
     request.scope["user"] = user

@@ -3,14 +3,14 @@ from typing import Optional
 from fastapi import APIRouter, Depends
 from starlette.requests import Request
 
-from fast_tmp.admin.depends import get_user
+from fast_tmp.admin.depends import get_staff
 from fast_tmp.responses import BaseRes, ListDataWithPage
 from fast_tmp.site import ModelAdmin, get_model_site
 
 router = APIRouter()
 
 
-@router.get("/{resource}/list", dependencies=[Depends(get_user)])
+@router.get("/{resource}/list", dependencies=[Depends(get_staff)])
 async def list_view(
     request: Request,
     page_model: ModelAdmin = Depends(get_model_site),
@@ -26,7 +26,7 @@ async def list_view(
     )
 
 
-@router.get("/{resource}/prefetch/{field_name}", dependencies=[Depends(get_user)])
+@router.get("/{resource}/prefetch/{field_name}", dependencies=[Depends(get_staff)])
 async def prefetch_view(
     request: Request,
     field_name: str,
@@ -42,7 +42,7 @@ async def prefetch_view(
     return BaseRes(data=datas)
 
 
-@router.get("/{resource}/select/{field_name}", dependencies=[Depends(get_user)])
+@router.get("/{resource}/select/{field_name}", dependencies=[Depends(get_staff)])
 async def select_view(
     request: Request,
     field_name: str,
@@ -58,7 +58,7 @@ async def select_view(
     return BaseRes(data=datas)
 
 
-@router.post("/{resource}/patch/{pk}", dependencies=[Depends(get_user)])
+@router.post("/{resource}/patch/{pk}", dependencies=[Depends(get_staff)])
 async def patch_data(
     request: Request,
     pk: str,
@@ -72,7 +72,7 @@ async def patch_data(
     return BaseRes().dict()
 
 
-@router.put("/{resource}/update/{pk}", dependencies=[Depends(get_user)])
+@router.put("/{resource}/update/{pk}", dependencies=[Depends(get_staff)])
 async def update_data(
     request: Request,
     pk: str,
@@ -83,7 +83,7 @@ async def update_data(
     return BaseRes(data=data)
 
 
-@router.get("/{resource}/update/{pk}", dependencies=[Depends(get_user)])
+@router.get("/{resource}/update/{pk}", dependencies=[Depends(get_staff)])
 async def update_view(
     request: Request,
     pk: str,
@@ -93,7 +93,7 @@ async def update_view(
     return BaseRes(data=data)
 
 
-@router.post("/{resource}/create", dependencies=[Depends(get_user)])
+@router.post("/{resource}/create", dependencies=[Depends(get_staff)])
 async def create(
     request: Request,
     page_model: ModelAdmin = Depends(get_model_site),
@@ -103,7 +103,7 @@ async def create(
     return BaseRes(data=data)
 
 
-@router.delete("/{resource}/delete/{pk}", dependencies=[Depends(get_user)])
+@router.delete("/{resource}/delete/{pk}", dependencies=[Depends(get_staff)])
 async def delete_func(
     request: Request,
     pk: str,
@@ -113,9 +113,9 @@ async def delete_func(
     return BaseRes()
 
 
-@router.get("/{resource}/schema", dependencies=[Depends(get_user)])
+@router.get("/{resource}/schema", dependencies=[Depends(get_staff)])
 async def get_schema(
     request: Request,
     page: ModelAdmin = Depends(get_model_site),
 ):
-    return BaseRes(data=page.get_app_page(request))
+    return BaseRes(data=await page.get_app_page(request))

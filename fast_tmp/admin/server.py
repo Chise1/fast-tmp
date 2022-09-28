@@ -10,13 +10,13 @@ from tortoise.exceptions import BaseORMException
 
 from fast_tmp.admin.site import GroupAdmin, UserAdmin
 from fast_tmp.conf import settings
-from fast_tmp.models import User
+from fast_tmp.models import Permission, User
 from fast_tmp.responses import BaseRes, FastTmpError
 from fast_tmp.site import model_list, register_model_site
 from fast_tmp.utils.token import create_access_token
 
 from ..jinja_extension.tags import register_tags
-from .depends import get_user
+from .depends import get_staff
 from .endpoint import router
 from .exception_handlers import fasttmp_exception_handler, tortoise_exception_handler
 
@@ -31,8 +31,8 @@ admin.exception_handler(FastTmpError)(fasttmp_exception_handler)
 admin.exception_handler(BaseORMException)(tortoise_exception_handler)
 
 
-@admin.post("/", name="index", dependencies=[Depends(get_user)])
-@admin.get("/", name="index", dependencies=[Depends(get_user)])
+@admin.post("/", name="index", dependencies=[Depends(get_staff)])
+@admin.get("/", name="index", dependencies=[Depends(get_staff)])
 async def index(request: Request):
     return templates.TemplateResponse(
         "index.html",
@@ -99,10 +99,24 @@ def logout(request: Request):
     return res
 
 
-@admin.get("/site", dependencies=[Depends(get_user)])
-def get_site(request: Request):
+@admin.get("/site", dependencies=[Depends(get_staff)])
+async def get_site(request: Request):
     pages = []
+    user = request.user
+    if not user.is_superuser:
+        perms = [
+            i.codename
+            for i in await Permission.filter(groups__user=user, codename__endswith="list")
+        ]
+    else:
+        perms = [i.codename for i in await Permission.filter(codename__endswith="list")]
     for name, ml in model_list.items():  # todo add home page
+        ml_p = []
+        for model in ml:
+            if model.name + "_list" in perms:
+                ml_p.append(model)
+        if len(ml_p) == 0:
+            continue
         pages.append(  # todo 增加权限控制，确认对应的页面
             {
                 "label": name,

@@ -1,8 +1,3 @@
-from typing import Any, Dict
-
-from requests import Request
-from tortoise import Model
-
 from fast_tmp.models import Group, Permission, User
 from fast_tmp.site import ModelAdmin
 from fast_tmp.site.field import Password
@@ -17,7 +12,6 @@ class UserAdmin(ModelAdmin):
         "password",
         "name",
         "groups",
-        "permissions",
         "is_active",
         "is_superuser",
         "is_staff",
@@ -27,12 +21,11 @@ class UserAdmin(ModelAdmin):
         "password",
         "name",
         "groups",
-        "permissions",
         "is_active",
         "is_superuser",
         "is_staff",
     )
-    fields = {"password": Password}
+    fields = {"password": Password}  # type: ignore
 
 
 class GroupAdmin(ModelAdmin):
@@ -44,6 +37,6 @@ class GroupAdmin(ModelAdmin):
 
 class PermissionAdmin(ModelAdmin):
     model = Permission
-    list_display = ("label", "codename", "users", "groups")
-    create_fields = ("label", "codename", "users", "groups")
-    update_fields = ("label", "codename", "users", "groups")
+    list_display = ("label", "codename", "groups")
+    create_fields = ("label", "codename", "groups")
+    update_fields = ("label", "codename", "groups")

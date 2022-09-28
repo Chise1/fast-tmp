@@ -9,7 +9,7 @@ from tortoise.contrib.fastapi import register_tortoise
 from fast_tmp.conf import settings
 from fast_tmp.depends.auth import get_current_active_user
 from fast_tmp.factory import create_app
-from fast_tmp.models import User
+from fast_tmp.models import Group, Permission, User
 from fast_tmp.site import register_model_site
 
 register_model_site({"fieldtesting": [FieldTestingModel(), BookModel(), AuthorModel()]})
@@ -25,7 +25,12 @@ async def get_perms(
     """
     测试权限
     """
-    print(await user.has_perms((codename,)))
+    codenames = codename.split(",")
+    permissions = await Permission.filter(codename__in=codenames)
+    group = Group()
+    group.name = "za"
+    group.permissions.add(*permissions)
+    await group.save()
     return await user.has_perm(codename)
 
 

@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import Optional, Tuple
+from typing import List, Optional
 
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -121,7 +121,7 @@ async def get_superuser(current_user: User = Depends(get_current_active_user)):
     return current_user
 
 
-async def get_user_has_perms(perms: Optional[Tuple[str, ...]]):
+async def get_user_has_perms(perms: Optional[List[str]]):
     """
     判定用户是否具有相关权限
     """

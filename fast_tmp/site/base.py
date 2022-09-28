@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any, Coroutine, Optional
 
 from starlette.requests import Request
 from tortoise import Model, fields
@@ -35,7 +35,7 @@ class AbstractAmisAdminDB:
         """
         return getattr(obj, self.name)
 
-    async def set_value(self, request: Request, obj: Model, value: Any):
+    async def set_value(self, request: Request, obj: Model, value: Any) -> Optional[Coroutine]:
         """
         设置值
         """

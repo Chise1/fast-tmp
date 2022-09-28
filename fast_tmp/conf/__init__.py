@@ -74,7 +74,7 @@ class Settings(BaseSettings):
 
             warnings.warn("TORTOISE_ORM为空")
         else:
-            init_model(self)
+            init_model(self)  # fixme 如果提示 has no models,请检查是否在执行导入settings之前先导入了fast_tmp.model
 
 
 settings = Settings()

@@ -43,10 +43,10 @@ async def make_permissions():
     all_model = get_all_models()
     for model in all_model:
         model_name=model.__name__.lower()
-        await Permission.get_or_create(codename=model_name + "_create", defaults={"label": f"{model_name}__创建"})
-        await Permission.get_or_create(codename=model_name + "_update", defaults={"label": f"{model_name}__更新"})
-        await Permission.get_or_create(codename=model_name + "_delete", defaults={"label": f"{model_name}__删除"})
-        await Permission.get_or_create(codename=model_name + "_list", defaults={"label": f"{model_name}__修改"})
+        await Permission.get_or_create(codename=model_name + "_create", defaults={"label": f"{model_name}_创建"})
+        await Permission.get_or_create(codename=model_name + "_update", defaults={"label": f"{model_name}_更新"})
+        await Permission.get_or_create(codename=model_name + "_delete", defaults={"label": f"{model_name}_删除"})
+        await Permission.get_or_create(codename=model_name + "_list", defaults={"label": f"{model_name}_查看"})
     sys.stdout.write("构建权限表完成\n")
 
 

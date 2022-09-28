@@ -1,6 +1,6 @@
 import datetime
 import json
-from typing import Any, List, Optional
+from typing import Any, Coroutine, List, Optional
 
 from starlette.requests import Request
 from tortoise import ForeignKeyFieldInstance, ManyToManyFieldInstance, Model, fields
@@ -493,14 +493,14 @@ class ManyToManyControl(BaseAdminControl, RelationSelectApi):
         if value is not None:
             pks = self.amis_2_orm(value)
             if len(pks) > 0:
-                value = await self._field.related_model.filter(pk__in=pks)  # type: ignore
-        return value
+                return await self._field.related_model.filter(pk__in=pks)  # type: ignore
+        return []
 
-    async def set_value(self, request: Request, obj: Model, value: Any):
+    async def set_value(self, request: Request, obj: Model, value: Any) -> Optional[Coroutine]:
         value = await self.validate(value)
         field: fields.ManyToManyRelation = getattr(obj, self.name)
-        # if not field:
-        #     raise NotFoundError()
+        if obj.pk is None and value:  # create
+            return field.add(*value)
         add_field = []
         remove_field = []
         for i in field:
@@ -519,6 +519,7 @@ class ManyToManyControl(BaseAdminControl, RelationSelectApi):
             await field.remove(*remove_field)
         if len(add_field) > 0:
             await field.add(*add_field)
+        return None
 
     def get_column_inline(
         self, request: Request
