@@ -74,15 +74,19 @@ def startproject():
     print(basedir)
     cookiecutter(os.path.join(basedir, "tpl/project"))
 
-
 @app.command()
-def staticfile():
-    """
-    离线环境下的swagger静态文件
-    """
-    basedir = os.path.abspath(os.path.dirname(__file__))
-    from cookiecutter.main import cookiecutter
-    cookiecutter(basedir + "/tpl/static")
+def downloadamis():
+    sys.stdout.write("download amis sdk from : https://github.com/baidu/amis/releases/download/v2.2.0/sdk.tar.gz")
+    os.system("curl -O https://github.com/baidu/amis/releases/download/v2.2.0/sdk.tar.gz")
+
+# @app.command()
+# def staticfile():
+#     """
+#     离线环境下的swagger静态文件
+#     """
+#     basedir = os.path.abspath(os.path.dirname(__file__))
+#     from cookiecutter.main import cookiecutter
+#     cookiecutter(basedir + "/tpl/static")
 
 
 # 导入自定义脚本执行方式
