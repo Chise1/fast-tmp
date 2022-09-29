@@ -1,7 +1,6 @@
 import os
 
 os.environ.setdefault("FASTAPI_SETTINGS_MODULE", "test_example.settings")
-
 from fastapi import Depends
 from test_example.admin import AuthorModel, BookModel, FieldTestingModel
 from tortoise.contrib.fastapi import register_tortoise

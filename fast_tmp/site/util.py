@@ -22,7 +22,8 @@ from fast_tmp.amis.forms.widgets import (
 )
 from fast_tmp.amis.frame import Dialog
 from fast_tmp.amis.response import AmisStructError
-from fast_tmp.responses import ListDataWithPage, TmpValueError
+from fast_tmp.exceptions import TmpValueError
+from fast_tmp.responses import ListDataWithPage
 from fast_tmp.site.base import AbstractAmisAdminDB, AbstractControl, AmisOrm
 
 
@@ -498,8 +499,10 @@ class ManyToManyControl(BaseAdminControl, RelationSelectApi):
     async def set_value(self, request: Request, obj: Model, value: Any) -> Optional[Coroutine]:
         value = await self.validate(value)
         field: fields.ManyToManyRelation = getattr(obj, self.name)
-        if obj.pk is None and value:  # create
-            return field.add(*value)
+        if obj.pk is None:
+            if value:  # create
+                return field.add(*value)
+            return None
         add_field = []
         remove_field = []
         for i in field:

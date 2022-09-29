@@ -8,7 +8,6 @@ from pydantic import AnyHttpUrl, BaseSettings, validator
 
 from fast_tmp.utils.db import init_model
 
-FASTAPI_VARIABLE = "FASTAPI_SETTINGS_MODULE"
 logger = logging.Logger(__file__)
 
 

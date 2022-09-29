@@ -29,8 +29,6 @@ class TestColumnField(BaseSite):
         }
         response = await self.client.post("/admin/Role/create", json=role_data)
         assert response.status_code == 200
-        data = response.json()
-        assert data["status"] == 0
         # get数据
         response = await self.client.get("/admin/Role/list")
         assert response.status_code == 200
@@ -46,7 +44,6 @@ class TestColumnField(BaseSite):
         role_data["name"] = "Amd"
         response = await self.client.put(f"/admin/Role/update/{pk}", json=role_data)
         assert response.status_code == 200
-        assert response.json()["status"] == 0
         response = await self.client.get("/admin/Role/list")
         assert response.status_code == 200
         data = response.json()

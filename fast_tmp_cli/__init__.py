@@ -22,15 +22,15 @@ async def create_superuser(username: str, password: str):
     try:
         await Tortoise.init(config=settings.TORTOISE_ORM)
     except AttributeError as e:
-        raise ValueError("may not config FASTAPI_SETTINGS_MODULE or "+str(e))
+        raise ValueError("may not config FASTAPI_SETTINGS_MODULE or " + str(e))
     from fast_tmp.models import User
     if await User.filter(username=username).exists():
-        print(f"{username} 已经存在了")
+        print(f"{username} has been created")
         exit(1)
-    user = User(username=username, is_superuser=True,is_staff=True,name=username)
+    user = User(username=username, is_superuser=True, is_staff=True, name=username)
     user.set_password(password)
     await user.save()
-    sys.stdout.write(f"创建{username}成功\n")
+    sys.stdout.write(f"success create {username}\n")
 
 
 async def make_permissions():
@@ -40,15 +40,12 @@ async def make_permissions():
     await Tortoise.init(config=settings.TORTOISE_ORM)
     all_model = get_all_models()
     for model in all_model:
-        model_name=model.__name__.lower()
-        try:
-            await Permission.get_or_create(codename=model_name + "_create", defaults={"label": f"{model_name}_创建"})
-        except Exception as e:
-            print(e)
-        await Permission.get_or_create(codename=model_name + "_update", defaults={"label": f"{model_name}_更新"})
-        await Permission.get_or_create(codename=model_name + "_delete", defaults={"label": f"{model_name}_删除"})
-        await Permission.get_or_create(codename=model_name + "_list", defaults={"label": f"{model_name}_查看"})
-    sys.stdout.write("构建权限表完成\n")
+        model_name = model.__name__.lower()
+        await Permission.get_or_create(codename=f"{model_name}_list", defaults={"label": f"{model_name}_list"})
+        await Permission.get_or_create(codename=f"{model_name}_create", defaults={"label": f"{model_name}_create"})
+        await Permission.get_or_create(codename=f"{model_name}_update", defaults={"label": f"{model_name}_update"})
+        await Permission.get_or_create(codename=f"{model_name}_delete", defaults={"label": f"{model_name}_delete"})
+    sys.stdout.write("success update table permission.\n")
 
 
 @app.command()
@@ -75,7 +72,8 @@ def startproject():
     basedir = os.path.abspath(os.path.dirname(__file__))
     from cookiecutter.main import cookiecutter
     print(basedir)
-    cookiecutter(os.path.join(basedir,"tpl/project"))
+    cookiecutter(os.path.join(basedir, "tpl/project"))
+
 
 @app.command()
 def staticfile():

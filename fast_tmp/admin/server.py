@@ -10,15 +10,20 @@ from tortoise.exceptions import BaseORMException
 
 from fast_tmp.admin.site import GroupAdmin, PermissionAdmin, UserAdmin
 from fast_tmp.conf import settings
+from fast_tmp.exceptions import FastTmpError, NoAuthError
 from fast_tmp.models import Permission, User
-from fast_tmp.responses import BaseRes, FastTmpError
+from fast_tmp.responses import BaseRes
 from fast_tmp.site import model_list, register_model_site
 from fast_tmp.utils.token import create_access_token
 
 from ..jinja_extension.tags import register_tags
 from .depends import get_staff
 from .endpoint import router
-from .exception_handlers import fasttmp_exception_handler, tortoise_exception_handler
+from .exception_handlers import (
+    auth_exception_handler,
+    fasttmp_exception_handler,
+    tortoise_exception_handler,
+)
 
 base_path = os.path.dirname(__file__)
 templates = Jinja2Templates(directory=base_path + "/templates")
@@ -26,7 +31,7 @@ register_tags(templates)
 admin = FastAPI(title="fast-tmp")
 register_model_site({"Auth": [UserAdmin(), GroupAdmin(), PermissionAdmin()]})
 admin.include_router(router)
-
+admin.exception_handler(NoAuthError)(auth_exception_handler)
 admin.exception_handler(FastTmpError)(fasttmp_exception_handler)
 admin.exception_handler(BaseORMException)(tortoise_exception_handler)
 
