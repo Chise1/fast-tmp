@@ -4,12 +4,15 @@ from starlette.requests import Request
 from starlette.responses import RedirectResponse, Response
 from tortoise.exceptions import BaseORMException
 
-from fast_tmp.responses import BaseRes, FastTmpError, NoAuthError
+from fast_tmp.exceptions import FastTmpError, NoAuthError
+from fast_tmp.responses import BaseRes
+
+
+async def auth_exception_handler(request: Request, exc: NoAuthError):
+    return RedirectResponse(request.url_for("admin:login"), status_code=status.HTTP_302_FOUND)
 
 
 async def fasttmp_exception_handler(request: Request, exc: FastTmpError):
-    if isinstance(exc, NoAuthError):
-        return RedirectResponse(request.url_for("admin:login"), status_code=status.HTTP_302_FOUND)
     return Response(
         status_code=200, content=exc.detail, headers={"Content-Type": "appliation/json"}
     )

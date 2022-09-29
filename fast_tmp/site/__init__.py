@@ -13,8 +13,8 @@ from fast_tmp.amis.filter import Filter, FilterModel
 from fast_tmp.amis.forms import Form
 from fast_tmp.amis.frame import Dialog
 from fast_tmp.amis.page import Page
+from fast_tmp.exceptions import NotFoundError
 from fast_tmp.models import Permission
-from fast_tmp.responses import NotFoundError, not_found_model
 from fast_tmp.site.base import DbSession, ModelFilter, RegisterRouter
 from fast_tmp.site.util import BaseAdminControl, RelationSelectApi, create_column
 
@@ -383,4 +383,4 @@ def get_model_site(resource: str) -> Optional[RegisterRouter]:
         for i in m_l:
             if i.prefix == resource:
                 return i
-    raise not_found_model
+    raise NotFoundError("can not found " + resource)

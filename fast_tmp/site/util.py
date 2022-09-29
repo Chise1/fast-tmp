@@ -22,7 +22,8 @@ from fast_tmp.amis.forms.widgets import (
 )
 from fast_tmp.amis.frame import Dialog
 from fast_tmp.amis.response import AmisStructError
-from fast_tmp.responses import ListDataWithPage, TmpValueError
+from fast_tmp.exceptions import TmpValueError
+from fast_tmp.responses import ListDataWithPage
 from fast_tmp.site.base import AbstractAmisAdminDB, AbstractControl, AmisOrm
 
 

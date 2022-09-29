@@ -5,7 +5,7 @@ from tortoise import Model
 
 from fast_tmp.amis.forms import Control, ControlEnum
 from fast_tmp.contrib.auth.hashers import make_password
-from fast_tmp.responses import TmpValueError
+from fast_tmp.exceptions import TmpValueError
 from fast_tmp.site.util import StrControl
 
 
