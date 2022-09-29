@@ -15,13 +15,14 @@ from fast_tmp.amis.frame import Dialog
 from fast_tmp.amis.page import Page
 from fast_tmp.exceptions import NotFoundError
 from fast_tmp.models import Permission
-from fast_tmp.site.base import DbSession, ModelFilter, RegisterRouter
+from fast_tmp.responses import ListDataWithPage
+from fast_tmp.site.base import ModelFilter, ModelSession, RegisterRouter
 from fast_tmp.site.util import BaseAdminControl, RelationSelectApi, create_column
 
 logger = logging.getLogger(__file__)
 
 
-class ModelAdmin(DbSession, RegisterRouter):  # todo inline字段必须都在update_fields内
+class ModelAdmin(ModelSession, RegisterRouter):  # todo inline字段必须都在update_fields内
     model: Type[Model]  # model
     list_display: Tuple[str, ...] = ()
     inline: Tuple[str, ...] = ()
@@ -194,7 +195,7 @@ class ModelAdmin(DbSession, RegisterRouter):  # todo inline字段必须都在upd
         codenames = await self.permission_code(request)
         return Page(title=self.name, body=self.get_crud(request, codenames)).dict(exclude_none=True)
 
-    async def put(self, request: Request, pk: str, data: Dict[str, Any]) -> Model:
+    async def update(self, request: Request, pk: str, data: Dict[str, Any]) -> Model:
         obj = await self.get_instance(request, pk)
         for field_name in self.update_fields:
             control = self.get_control_field(field_name)
@@ -202,19 +203,20 @@ class ModelAdmin(DbSession, RegisterRouter):  # todo inline字段必须都在upd
         await obj.save()
         return obj
 
-    async def put_get(self, request: Request, pk: str) -> dict:
+    async def get_update(self, request: Request, pk: str) -> dict:
         obj = await self.get_instance(request, pk)
         ret = {}
         for field_name, field in self.get_update_fields_with_pk().items():
             ret[field_name] = await field.get_value(request, obj)
         return ret
 
-    async def patch(self, request: Request, pk: str, data: Dict[str, Any]):
+    async def patch(self, request: Request, pk: str, data: Dict[str, Any]) -> Model:
         obj = await self.get_instance(request, pk)
         for field_name in self.inline:
             control = self.get_control_field(field_name)
             await control.set_value(request, obj, data[field_name])
         await obj.save()
+        return obj
 
     async def create(self, request: Request, data: Dict[str, Any]) -> Model:
         obj = self.model()
@@ -260,7 +262,7 @@ class ModelAdmin(DbSession, RegisterRouter):  # todo inline字段必须都在upd
         request: Request,
         perPage: int = 10,
         page: int = 1,
-    ):
+    ) -> ListDataWithPage:
         base_queryset = self.queryset(request)
         base_queryset = self.queryset_filter(request, base_queryset)
         queryset = self.prefetch(request, base_queryset, self.get_list_distplay())
@@ -274,7 +276,7 @@ class ModelAdmin(DbSession, RegisterRouter):  # todo inline字段必须都在upd
                 ret[field_name] = await field.get_value(request, i)
             res.append(ret)
         count = await base_queryset.count()
-        return {"total": count, "items": res}
+        return ListDataWithPage(total=count, items=res)
 
     async def get_instance(self, request: Request, pk: Any) -> Model:
         queryset = self.model.filter(pk=pk)
@@ -356,7 +358,7 @@ class ModelAdmin(DbSession, RegisterRouter):  # todo inline字段必须都在upd
         pk: Optional[str],
         perPage: Optional[int],
         page: Optional[int],
-    ):
+    ) -> List[Dict[str, str]]:
         """
         外键的枚举获取值以及多对多获取对象列表
         """

@@ -499,8 +499,10 @@ class ManyToManyControl(BaseAdminControl, RelationSelectApi):
     async def set_value(self, request: Request, obj: Model, value: Any) -> Optional[Coroutine]:
         value = await self.validate(value)
         field: fields.ManyToManyRelation = getattr(obj, self.name)
-        if obj.pk is None and value:  # create
-            return field.add(*value)
+        if obj.pk is None:
+            if value:  # create
+                return field.add(*value)
+            return None
         add_field = []
         remove_field = []
         for i in field:

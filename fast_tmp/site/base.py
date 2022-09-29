@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Coroutine, Dict, Optional
+from typing import Any, Coroutine, Dict, List, Optional
 
 from starlette.requests import Request
 from tortoise import fields
@@ -9,6 +9,7 @@ from tortoise.queryset import QuerySet
 from fast_tmp.amis.forms import Column, Control
 from fast_tmp.amis.page import Page
 from fast_tmp.amis.response import AmisStructError
+from fast_tmp.responses import ListDataWithPage
 
 logger = logging.getLogger(__file__)
 
@@ -121,35 +122,6 @@ class ModelFilter:
         self.placeholder = placeholder
 
 
-# 操作数据库的方法
-class ModelSession:
-    async def list(
-        self,
-        request: Request,
-        perPage: int = 10,
-        page: int = 1,
-    ):
-        """
-        获取列表
-        """
-        pass
-
-    async def get_instance(self, request: Request, pk: Any) -> Optional[Model]:
-        """
-        根据pk获取一个实例
-        """
-        pass
-
-    async def patch(self, request: Request, pk: str, data: Dict[str, Any]) -> Model:
-        """
-        对inline的数据进行更新
-        """
-        pass
-
-    async def create(self, request: Request, data: Dict[str, Any]) -> Model:
-        pass
-
-
 class RegisterRouter:
     _name: str
     _prefix: str
@@ -171,15 +143,19 @@ class RegisterRouter:
 
 
 # 操作数据库的方法
-class DbSession:
+class ModelSession:
+    """
+    后台管理页面数据库操作基类，包含后台页面对数据操作的所有需要的方法
+    """
+
     async def list(
         self,
         request: Request,
         perPage: int = 10,
         page: int = 1,
-    ):
+    ) -> ListDataWithPage:
         """
-        获取列表
+        获取数据列表
         """
         pass
 
@@ -191,17 +167,26 @@ class DbSession:
 
     async def patch(self, request: Request, pk: str, data: Dict[str, Any]) -> Model:
         """
-        对inline的数据进行更新
+        对在表单上快速编辑的（inline类型）数据的进行修改
         """
         pass
 
     async def create(self, request: Request, data: Dict[str, Any]) -> Model:
+        """
+        创建数据
+        """
         pass
 
     async def delete(self, request: Request, pk: str):
+        """
+        删除某条数据
+        """
         pass
 
-    async def put_get(self, request: Request, pk: str) -> dict:
+    async def get_update(self, request: Request, pk: str) -> dict:
+        """
+        获取要更新的数据
+        """
         pass
 
     async def select_options(
@@ -211,8 +196,17 @@ class DbSession:
         pk: Optional[str],
         perPage: Optional[int],
         page: Optional[int],
-    ):
+    ) -> List[Dict[str, str]]:
+        """
+        多对多，多对一等情况下需要枚举选择的时候，返回数据列表
+        返回数据结构大致如下：
+        [{"label":"xxx","value":"xxx"}]
+        value可以使数字或字符串
+        """
         pass
 
-    async def put(self, request: Request, pk: str, data: Dict[str, Any]) -> Model:
+    async def update(self, request: Request, pk: str, data: Dict[str, Any]) -> Model:
+        """
+        更新数据
+        """
         pass
