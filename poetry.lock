@@ -1410,7 +1410,7 @@ reference = "aliyun"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "fda6af96c4018d3de21ea1a7750494f860c6de66ff3fbd52a0505ffe9f81a046"
+content-hash = "8106e9ee52037a9b45bfc09b8b85073b38f8cb7bc7ce898af0af7a994bd9df6e"
 
 [metadata.files]
 aiosqlite = [
