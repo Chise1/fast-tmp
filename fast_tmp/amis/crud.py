@@ -3,8 +3,8 @@ from typing import List, Optional, Union
 from fast_tmp.amis.base import BaseAmisModel, _Action
 from fast_tmp.amis.buttons import Operation
 from fast_tmp.amis.enums import TypeEnum
-from fast_tmp.amis.filter import FilterModel
 from fast_tmp.amis.forms import Column
+from fast_tmp.amis.forms.filter import FilterModel
 
 
 class CRUD(BaseAmisModel):

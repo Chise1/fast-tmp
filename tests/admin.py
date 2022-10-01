@@ -1,5 +1,4 @@
 from fast_tmp.site import ModelAdmin
-from fast_tmp.site.filter import ContainsFilter
 
 from .testmodels import Author, Book, Role
 
@@ -47,7 +46,7 @@ class BookModel(ModelAdmin):
     list_display = ("name", "author", "rating")
     create_fields = ("name", "author", "rating")
     update_fields = ("name", "author")
-    filters = (ContainsFilter("name"),)
+    filters = ("name__contains",)
 
 
 class AuthorModel(ModelAdmin):

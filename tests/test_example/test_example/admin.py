@@ -44,20 +44,18 @@ class FieldTestingModel(ModelAdmin):
     )
 
 
-from fast_tmp.site.filter import ContainsFilter
-
-
 class BookModel(ModelAdmin):
     model = Book
     list_display = ("name", "author", "rating")
     create_fields = ("name", "author", "rating")
     update_fields = ("name", "author")
-    filters = (ContainsFilter("name"),)
+    filters = ("name_contains",)
 
 
 class AuthorModel(ModelAdmin):
     model = Author
-    list_display = ("name",)
-    create_fields = ("name",)
+    list_display = ("name", "birthday")
+    create_fields = ("name", "birthday")
     inline = ("name",)
-    update_fields = ("name",)
+    update_fields = ("name", "birthday")
+    filters = ["birthday", "birthday__gte", "birthday__lte"]

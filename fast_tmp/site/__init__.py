@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Callable, Coroutine, Dict, List, Optional, Set, Tuple, Type
+from typing import Any, Callable, Coroutine, Dict, List, Optional, Set, Tuple, Type, Union
 
 from starlette.requests import Request
 from tortoise.models import Model
@@ -9,14 +9,15 @@ from fast_tmp.amis.actions import AjaxAction, DialogAction
 from fast_tmp.amis.buttons import Operation
 from fast_tmp.amis.crud import CRUD
 from fast_tmp.amis.enums import ButtonLevelEnum
-from fast_tmp.amis.filter import Filter, FilterModel
 from fast_tmp.amis.forms import Form
+from fast_tmp.amis.forms.filter import FilterModel
 from fast_tmp.amis.frame import Dialog
 from fast_tmp.amis.page import Page
 from fast_tmp.exceptions import NotFoundError
 from fast_tmp.models import Permission
 from fast_tmp.responses import ListDataWithPage
 from fast_tmp.site.base import ModelFilter, ModelSession, RegisterRouter
+from fast_tmp.site.filter import make_filter_by_str
 from fast_tmp.site.util import BaseAdminControl, RelationSelectApi, create_column
 
 logger = logging.getLogger(__file__)
@@ -28,7 +29,7 @@ class ModelAdmin(ModelSession, RegisterRouter):  # todo inline字段必须都在
     inline: Tuple[str, ...] = ()
     # search list
     searchs: Tuple[str, ...] = ()
-    filters: Tuple[ModelFilter, ...] = ()
+    filters: Tuple[Union[str, ModelFilter], ...] = ()
     # create
     create_fields: Tuple[str, ...] = ()
     update_fields: Tuple[str, ...] = ()
@@ -53,14 +54,28 @@ class ModelAdmin(ModelSession, RegisterRouter):  # todo inline字段必须都在
     ]
     _filters = None
 
-    def get_filters(self) -> Dict[str, ModelFilter]:
-        if not self._filters:
-            self._filters = {i.name: i for i in self.filters}
+    def get_filters(self, request: Request) -> Dict[str, ModelFilter]:
+        if self._filters is None:
+            filters = {}
+            for filter in self.filters:
+                if isinstance(filter, ModelFilter):
+                    filters[filter.name] = filter
+                else:
+                    name_split = filter.split("__")
+                    if len(name_split) == 1:  # equal
+                        field = self.fields[filter]
+                    elif len(name_split) == 2:
+                        name = name_split[0]
+                        field = self.fields[name]
+                    else:
+                        raise AttributeError("filter field can not be " + filter)
+                    filters[filter] = make_filter_by_str(request, filter, field)
+            self._filters = filters
         return self._filters
 
     def queryset_filter(self, request: Request, queryset: QuerySet):
         query = request.query_params
-        filter_fs = self.get_filters()
+        filter_fs = self.get_filters(request)
         for k, v in query.items():
             if k in ("pk", "page", "perPage"):
                 continue
@@ -147,16 +162,7 @@ class ModelAdmin(ModelSession, RegisterRouter):  # todo inline字段必须都在
         页面上的过滤框
         """
         return FilterModel(
-            body=[
-                Filter(
-                    type=v.type,
-                    name=v.name,
-                    label=v.label,
-                    clearable=v.clearable,
-                    placeholder=v.placeholder,
-                )
-                for v in self.get_filters().values()
-            ]
+            body=[v.filter_control(request) for v in self.get_filters(request).values()]
         )
 
     def get_crud(self, request: Request, codenames: List[str]):
@@ -175,7 +181,7 @@ class ModelAdmin(ModelSession, RegisterRouter):  # todo inline字段必须都在
             quickSaveItemApi=self._prefix + "/patch/" + "$pk",
             syncLocation=False,
         )
-        if len(self.get_filters()) > 0 and self.name + "_list" in codenames:
+        if len(self.get_filters(request)) > 0 and self.name + "_list" in codenames:
             crud.filter = self.get_filter_page(request)
         body.append(crud)
         return body

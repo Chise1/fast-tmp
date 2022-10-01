@@ -6,7 +6,7 @@ from tortoise import fields
 from tortoise.models import Model
 from tortoise.queryset import QuerySet
 
-from fast_tmp.amis.forms import Column, Control
+from fast_tmp.amis.forms import Column, ColumnInline, Control, ControlEnum, QuickEdit
 from fast_tmp.amis.page import Page
 from fast_tmp.amis.response import AmisStructError
 from fast_tmp.responses import ListDataWithPage
@@ -94,13 +94,85 @@ class AbstractControl:
         """
 
 
+class BaseAdminControl(AbstractAmisAdminDB, AbstractControl, AmisOrm):
+    """
+    默认的将model字段转control的类
+    """
+
+    label: str
+    _field: fields.Field
+    _control: Control = None  # type: ignore
+    _column: Column = None  # type: ignore
+    _column_inline: ColumnInline = None  # type: ignore
+    _control_type: ControlEnum = ControlEnum.input_text
+    _many = False  # 多对多字段标记，查询的时候默认跳过
+
+    def get_column(self, request: Request) -> Column:
+        if not self._column:
+            self._column = Column(name=self.name, label=self.label)
+        return self._column
+
+    def get_control(self, request: Request) -> Control:
+        if not self._control:
+            self._control = Control(type=self._control_type, name=self.name, label=self.label)
+            if not self._field.null:  # type: ignore
+                self._control.required = True
+            if self._field.default is not None:  # type: ignore
+                self._control.value = self.orm_2_amis(self._field.default)  # type: ignore
+        return self._control
+
+    def options(self):
+        return None
+
+    def get_column_inline(self, request: Request) -> Column:
+        if not self._column_inline:
+            column = self.get_column(request)
+            self._column_inline = ColumnInline(
+                type=column.type,
+                name=self.name,
+                label=self.label,
+                quickEdit=QuickEdit(type=self._control_type, saveImmediately=True),
+            )
+            options = self.options()
+            if options:
+                self._column_inline.quickEdit.options = options
+                if self._field.null:  # type: ignore
+                    self._column_inline.quickEdit.clearable = True
+        return self._column_inline
+
+    async def set_value(self, request: Request, obj: Model, value: Any):
+        value = await self.validate(value)
+        setattr(obj, self.name, value)
+
+    async def get_value(self, request: Request, obj: Model) -> Any:
+        return self.orm_2_amis(getattr(obj, self.name))
+
+    def __init__(self, name: str, field: fields.Field, prefix: str, **kwargs):
+        super().__init__(name, prefix, **kwargs)
+        self._field = field  # type: ignore
+        self.name = name
+        self.label = kwargs.get("label") or self.name
+
+    async def validate(self, value: Any) -> Any:
+        value = self.amis_2_orm(value)
+        self._field.validate(value)  # type: ignore
+        return value
+
+
 class ModelFilter:
     name = ""
     type: Optional[str] = None
     label: Optional[str]
-    clearable: Optional[bool]
-    placeholder: Optional[str]
-    _field: Optional[fields.Field] = None
+    _field: AmisOrm
+
+    def filter_control(self, request) -> dict:
+        ret = {
+            "type": self.type,
+            "label": self.label,
+            "name": self.name,
+        }
+        ret.update(self.kwargs)
+        return ret
 
     def queryset(self, request: Request, queryset: QuerySet, val: Any) -> QuerySet:
         return queryset
@@ -108,18 +180,16 @@ class ModelFilter:
     def __init__(
         self,
         name: str,
+        field: AmisOrm,
         type: str = "input-text",
         label: str = None,
-        clearable=None,
-        placeholder=None,
-        field: fields.Field = None,
+        **kwargs,
     ):
         self.name = name
         self._field = field
         self.type = type
         self.label = label or self.name
-        self.clearable = clearable
-        self.placeholder = placeholder
+        self.kwargs = kwargs
 
 
 class RegisterRouter:
