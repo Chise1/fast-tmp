@@ -46,10 +46,10 @@ class FieldTestingModel(ModelAdmin):
 
 class BookModel(ModelAdmin):
     model = Book
-    list_display = ("name", "author", "rating")
-    create_fields = ("name", "author", "rating")
-    update_fields = ("name", "author")
-    filters = ("name_contains",)
+    list_display = ("name", "author", "rating", "cover")
+    create_fields = ("name", "author", "rating", "cover")
+    update_fields = ("name", "author", "cover")
+    filters = ("name__contains",)
 
 
 class AuthorModel(ModelAdmin):

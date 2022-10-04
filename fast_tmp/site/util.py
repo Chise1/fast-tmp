@@ -14,6 +14,8 @@ from fast_tmp.amis.forms import Column, Control, ControlEnum
 from fast_tmp.amis.forms.widgets import (
     DateItem,
     DatetimeItem,
+    FileItem,
+    ImageItem,
     PickerItem,
     PickerSchema,
     SelectItem,
@@ -22,6 +24,7 @@ from fast_tmp.amis.forms.widgets import (
 )
 from fast_tmp.amis.frame import Dialog
 from fast_tmp.amis.response import AmisStructError
+from fast_tmp.contrib.tortoise.fields import FileClass, FileField, ImageField
 from fast_tmp.exceptions import TmpValueError
 from fast_tmp.responses import ListDataWithPage
 from fast_tmp.site.base import BaseAdminControl
@@ -467,6 +470,63 @@ class ManyToManyControl(BaseAdminControl, RelationSelectApi):
         return [{"label": str(i), "value": i.pk} for i in value]
 
 
+class FileControl(BaseAdminControl):
+    _control_type = ControlEnum.input_file
+
+    def get_control(self, request: Request) -> Control:
+        if not self._control:
+            self._control = FileItem(
+                name=self.name,
+                label=self.label,
+                receiver=f"{self._field.model.__name__}/file/{self.name}",  # type: ignore
+            )
+            if not self._field.null:  # type: ignore
+                self._control.required = True
+            if self._field.default is not None:  # type: ignore
+                self._control.value = self.orm_2_amis(self._field.default)  # type: ignore
+        return self._control
+
+    def orm_2_amis(self, value: Any) -> Any:
+        if value is not None:
+            return value.get_static_path()
+        return value
+
+    def amis_2_orm(self, value: Any) -> Any:
+        return FileClass.from_static_path(value)
+
+
+class ImageControl(BaseAdminControl):
+    _control_type = ControlEnum.input_image
+
+    def get_control(self, request: Request) -> Control:
+        if not self._control:
+            self._control = ImageItem(
+                name=self.name,
+                label=self.label,
+                receiver=f"{self._field.model.__name__}/file/{self.name}",  # type: ignore
+            )
+            if not self._field.null:  # type: ignore
+                self._control.required = True
+            if self._field.default is not None:  # type: ignore
+                self._control.value = self.orm_2_amis(self._field.default)  # type: ignore
+        return self._control
+
+    def get_column(self, request: Request) -> Column:
+        if not self._column:
+            self._column = Column(type="image", name=self.name, label=self.label)
+        return self._column
+
+    def orm_2_amis(self, value: FileClass) -> Any:
+        if value is not None:
+            return value.get_static_path()
+        return value
+
+    def amis_2_orm(self, value: Any) -> Any:
+        if value is not None:
+            return FileClass.from_static_path(value)
+        return None
+
+
 def create_column(
     field_name: str,
     field_type: fields.Field,
@@ -498,5 +558,9 @@ def create_column(
         return ForeignKeyControl(field_name, field_type, prefix)
     elif isinstance(field_type, ManyToManyFieldInstance):
         return ManyToManyControl(field_name, field_type, prefix)
+    elif isinstance(field_type, ImageField):
+        return ImageControl(field_name, field_type, prefix)
+    elif isinstance(field_type, FileField):
+        return FileControl(field_name, field_type, prefix)
     else:
         raise AmisStructError("create_column error:", type(field_type))

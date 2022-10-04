@@ -32,6 +32,8 @@ class ControlEnum(str, Enum):
     picker = "picker"
     custom = "custom"
     input_password = "input-password"
+    input_image = "input-image"
+    input_file = "input-file"
 
 
 class ItemModel(str, Enum):

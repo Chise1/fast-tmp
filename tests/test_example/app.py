@@ -4,8 +4,10 @@ os.environ.setdefault("FASTAPI_SETTINGS_MODULE", "test_example.settings")
 from test_example.admin import AuthorModel, BookModel, FieldTestingModel
 from tortoise.contrib.fastapi import register_tortoise
 
+from fast_tmp.admin.register import register_static_server
 from fast_tmp.conf import settings
 from fast_tmp.factory import create_app
+from fast_tmp.models import User
 from fast_tmp.site import register_model_site
 
 register_model_site({"fieldtesting": [FieldTestingModel(), BookModel(), AuthorModel()]})
@@ -13,11 +15,20 @@ app = create_app()
 app.title = "test_example"
 
 
+@app.get("/ss")
+async def create_user():
+    user = User(username="admin")
+    user.set_password("123456")
+    user.name = "admin"
+    user.is_active = True
+    user.is_staff = True
+    user.is_superuser = True
+    await user.save()
+
+
 register_tortoise(app, config=settings.TORTOISE_ORM, generate_schemas=True)
 if settings.DEBUG:
-    from starlette.staticfiles import StaticFiles
-
-    app.mount("/static", StaticFiles(directory="static"), name="static")  # 注册admin页面需要的静态文件，
+    register_static_server(app)
 
 if __name__ == "__main__":
     import uvicorn  # type:ignore

@@ -41,10 +41,14 @@ async def make_permissions():
     all_model = get_all_models()
     for model in all_model:
         model_name = model.__name__.lower()
-        await Permission.get_or_create(codename=f"{model_name}_list", defaults={"label": f"{model_name}_list"})
-        await Permission.get_or_create(codename=f"{model_name}_create", defaults={"label": f"{model_name}_create"})
-        await Permission.get_or_create(codename=f"{model_name}_update", defaults={"label": f"{model_name}_update"})
-        await Permission.get_or_create(codename=f"{model_name}_delete", defaults={"label": f"{model_name}_delete"})
+        await Permission.get_or_create(codename=f"{model_name}_list",
+                                       defaults={"label": f"{model_name}_list"})
+        await Permission.get_or_create(codename=f"{model_name}_create",
+                                       defaults={"label": f"{model_name}_create"})
+        await Permission.get_or_create(codename=f"{model_name}_update",
+                                       defaults={"label": f"{model_name}_update"})
+        await Permission.get_or_create(codename=f"{model_name}_delete",
+                                       defaults={"label": f"{model_name}_delete"})
     sys.stdout.write("success update table permission.\n")
 
 

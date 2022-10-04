@@ -35,6 +35,7 @@ class GroupAdmin(ModelAdmin):
     update_fields = ("name", "users", "permissions")
 
 
+# todo 增加同步权限的按钮
 class PermissionAdmin(ModelAdmin):
     model = Permission
     list_display = ("label", "codename", "groups")

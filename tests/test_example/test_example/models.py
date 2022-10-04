@@ -7,8 +7,11 @@ import os
 import uuid
 from enum import Enum, IntEnum
 
+from fastapi import UploadFile
 from tortoise import fields
 from tortoise.models import Model
+
+from fast_tmp.contrib.tortoise.fields import ImageField
 
 
 def generate_token():
@@ -28,6 +31,7 @@ class Book(Model):
     author: fields.ForeignKeyRelation[Author] = fields.ForeignKeyField(
         "fast_tmp.Author", related_name="books"
     )
+    cover = ImageField()
     rating = fields.FloatField()
 
 

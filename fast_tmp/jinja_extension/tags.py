@@ -1,5 +1,3 @@
-import os.path
-
 import jinja2
 from pydantic import typing
 
@@ -11,7 +9,7 @@ def register_tags(templates):
 
     @jinja2.pass_context
     def static(context: dict, **path_params: typing.Any) -> str:
-        return "/" + os.path.join(settings.STATIC_PATH, path_params["path"])
+        return "/" + "/".join([settings.STATIC_PATH, path_params["path"]])
 
     env.globals["static"] = static
 

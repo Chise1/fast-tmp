@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     LOGIN_URL: str = "/api-token-auth"
     STATIC_ROOT = "static"
     STATIC_PATH = "static"
+    MEDIA_ROOT = "media"
+    MEDIA_PATH = "media"
     LOCAL_FILE: bool = False  # 是否使用本地amis静态文件
 
     @validator("DEBUG", pre=True, allow_reuse=True)

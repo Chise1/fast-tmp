@@ -114,30 +114,52 @@ async def get_site(request: Request):
             i.codename
             for i in await Permission.filter(groups__users=user, codename__endswith="list")
         ]
+        for name, ml in model_list.items():
+            ml_p = []
+            for model in ml:
+                if model.name + "_list" in perms:
+                    if not index_page:
+                        index_page = model
+                    ml_p.append(model)
+            if len(ml_p) == 0:
+                continue
+            pages.append(
+                {
+                    "label": name,
+                    "children": [
+                        {
+                            "label": model.name,
+                            "url": model.prefix,
+                            "schemaApi": model.prefix + "/schema",
+                        }
+                        for model in ml
+                    ],
+                }
+            )
+        if index_page:
+            pages.insert(0, {"label": index_page.name, "url": "/", "redirect": index_page.prefix})
     else:
-        perms = [i.codename for i in await Permission.filter(codename__endswith="list")]
-    for name, ml in model_list.items():  # todo add home page
-        ml_p = []
-        for model in ml:
-            if model.name + "_list" in perms:
+        for name, ml in model_list.items():
+            ml_p = []
+            for model in ml:
                 if not index_page:
                     index_page = model
                 ml_p.append(model)
-        if len(ml_p) == 0:
-            continue
-        pages.append(
-            {
-                "label": name,
-                "children": [
-                    {
-                        "label": model.name,
-                        "url": model.prefix,
-                        "schemaApi": model.prefix + "/schema",
-                    }
-                    for model in ml
-                ],
-            }
-        )
-    if index_page:
-        pages.insert(0, {"label": index_page.name, "url": "/", "redirect": index_page.prefix})
+            if len(ml_p) == 0:
+                continue
+            pages.append(
+                {
+                    "label": name,
+                    "children": [
+                        {
+                            "label": model.name,
+                            "url": model.prefix,
+                            "schemaApi": model.prefix + "/schema",
+                        }
+                        for model in ml
+                    ],
+                }
+            )
+        if index_page:
+            pages.insert(0, {"label": index_page.name, "url": "/", "redirect": index_page.prefix})
     return BaseRes(data={"pages": pages})

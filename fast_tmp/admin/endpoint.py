@@ -1,9 +1,11 @@
+import os.path
 from typing import Optional
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, UploadFile
 from starlette.requests import Request
 
 from fast_tmp.admin.depends import get_staff
+from fast_tmp.conf import settings
 from fast_tmp.responses import BaseRes
 from fast_tmp.site import ModelSession, RegisterRouter, get_model_site
 
@@ -112,3 +114,26 @@ async def get_schema(
     page: RegisterRouter = Depends(get_model_site),
 ):
     return BaseRes(data=await page.get_app_page(request))
+
+
+# todo 考虑清除没有被使用的文件 考虑对上传的文件进行校验，判断该字段是否应该上传文件
+@router.post("/{resource}/file/{name}")
+async def update_file(
+    request: Request,
+    name: str,
+    file: UploadFile,
+    page: RegisterRouter = Depends(get_model_site),
+):
+    import aiofiles  # type: ignore
+
+    if not os.path.exists(settings.MEDIA_PATH):
+        os.mkdir(settings.MEDIA_PATH)
+    if not os.path.exists(os.path.join(settings.MEDIA_PATH, page.name)):
+        os.mkdir(os.path.join(settings.MEDIA_PATH, page.name))
+    cwd = os.path.join(settings.MEDIA_PATH, page.name, name)
+    if not os.path.exists(cwd):
+        os.mkdir(cwd)
+    async with aiofiles.open(os.path.join(cwd, file.filename), "wb") as f:
+        await f.write(await file.read())
+    res_path = f"/{settings.MEDIA_ROOT}/{page.name}/{name}/{file.filename}"
+    return BaseRes(data={"value": res_path})

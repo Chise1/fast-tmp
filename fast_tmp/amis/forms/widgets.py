@@ -270,6 +270,18 @@ class PickerItem(Control):
     embed: Optional[bool]  # 是否使用内嵌模式
 
 
+class FileItem(Control):
+    type = ControlEnum.input_file
+    receiver: str
+    asBase64: bool = True
+
+
+class ImageItem(Control):
+    type = ControlEnum.input_image
+
+    receiver: str
+
+
 # class ButtonToolbarItem(Control):
 #     """
 #     按钮组
