@@ -222,7 +222,7 @@ class TransferItem(Control):
     # Transfer 穿梭器
     type = ControlEnum.transfer
     options: Optional[List[Union[dict, str]]]  # 选项组
-    source: Optional[str]  # 动态选项组#fixme:路由替换需要支持source
+    source: Optional[str]  # 动态选项组
     delimeter: Optional[str]  # 拼接符
     joinValues: Optional[bool]  # 拼接值
     extractValue: Optional[bool]  # 提取值
@@ -649,8 +649,3 @@ class ImageItem(Control):
 #     type = "page"
 #     body: Optional[Dict[str, Any]]
 #
-# # fixme:type有问题
-# # class YearItem(Control):
-# #     # Year年
-# #     type = "page"
-# #     body: Optional[Dict[str, Any]]

@@ -1,7 +1,4 @@
-from fast_tmp.contrib.pydantic import (
-    pydantic_model_creator,
-    pydantic_queryset_creator,
-)
+from fast_tmp.contrib.pydantic import pydantic_model_creator, pydantic_queryset_creator
 from tests.base import BaseSite
 from tests.testmodels import Address, Event, Reporter, Team, Tournament
 

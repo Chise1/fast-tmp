@@ -7,8 +7,6 @@ from tortoise import Tortoise
 
 from fast_tmp.exceptions import NoAuthError
 from fast_tmp.models import User
-
-# todo 需要判定是否存在对应的权限字段，如果没有则写入
 from fast_tmp.utils.token import decode_access_token
 
 

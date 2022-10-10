@@ -60,6 +60,6 @@ class CommonFilter(ModelFilter):
 #         return queryset.filter(**{f"{self.name}__lte": val})
 #
 #
-# class InFilter(ModelFilter):  # todo 是否要转为列表进行处理？传进来的字符串还是列表？
+# class InFilter(ModelFilter):
 #     def queryset(self, request: Request, queryset: QuerySet, val: Iterable) -> QuerySet:
 #         return queryset.filter(**{f"{self.name}__in": val})
