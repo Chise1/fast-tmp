@@ -35,20 +35,9 @@ async def create_superuser(username: str, password: str):
 
 async def make_permissions():
     from tortoise import Tortoise
-    from fast_tmp.utils.model import get_all_models
     from fast_tmp.models import Permission
     await Tortoise.init(config=settings.TORTOISE_ORM)
-    all_model = get_all_models()
-    for model in all_model:
-        model_name = model.__name__.lower()
-        await Permission.get_or_create(codename=f"{model_name}_list",
-                                       defaults={"label": f"{model_name}_list"})
-        await Permission.get_or_create(codename=f"{model_name}_create",
-                                       defaults={"label": f"{model_name}_create"})
-        await Permission.get_or_create(codename=f"{model_name}_update",
-                                       defaults={"label": f"{model_name}_update"})
-        await Permission.get_or_create(codename=f"{model_name}_delete",
-                                       defaults={"label": f"{model_name}_delete"})
+    await Permission.migrate_permissions()
     sys.stdout.write("success update table permission.\n")
 
 
@@ -78,10 +67,12 @@ def startproject():
     print(basedir)
     cookiecutter(os.path.join(basedir, "tpl/project"))
 
+
 @app.command()
 def downloadamis():
     sys.stdout.write("download amis sdk from : https://github.com/baidu/amis/releases/download/v2.2.0/sdk.tar.gz")
     os.system("curl -O https://github.com/baidu/amis/releases/download/v2.2.0/sdk.tar.gz")
+
 
 # @app.command()
 # def staticfile():

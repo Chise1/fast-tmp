@@ -7,11 +7,10 @@ from fast_tmp.conf import settings
 from fast_tmp.factory import create_app
 from fast_tmp.models import Permission, User
 from fast_tmp.site import register_model_site
-from fast_tmp.utils.model import get_all_models
 
-from .admin import RoleModel
+from .admin import AuthorModel, BookModel, RoleModel
 
-register_model_site({"fieldtesting": [RoleModel()]})
+register_model_site({"fieldtesting": [RoleModel(), BookModel(), AuthorModel()]})
 app = create_app()
 
 
@@ -25,11 +24,28 @@ class BaseSite(SimpleTestCase):
         await Tortoise.init(settings.TORTOISE_ORM, _create_db=True)
         await Tortoise.generate_schemas()
         await self.create_superuser("admin", "admin")
-        await self.make_permissions()
+        await self.migrate_permissions()
 
     async def asyncTearDown(self) -> None:
         await self.client.__aexit__()
         await Tortoise.close_connections()
+
+    @classmethod
+    async def create_user(
+        cls, username: str, password="123456", is_superuser=False, is_active=True, is_staff=True
+    ):
+        user = User(
+            username=username,
+            is_superuser=is_superuser,
+            is_active=is_active,
+            is_staff=is_staff,
+            name=username,
+        )
+        if await User.filter(username=user.username).exists():
+            return
+        user.set_password(password)
+        await user.save()
+        return user
 
     @classmethod
     async def create_superuser(cls, username, password):
@@ -41,22 +57,8 @@ class BaseSite(SimpleTestCase):
         user.set_password(password)
         await user.save()
 
-    async def make_permissions(self):
-        all_model = get_all_models()
-        for model in all_model:
-            model_name = model.__name__.lower()
-            await Permission.get_or_create(
-                codename=model_name + "_create", defaults={"label": f"{model_name}_创建"}
-            )
-            await Permission.get_or_create(
-                codename=model_name + "_update", defaults={"label": f"{model_name}_更新"}
-            )
-            await Permission.get_or_create(
-                codename=model_name + "_delete", defaults={"label": f"{model_name}_删除"}
-            )
-            await Permission.get_or_create(
-                codename=model_name + "_list", defaults={"label": f"{model_name}_查看"}
-            )
+    async def migrate_permissions(self):
+        await Permission.migrate_permissions()
 
     async def login(self):
         response = await self.client.post(

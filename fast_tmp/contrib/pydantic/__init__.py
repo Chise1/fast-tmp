@@ -83,7 +83,8 @@ def _pydantic_recursion_protector(
     """
     if not allow_cycles and cls in (c[0] for c in stack[:-1]):
         return None
-
+    if depth == 0:  # clear submodel if fields is null
+        return None
     caller_fname = stack[0][1]
     prop_path = [caller_fname]  # It stores the fields in the hierarchy
     level = 1

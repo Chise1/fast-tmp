@@ -9,7 +9,8 @@ from tortoise.queryset import QuerySet
 from fast_tmp.amis.forms import Column, ColumnInline, Control, ControlEnum, QuickEdit
 from fast_tmp.amis.page import Page
 from fast_tmp.amis.response import AmisStructError
-from fast_tmp.responses import ListDataWithPage
+from fast_tmp.exceptions import NotFoundError
+from fast_tmp.responses import BaseRes, ListDataWithPage
 
 logger = logging.getLogger(__file__)
 
@@ -210,6 +211,9 @@ class RegisterRouter:
     @property
     def name(self) -> str:
         return self._name
+
+    async def router(self, request: Request, prefix: str, method: str) -> BaseRes:
+        raise NotFoundError("not found function.")
 
 
 # 操作数据库的方法

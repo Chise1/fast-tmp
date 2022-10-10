@@ -124,6 +124,7 @@ async def update_file(
     file: UploadFile,
     page: RegisterRouter = Depends(get_model_site),
 ):
+    # pip install aiofiles
     import aiofiles  # type: ignore
 
     if not os.path.exists(settings.MEDIA_PATH):
@@ -137,3 +138,13 @@ async def update_file(
         await f.write(await file.read())
     res_path = f"/{settings.MEDIA_ROOT}/{page.name}/{name}/{file.filename}"
     return BaseRes(data={"value": res_path})
+
+
+@router.api_route("/{resource}/extra/{prefix}", methods=["POST", "GET", "DELETE", "PUT", "PATCH"])
+async def extra_func(
+    request: Request,
+    prefix: str,
+    page: RegisterRouter = Depends(get_model_site),
+):
+    method = request.method
+    return await page.router(request, prefix, method)
