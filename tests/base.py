@@ -23,7 +23,7 @@ class BaseSite(SimpleTestCase):
         await self.client.__aenter__()
         await Tortoise.init(settings.TORTOISE_ORM, _create_db=True)
         await Tortoise.generate_schemas()
-        await self.create_superuser("admin", "admin")
+        await self.create_superuser("admin", "123456")
         await self.migrate_permissions()
 
     async def asyncTearDown(self) -> None:
@@ -60,11 +60,11 @@ class BaseSite(SimpleTestCase):
     async def migrate_permissions(self):
         await Permission.migrate_permissions()
 
-    async def login(self):
+    async def login(self, username="admin", password="123456"):
         response = await self.client.post(
             "/admin/login",
             headers={"ContentType": "application/x-www-form-urlencoded"},
-            data={"username": "admin", "password": "admin"},
+            data={"username": username, "password": password},
         )
         assert response.status_code == 302
         assert response.headers.get("location") == "http://test/admin/"

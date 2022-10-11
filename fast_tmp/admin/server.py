@@ -41,7 +41,7 @@ admin.exception_handler(BaseORMException)(tortoise_exception_handler)
 async def index(request: Request):
     return templates.TemplateResponse(
         "index.html",
-        {"request": request, "title": admin.title},
+        {"request": request, "title": admin.title, "api": "/admin/site"},
     )
 
 

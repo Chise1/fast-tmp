@@ -4,7 +4,7 @@ from starlette.staticfiles import StaticFiles
 from fast_tmp.conf import settings
 
 
-def register_static_server(app: FastAPI):
+def register_static_service(app: FastAPI):
     """
     加载静态文件的服务
     """
