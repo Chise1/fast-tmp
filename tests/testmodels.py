@@ -7,6 +7,8 @@ from enum import Enum, IntEnum
 from tortoise import fields
 from tortoise.models import Model
 
+from fast_tmp.contrib.tortoise.fields import ImageField
+
 
 def generate_token():
     return binascii.hexlify(os.urandom(16)).decode("ascii")
@@ -14,6 +16,10 @@ def generate_token():
 
 class Author(Model):
     name = fields.CharField(max_length=255)
+    birthday = fields.DateField()
+
+    def __str__(self):
+        return self.name
 
 
 class Book(Model):
@@ -21,6 +27,7 @@ class Book(Model):
     author: fields.ForeignKeyRelation[Author] = fields.ForeignKeyField(
         "fast_tmp.Author", related_name="books"
     )
+    cover = ImageField()
     rating = fields.FloatField()
 
 

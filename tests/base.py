@@ -1,9 +1,10 @@
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from httpx import AsyncClient
 from tortoise import Tortoise
 from tortoise.contrib.test import SimpleTestCase
 
 from fast_tmp.conf import settings
+from fast_tmp.depends.auth import get_current_active_user_or_none, get_user_has_perms
 from fast_tmp.factory import create_app
 from fast_tmp.models import Permission, User
 from fast_tmp.site import register_model_site
@@ -12,6 +13,24 @@ from .admin import AuthorModel, BookModel, RoleModel
 
 register_model_site({"fieldtesting": [RoleModel(), BookModel(), AuthorModel()]})
 app = create_app()
+
+
+@app.get("/userinfo")
+async def get_userinfo(user: User = Depends(get_current_active_user_or_none)):
+    return user
+
+
+@app.get("/perms")
+async def get_user_perms(
+    user: User = Depends(
+        get_user_has_perms(
+            {
+                "permission_list",
+            }
+        )
+    )
+):
+    return Permission.filter(groups__users=user)
 
 
 class BaseSite(SimpleTestCase):

@@ -287,5 +287,3 @@ class ModelSession:
 
     async def check_perm(self, request: Request, base_codename: str):
         pass
-        # if not await staff.has_perm(codename):
-        #     raise PermError()

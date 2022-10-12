@@ -93,6 +93,7 @@ class TestPermission(BaseSite):
                                     "onUpdate": "const value=data.author;dom.current.firstChild.textContent=value.label;$author=value.value;",
                                 },
                                 {"name": "rating", "label": "rating"},
+                                {"label": "cover", "name": "cover", "type": "image"},
                             ],
                             "affixHeader": False,
                             "quickSaveItemApi": "Book/patch/$pk",
@@ -113,6 +114,10 @@ class TestPermission(BaseSite):
                 },
             },
         )
+        response = await self.client.get("/admin/User/list")
+        self.assertEqual(
+            response.json(), {"status": 400, "msg": "you have no permission", "data": {}}
+        )
 
     async def test_book(self):
         user: User = await self.create_user("user2")
@@ -123,4 +128,63 @@ class TestPermission(BaseSite):
             Q(codename__startswith="book") | Q(codename__startswith="author")
         )
         await group.permissions.add(*perms)
-        # todo 完成prefetch select delete的测试
+        await self.login("user2")
+        # 创建author
+        response = await self.client.post(
+            "/admin/Author/create", json={"name": "author_name1", "birthday": "2022-10-13"}
+        )
+        self.assertEqual(response.status_code, 200)
+        # 查询author
+        response = await self.client.get("/admin/Author/list?page=1&perPage=10")
+        self.assertEqual(
+            response.json(),
+            {
+                "status": 0,
+                "msg": "",
+                "data": {
+                    "items": [{"name": "author_name1", "birthday": "2022-10-13", "pk": 1}],
+                    "total": 1,
+                },
+            },
+        )
+        # 修改作者姓名
+        response = await self.client.put(
+            "/admin/Author/update/1", json={"name": "author1", "birthday": "2022-10-13", "pk": 3}
+        )
+        self.assertEqual(response.status_code, 200)
+        # 创建book
+        # 上传图片
+        with open("./tests/image/avatar1.jpeg", "rb") as f:
+            response = await self.client.post("/admin/Book/file/cover", files={"file": f})
+        self.assertEqual(
+            response.json(),
+            {"status": 0, "msg": "", "data": {"value": "/media/book/cover/avatar1.jpeg"}},
+        )
+        data = {
+            "name": "book1",
+            "author": 1,
+            "rating": 123,
+            "cover": "/media/book/cover/avatar1.jpeg",
+        }
+        response = await self.client.post("/admin/Book/create", json=data)
+        self.assertEqual(response.status_code, 200)
+        response = await self.client.get("/admin/Book/list?page=1&perPage=10")
+        self.assertEqual(
+            response.json(),
+            {
+                "status": 0,
+                "msg": "",
+                "data": {
+                    "items": [
+                        {
+                            "name": "book1",
+                            "author": {"label": "author1", "value": 1},
+                            "rating": 123.0,
+                            "cover": "/media/book/cover/avatar1.jpeg",
+                            "pk": 1,
+                        }
+                    ],
+                    "total": 1,
+                },
+            },
+        )
