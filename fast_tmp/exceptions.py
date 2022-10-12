@@ -26,3 +26,8 @@ class TmpValueError(FastTmpError):
 class NotFoundError(FastTmpError):
     def __init__(self, content: Optional[str] = None):
         self.detail = BaseRes(status=400, msg=content or "not found model").json()
+
+
+class PermError(FastTmpError):
+    def __init__(self, content: Optional[str] = None):
+        self.detail = BaseRes(status=400, msg=content or "you have no permission").json()

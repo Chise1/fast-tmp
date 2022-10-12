@@ -14,7 +14,7 @@ from fast_tmp.amis.forms import Form
 from fast_tmp.amis.forms.filter import FilterModel
 from fast_tmp.amis.frame import Dialog
 from fast_tmp.amis.page import Page
-from fast_tmp.exceptions import NotFoundError
+from fast_tmp.exceptions import NotFoundError, PermError
 from fast_tmp.models import Permission
 from fast_tmp.responses import ListDataWithPage
 from fast_tmp.site.base import ModelFilter, ModelSession, RegisterRouter
@@ -43,10 +43,6 @@ class ModelAdmin(ModelSession, RegisterRouter):  # todo inline字段必须都在
         "delete",
         # "deleteMany",
     )  # todo 需要retrieve？
-    # 页面相关的东西
-    __get_pks: Any = None
-    list_per_page: int = 10  # 每页多少数据
-    list_max_show_all: int = 200  # 最多每页多少数据
     selct_defs: Dict[
         str,
         Callable[
@@ -372,6 +368,12 @@ class ModelAdmin(ModelSession, RegisterRouter):  # todo inline字段必须都在
         外键的枚举获取值以及多对多获取对象列表
         """
         return await self.selct_defs[name](request, pk, perPage, page)
+
+    async def check_perm(self, request: Request, base_codename: str):
+        codename: str = self.name + "_" + base_codename
+        user = request.user
+        if not await user.has_perm(codename.lower()):
+            raise PermError()
 
 
 model_list: Dict[str, List[RegisterRouter]] = {}

@@ -19,6 +19,7 @@ async def list_view(
     perPage: int = 10,
     page: int = 1,
 ):
+    await page_model.check_perm(request, "list")
     datas = await page_model.list(request, perPage, page)
     return BaseRes(data=datas)
 
@@ -35,6 +36,7 @@ async def prefetch_view(
     """
     对多对多外键进行额外的加载
     """
+    await page_model.check_perm(request, "list")
     datas = await page_model.select_options(request, field_name, pk, perPage, page)
     return BaseRes(data=datas)
 
@@ -51,6 +53,7 @@ async def select_view(
     """
     枚举字段的额外加载，主要用于外键
     """
+    await page_model.check_perm(request, "list")
     datas = await page_model.select_options(request, field_name, pk, perPage, page)
     return BaseRes(data=datas)
 
@@ -64,6 +67,7 @@ async def patch_data(
     """
     内联模式快速修改需要的接口
     """
+    await page_model.check_perm(request, "update")
     data = await request.json()
     await page_model.patch(request, pk, data)
     return BaseRes().dict()
@@ -75,6 +79,7 @@ async def update_data(
     pk: str,
     page_model: ModelSession = Depends(get_model_site),
 ):
+    await page_model.check_perm(request, "update")
     data = await request.json()
     await page_model.update(request, pk, data)
 
@@ -85,6 +90,7 @@ async def update_view(
     pk: str,
     page_model: ModelSession = Depends(get_model_site),
 ):
+    await page_model.check_perm(request, "update")
     data = await page_model.get_update(request, pk)
     return BaseRes(data=data)
 
@@ -94,6 +100,7 @@ async def create(
     request: Request,
     page_model: ModelSession = Depends(get_model_site),
 ):
+    await page_model.check_perm(request, "create")
     data = await request.json()
     await page_model.create(request, data)
 
@@ -104,6 +111,7 @@ async def delete_func(
     pk: str,
     page_model: ModelSession = Depends(get_model_site),
 ):
+    await page_model.check_perm(request, "delete")
     await page_model.delete(request, pk)
     return BaseRes()
 
