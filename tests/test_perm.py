@@ -188,3 +188,6 @@ class TestPermission(BaseSite):
                 },
             },
         )
+        # delete
+        response = await self.client.delete("/admin/Book/delete/1")
+        self.assertEqual(response.status_code, 200)
