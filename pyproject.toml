@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "fast-tmp"
-version = "1.0.6"
+version = "1.0.7"
 description = "fastapi tortoise amis admin"
 authors = ["Chise1 <chise123@live.com>"]
 include = ["LICENSE", "README.md"]
