@@ -24,23 +24,6 @@ async def list_view(
     return BaseRes(data=datas)
 
 
-@router.get("/{resource}/prefetch/{field_name}", dependencies=[Depends(get_staff)])
-async def prefetch_view(
-    request: Request,
-    field_name: str,
-    pk: Optional[str] = None,
-    perPage: Optional[int] = None,
-    page: Optional[int] = None,
-    page_model: ModelSession = Depends(get_model_site),
-):
-    """
-    对多对多外键进行额外的加载
-    """
-    await page_model.check_perm(request, "list")
-    datas = await page_model.select_options(request, field_name, pk, perPage, page)
-    return BaseRes(data=datas)
-
-
 @router.get("/{resource}/select/{field_name}", dependencies=[Depends(get_staff)])
 async def select_view(
     request: Request,

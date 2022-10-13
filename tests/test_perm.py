@@ -221,6 +221,56 @@ class TestPermission(BaseSite):
             },
         )
         self.assertEqual(response.status_code, 200)
+        user4 = await User.get(username="user4")
+        response = await self.client.post(
+            f"/admin/User/patch/{user4.pk}",
+            json={
+                "is_active": "True",
+                "is_staff": "True",
+                "is_superuser": "False",
+                "name": "user444",
+                "pk": user4.pk,
+                "username": "admin44",
+            },
+        )
+        self.assertEqual(response.json(), {"status": 0, "msg": "", "data": {}})
+        response = await self.client.get("/admin/User/list")
+        self.assertEqual(
+            response.json(),
+            {
+                "status": 0,
+                "msg": "",
+                "data": {
+                    "items": [
+                        {
+                            "name": "admin",
+                            "username": "admin",
+                            "is_active": "True",
+                            "is_superuser": "True",
+                            "is_staff": "True",
+                            "pk": 1,
+                        },
+                        {
+                            "name": "user3",
+                            "username": "user3",
+                            "is_active": "True",
+                            "is_superuser": "False",
+                            "is_staff": "True",
+                            "pk": 2,
+                        },
+                        {
+                            "name": "user4",
+                            "username": "user4",
+                            "is_active": "True",
+                            "is_superuser": "False",
+                            "is_staff": "True",
+                            "pk": 3,
+                        },
+                    ],
+                    "total": 3,
+                },
+            },
+        )
         await self.login("user4")
         await self.login("user3")
         # group
@@ -239,5 +289,128 @@ class TestPermission(BaseSite):
                     "items": [{"value": 2, "label": "user3"}, {"value": 3, "label": "user4"}],
                     "total": 2,
                 },
+            },
+        )
+        await Permission.filter(codename__startswith="book").delete()
+        perms = await Permission.all().values("codename")
+        perms = {perm["codename"] for perm in perms}
+        self.assertEqual(
+            perms,
+            {
+                "tournament_delete",
+                "team_create",
+                "author_list",
+                "author_create",
+                "address_delete",
+                "address_create",
+                "tree_create",
+                "event_list",
+                "tree_update",
+                "user_update",
+                "tournament_create",
+                "address_update",
+                "event_update",
+                "user_delete",
+                "node_create",
+                "author_update",
+                "address_list",
+                "tournament_list",
+                "node_delete",
+                "node_list",
+                "team_list",
+                "user_list",
+                "reporter_list",
+                "reporter_update",
+                "group_delete",
+                "tree_list",
+                "reporter_delete",
+                "permission_delete",
+                "group_list",
+                "tree_delete",
+                "role_update",
+                "role_delete",
+                "role_list",
+                "author_delete",
+                "group_update",
+                "role_create",
+                "team_delete",
+                "user_create",
+                "permission_list",
+                "reporter_create",
+                "team_update",
+                "group_create",
+                "event_delete",
+                "node_update",
+                "permission_update",
+                "tournament_update",
+                "permission_create",
+                "event_create",
+            },
+        )
+        response = await self.client.post("/admin/Permission/extra/migrate")
+        self.assertEqual(
+            response.json(), {"status": 0, "msg": "success update table permission", "data": {}}
+        )
+        perms2 = await Permission.all().values("codename")
+        perms2 = {perm["codename"] for perm in perms2}
+        self.assertEqual(
+            perms2,
+            {
+                "tournament_delete",
+                "team_create",
+                "author_list",
+                "author_create",
+                "address_delete",
+                "address_create",
+                "tree_create",
+                "event_list",
+                "tree_update",
+                "user_update",
+                "tournament_create",
+                "address_update",
+                "event_update",
+                "user_delete",
+                "node_create",
+                "author_update",
+                "booknoconstraint_update",
+                "address_list",
+                "tournament_list",
+                "book_update",
+                "booknoconstraint_list",
+                "book_delete",
+                "node_delete",
+                "node_list",
+                "team_list",
+                "user_list",
+                "reporter_list",
+                "reporter_update",
+                "book_create",
+                "booknoconstraint_create",
+                "group_delete",
+                "tree_list",
+                "reporter_delete",
+                "booknoconstraint_delete",
+                "permission_delete",
+                "group_list",
+                "tree_delete",
+                "role_update",
+                "role_delete",
+                "role_list",
+                "author_delete",
+                "group_update",
+                "role_create",
+                "team_delete",
+                "user_create",
+                "permission_list",
+                "reporter_create",
+                "team_update",
+                "group_create",
+                "event_delete",
+                "node_update",
+                "permission_update",
+                "tournament_update",
+                "permission_create",
+                "event_create",
+                "book_list",
             },
         )
