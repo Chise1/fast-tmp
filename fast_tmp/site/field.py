@@ -217,11 +217,11 @@ class RelationSelectApi:
     """
 
     async def get_selects(
-            self,
-            request: Request,
-            pk: Optional[str],
-            perPage: Optional[int],
-            page: Optional[int],
+        self,
+        request: Request,
+        pk: Optional[str],
+        perPage: Optional[int],
+        page: Optional[int],
     ) -> List[dict]:
         pass
 
@@ -235,11 +235,11 @@ class ForeignKeyPickerControl(BaseAdminControl, RelationSelectApi):  # todo æ”¯æ
     _field: fields.ForeignKeyRelation
 
     async def get_selects(
-            self,
-            request: Request,
-            pk: Optional[str],
-            perPage: Optional[int],
-            page: Optional[int],
+        self,
+        request: Request,
+        pk: Optional[str],
+        perPage: Optional[int],
+        page: Optional[int],
     ):
         field_model_all = self._field.related_model.all()  # type: ignore
         if perPage is not None and page is not None:
@@ -297,11 +297,11 @@ class ForeignKeyControl(BaseAdminControl, RelationSelectApi):
     _control_type = ControlEnum.select
 
     async def get_selects(
-            self,
-            request: Request,
-            pk: Optional[str],
-            perPage: Optional[int],
-            page: Optional[int],
+        self,
+        request: Request,
+        pk: Optional[str],
+        perPage: Optional[int],
+        page: Optional[int],
     ):
         field_model_all = self._field.related_model.all()  # type: ignore
         if perPage is not None and page is not None:
@@ -374,8 +374,8 @@ class ManyToManyControl(BaseAdminControl, RelationSelectApi):
                             title=self.label,
                             body=CRUD(
                                 api="get:"
-                                    + self._field.model.__name__  # type: ignore
-                                    + f"/select/{self.name}?pk=$pk",
+                                + self._field.model.__name__  # type: ignore
+                                + f"/select/{self.name}?pk=$pk",
                                 columns=[
                                     Column(label="pk", name="pk"),
                                     Column(label="label", name="label"),
@@ -388,11 +388,11 @@ class ManyToManyControl(BaseAdminControl, RelationSelectApi):
         return self._column
 
     async def get_selects(
-            self,
-            request: Request,
-            pk: Optional[str],
-            perPage: Optional[int],
-            page: Optional[int],
+        self,
+        request: Request,
+        pk: Optional[str],
+        perPage: Optional[int],
+        page: Optional[int],
     ):
         related_model = self._field.related_model  # type: ignore
         if pk is not None:
@@ -525,16 +525,16 @@ class ImageControl(BaseAdminControl):
 
 
 def create_column(
-        field_name: str,
-        field_type: fields.Field,
-        prefix: str,
+    field_name: str,
+    field_type: fields.Field,
+    prefix: str,
 ):
     if isinstance(field_type, IntEnumFieldInstance):
         return IntEnumControl(field_name, field_type, prefix)
     elif isinstance(field_type, CharEnumFieldInstance):
         return StrEnumControl(field_name, field_type, prefix)
     elif isinstance(
-            field_type, (fields.IntField, fields.SmallIntField, fields.BigIntField, fields.FloatField)
+        field_type, (fields.IntField, fields.SmallIntField, fields.BigIntField, fields.FloatField)
     ):
         return IntControl(field_name, field_type, prefix)
     elif isinstance(field_type, fields.TextField):
