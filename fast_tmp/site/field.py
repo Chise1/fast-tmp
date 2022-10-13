@@ -329,9 +329,7 @@ class ForeignKeyControl(BaseAdminControl, RelationSelectApi):
             )
         return self._column
 
-    def get_column_inline(
-        self, request: Request
-    ) -> Column:
+    def get_column_inline(self, request: Request) -> Column:
         raise AttributeError("foreignkey field can not be used in column inline.")
 
     def get_control(self, request: Request) -> Control:
@@ -462,9 +460,7 @@ class ManyToManyControl(BaseAdminControl, RelationSelectApi):
             await field.add(*add_field)
         return None
 
-    def get_column_inline(
-        self, request: Request
-    ) -> Column:
+    def get_column_inline(self, request: Request) -> Column:
         raise AttributeError("manytomany field can not be used in column inline.")
 
     def orm_2_amis(self, value: Any) -> Any:
