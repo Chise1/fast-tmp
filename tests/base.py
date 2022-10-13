@@ -3,6 +3,7 @@ from httpx import AsyncClient
 from tortoise import Tortoise
 from tortoise.contrib.test import SimpleTestCase
 
+from fast_tmp.admin.register import register_static_service
 from fast_tmp.conf import settings
 from fast_tmp.depends.auth import get_current_active_user_or_none, get_user_has_perms
 from fast_tmp.factory import create_app
@@ -13,6 +14,7 @@ from .admin import AuthorModel, BookModel, RoleModel
 
 register_model_site({"fieldtesting": [RoleModel(), BookModel(), AuthorModel()]})
 app = create_app()
+register_static_service(app)
 
 
 @app.get("/userinfo")
