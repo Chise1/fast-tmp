@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import List, Optional
+from typing import Optional, Set
 
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -112,16 +112,7 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
     return current_user
 
 
-async def get_superuser(current_user: User = Depends(get_current_active_user)):
-    """
-    获取超级用户
-    """
-    if not current_user.is_superuser:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
-    return current_user
-
-
-async def get_user_has_perms(perms: Optional[List[str]]):
+def get_user_has_perms(perms: Optional[Set[str]]):
     """
     判定用户是否具有相关权限
     """

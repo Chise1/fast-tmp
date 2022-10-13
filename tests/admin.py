@@ -43,15 +43,15 @@ class RoleModel(ModelAdmin):
 
 class BookModel(ModelAdmin):
     model = Book
-    list_display = ("name", "author", "rating")
-    create_fields = ("name", "author", "rating")
-    update_fields = ("name", "author")
+    list_display = ("name", "author", "rating", "cover")
+    create_fields = ("name", "author", "rating", "cover")
+    update_fields = ("name", "author", "cover")
     filters = ("name__contains",)
 
 
 class AuthorModel(ModelAdmin):
     model = Author
-    list_display = ("name",)
-    create_fields = ("name",)
+    list_display = ("name", "birthday")
+    create_fields = ("name", "birthday")
     inline = ("name",)
-    update_fields = ("name",)
+    update_fields = ("name", "birthday")

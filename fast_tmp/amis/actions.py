@@ -74,4 +74,3 @@ class DialogAction(_Action):
 class DrawerAction(_Action):
     actionType = ActionTypeEnum.drawer
     drawer: Drawer
-    # type = TypeEnum.button

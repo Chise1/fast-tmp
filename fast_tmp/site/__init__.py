@@ -6,6 +6,7 @@ from tortoise.models import Model
 from tortoise.queryset import QuerySet
 
 from fast_tmp.amis.actions import AjaxAction, DialogAction
+from fast_tmp.amis.base import BaseAmisModel, _Action
 from fast_tmp.amis.buttons import Operation
 from fast_tmp.amis.crud import CRUD
 from fast_tmp.amis.enums import ButtonLevelEnum
@@ -13,12 +14,12 @@ from fast_tmp.amis.forms import Form
 from fast_tmp.amis.forms.filter import FilterModel
 from fast_tmp.amis.frame import Dialog
 from fast_tmp.amis.page import Page
-from fast_tmp.exceptions import NotFoundError
+from fast_tmp.exceptions import NotFoundError, PermError
 from fast_tmp.models import Permission
 from fast_tmp.responses import ListDataWithPage
 from fast_tmp.site.base import ModelFilter, ModelSession, RegisterRouter
+from fast_tmp.site.field import BaseAdminControl, RelationSelectApi, create_column
 from fast_tmp.site.filter import make_filter_by_str
-from fast_tmp.site.util import BaseAdminControl, RelationSelectApi, create_column
 
 logger = logging.getLogger(__file__)
 
@@ -42,10 +43,6 @@ class ModelAdmin(ModelSession, RegisterRouter):  # todo inline字段必须都在
         "delete",
         # "deleteMany",
     )  # todo 需要retrieve？
-    # 页面相关的东西
-    __get_pks: Any = None
-    list_per_page: int = 10  # 每页多少数据
-    list_max_show_all: int = 200  # 最多每页多少数据
     selct_defs: Dict[
         str,
         Callable[
@@ -95,22 +92,24 @@ class ModelAdmin(ModelSession, RegisterRouter):  # todo inline字段必须都在
         ret["pk"] = self.get_control_field("pk")
         return ret
 
-    def get_create_dialogation_button(self, request: Request):
+    def get_create_dialogation_button(self, request: Request) -> List[_Action]:
         controls = self.get_create_fields()
 
-        return DialogAction(
-            label="新增",
-            dialog=Dialog(
-                title="新增",
-                body=Form(
-                    name=f"新增{self.name}",
-                    title=f"新增{self.name}",
-                    # fixme 你的field字段传实例了吗？
-                    body=[(i.get_control(request)) for i in controls.values()],
-                    api=f"post:{self.prefix}/create",
+        return [
+            DialogAction(
+                label="新增",
+                dialog=Dialog(
+                    title="新增",
+                    body=Form(
+                        name=f"新增{self.name}",
+                        title=f"新增{self.name}",
+                        # fixme 你的field字段传实例了吗？
+                        body=[(i.get_control(request)) for i in controls.values()],
+                        api=f"post:{self.prefix}/create",
+                    ),
                 ),
-            ),
-        )
+            )
+        ]
 
     def get_list_page(self, request: Request):
         res = []
@@ -151,7 +150,7 @@ class ModelAdmin(ModelSession, RegisterRouter):  # todo inline字段必须都在
         buttons = []
         if "put" in self.methods and self.update_fields and self.name + "_update" in codenames:
             buttons.append(self.get_update_one_button(request))
-        if "delete" in self.methods and self.name + "delete" in codenames:
+        if "delete" in self.methods and self.name + "_delete" in codenames:
             buttons.append(self.get_del_one_button())
         if len(buttons) > 0:
             return Operation(buttons=buttons)
@@ -166,10 +165,10 @@ class ModelAdmin(ModelSession, RegisterRouter):  # todo inline字段必须都在
         )
 
     def get_crud(self, request: Request, codenames: List[str]):
-        body = []
+        body: List[BaseAmisModel] = []
         columns = []
         if "create" in self.methods and self.create_fields and self.name + "_create" in codenames:
-            body.append(self.get_create_dialogation_button(request))
+            body.extend(self.get_create_dialogation_button(request))
         if "list" in self.methods and self.list_display and self.name + "_list" in codenames:
             columns.extend(self.get_list_page(request))
         buttons = self.get_operation(request, codenames)
@@ -299,7 +298,7 @@ class ModelAdmin(ModelSession, RegisterRouter):  # todo inline字段必须都在
                 self.name + "_list",
                 self.name + "_create",
                 self.name + "_update",
-                self.name + "delete",
+                self.name + "_delete",
             ]
         user = request.user
         if user.is_superuser:
@@ -339,10 +338,11 @@ class ModelAdmin(ModelSession, RegisterRouter):  # todo inline字段必须都在
             raise NotFoundError("can not found field:" + name)
         return ret
 
-    def __init__(self, prefix: str = None):
+    def __init__(self, prefix: str = None, label: Optional[str] = None):
         if not prefix:
             prefix = self.model.__name__
-        super().__init__(prefix, self.model.__name__.lower())
+
+        super().__init__(prefix, label or self.model.__name__.lower())
         if not self.fields:
             self.fields = {}
         self.make_fields()
@@ -370,8 +370,12 @@ class ModelAdmin(ModelSession, RegisterRouter):  # todo inline字段必须都在
         """
         return await self.selct_defs[name](request, pk, perPage, page)
 
+    async def check_perm(self, request: Request, codename: str):
+        user = request.user
+        if not await user.has_perm(codename.lower()):
+            raise PermError()
 
-# TModelAdmin=TypeVar("TModelAdmin",bound=ModelAdmin)
+
 model_list: Dict[str, List[RegisterRouter]] = {}
 resources: Set[str] = set()
 

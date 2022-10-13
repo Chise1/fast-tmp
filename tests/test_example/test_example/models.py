@@ -7,7 +7,6 @@ import os
 import uuid
 from enum import Enum, IntEnum
 
-from fastapi import UploadFile
 from tortoise import fields
 from tortoise.models import Model
 

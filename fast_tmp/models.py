@@ -1,4 +1,4 @@
-from typing import List
+from typing import Set
 
 from tortoise import Model, fields
 
@@ -18,6 +18,30 @@ class Permission(Model):
 
     def __repr__(self):
         return self.label
+
+    @classmethod
+    async def migrate_permissions(cls) -> bool:
+        """
+        同步所有注册的模型的所有权限
+        """
+        from fast_tmp.utils.model import get_all_models
+
+        all_models = get_all_models()
+        for model in all_models:
+            model_name = model.__name__.lower()
+            await cls.get_or_create(
+                codename=f"{model_name}_list", defaults={"label": f"{model_name}_list"}
+            )
+            await cls.get_or_create(
+                codename=f"{model_name}_create", defaults={"label": f"{model_name}_create"}
+            )
+            await cls.get_or_create(
+                codename=f"{model_name}_update", defaults={"label": f"{model_name}_update"}
+            )
+            await cls.get_or_create(
+                codename=f"{model_name}_delete", defaults={"label": f"{model_name}_delete"}
+            )
+        return True
 
 
 class User(Model):
@@ -59,20 +83,18 @@ class User(Model):
             return True
         return False
 
-    async def has_perms(self, codenames: List[str]) -> bool:
+    async def has_perms(self, codenames: Set[str]) -> bool:
         """
         根据permission的codename进行判定
         """
         perms = await self.get_perms(codenames)
-        return len(perms) == codenames
+        return codenames == perms
 
-    async def get_perms(self, codenames: List[str]) -> List[str]:
+    async def get_perms(self, codenames: Set[str]) -> Set[str]:
         if self.is_superuser:
             return codenames
-        perms = await Permission.filter(
-            groups__users__pk=self.pk, permissions__codename__in=codenames
-        )
-        return [i.codename for i in perms]
+        perms = await Permission.filter(groups__users=self, codename__in=codenames)
+        return set(i.codename for i in perms)
 
     def __str__(self):
         return self.name

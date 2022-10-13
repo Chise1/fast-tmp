@@ -4,7 +4,7 @@ os.environ.setdefault("FASTAPI_SETTINGS_MODULE", "test_example.settings")
 from test_example.admin import AuthorModel, BookModel, FieldTestingModel
 from tortoise.contrib.fastapi import register_tortoise
 
-from fast_tmp.admin.register import register_static_server
+from fast_tmp.admin.register import register_static_service
 from fast_tmp.conf import settings
 from fast_tmp.factory import create_app
 from fast_tmp.models import User
@@ -28,7 +28,7 @@ async def create_user():
 
 register_tortoise(app, config=settings.TORTOISE_ORM, generate_schemas=True)
 if settings.DEBUG:
-    register_static_server(app)
+    register_static_service(app)
 
 if __name__ == "__main__":
     import uvicorn  # type:ignore

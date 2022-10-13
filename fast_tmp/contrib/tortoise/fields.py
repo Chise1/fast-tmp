@@ -6,7 +6,6 @@ from fastapi import UploadFile
 from tortoise import ConfigurationError, Model
 from tortoise.fields import Field
 
-from fast_tmp.conf import settings
 from fast_tmp.contrib.tortoise.validators import FilePathValidator, ImagePathValidator
 
 
@@ -15,6 +14,8 @@ class FileClass(str):
         self.path = path
 
     def get_file(self):
+        from fast_tmp.conf import settings
+
         if self.path is not None:
             value = os.path.join(os.getcwd(), settings.MEDIA_PATH, self.path)
             return UploadFile(filename=value)
@@ -27,10 +28,14 @@ class FileClass(str):
         return self.path
 
     def get_static_path(self):
+        from fast_tmp.conf import settings
+
         return "/" + "/".join([settings.MEDIA_ROOT, self.path])
 
     @classmethod
     def from_static_path(cls, path: str):
+        from fast_tmp.conf import settings
+
         if not path:
             return None
         if path.startswith("/" + settings.MEDIA_ROOT):  # 去除静态头

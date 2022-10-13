@@ -167,7 +167,7 @@ class TimeItem(Control):
     body: Optional[Dict[str, Any]]
     value: Optional[datetime.time]  # 默认值
     timeFormat: str = "HH:mm:ss"  # 时间选择器值格式，更多格式类型请参考 moment
-    format: Optional[str]  # = "X"  # 时间选择器值格式，更多格式类型请参考 moment
+    format: str = "HH:mm:ss"  # = "X"  # 时间选择器值格式，更多格式类型请参考 moment
     inputFormat: str = "HH:mm:ss"  # 时间选择器显示格式，即时间戳格式，更多格式类型请参考 moment
     placeholder: Optional[str]  # 占位文本
     clearable: Optional[bool]  # 是否可清除
@@ -222,7 +222,7 @@ class TransferItem(Control):
     # Transfer 穿梭器
     type = ControlEnum.transfer
     options: Optional[List[Union[dict, str]]]  # 选项组
-    source: Optional[str]  # 动态选项组#fixme:路由替换需要支持source
+    source: Optional[str]  # 动态选项组
     delimeter: Optional[str]  # 拼接符
     joinValues: Optional[bool]  # 拼接值
     extractValue: Optional[bool]  # 提取值
@@ -649,8 +649,3 @@ class ImageItem(Control):
 #     type = "page"
 #     body: Optional[Dict[str, Any]]
 #
-# # fixme:type有问题
-# # class YearItem(Control):
-# #     # Year年
-# #     type = "page"
-# #     body: Optional[Dict[str, Any]]

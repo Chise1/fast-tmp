@@ -3,7 +3,7 @@ from typing import Iterator, Type
 from tortoise import Model, Tortoise
 
 
-def get_all_models() -> Iterator[Type[Model]]:  # fixme:需要测试
+def get_all_models() -> Iterator[Type[Model]]:
     """
     get all tortoise models
     """

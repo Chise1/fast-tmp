@@ -1,18 +1,38 @@
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from httpx import AsyncClient
 from tortoise import Tortoise
 from tortoise.contrib.test import SimpleTestCase
 
+from fast_tmp.admin.register import register_static_service
 from fast_tmp.conf import settings
+from fast_tmp.depends.auth import get_current_active_user_or_none, get_user_has_perms
 from fast_tmp.factory import create_app
 from fast_tmp.models import Permission, User
 from fast_tmp.site import register_model_site
-from fast_tmp.utils.model import get_all_models
 
-from .admin import RoleModel
+from .admin import AuthorModel, BookModel, RoleModel
 
-register_model_site({"fieldtesting": [RoleModel()]})
+register_model_site({"fieldtesting": [RoleModel(), BookModel(), AuthorModel()]})
 app = create_app()
+register_static_service(app)
+
+
+@app.get("/userinfo")
+async def get_userinfo(user: User = Depends(get_current_active_user_or_none)):
+    return user
+
+
+@app.get("/perms")
+async def get_user_perms(
+    user: User = Depends(
+        get_user_has_perms(
+            {
+                "permission_list",
+            }
+        )
+    )
+):
+    return Permission.filter(groups__users=user)
 
 
 class BaseSite(SimpleTestCase):
@@ -24,12 +44,29 @@ class BaseSite(SimpleTestCase):
         await self.client.__aenter__()
         await Tortoise.init(settings.TORTOISE_ORM, _create_db=True)
         await Tortoise.generate_schemas()
-        await self.create_superuser("admin", "admin")
-        await self.make_permissions()
+        await self.create_superuser("admin", "123456")
+        await self.migrate_permissions()
 
     async def asyncTearDown(self) -> None:
         await self.client.__aexit__()
         await Tortoise.close_connections()
+
+    @classmethod
+    async def create_user(
+        cls, username: str, password="123456", is_superuser=False, is_active=True, is_staff=True
+    ):
+        user = User(
+            username=username,
+            is_superuser=is_superuser,
+            is_active=is_active,
+            is_staff=is_staff,
+            name=username,
+        )
+        if await User.filter(username=user.username).exists():
+            return
+        user.set_password(password)
+        await user.save()
+        return user
 
     @classmethod
     async def create_superuser(cls, username, password):
@@ -41,28 +78,14 @@ class BaseSite(SimpleTestCase):
         user.set_password(password)
         await user.save()
 
-    async def make_permissions(self):
-        all_model = get_all_models()
-        for model in all_model:
-            model_name = model.__name__.lower()
-            await Permission.get_or_create(
-                codename=model_name + "_create", defaults={"label": f"{model_name}_创建"}
-            )
-            await Permission.get_or_create(
-                codename=model_name + "_update", defaults={"label": f"{model_name}_更新"}
-            )
-            await Permission.get_or_create(
-                codename=model_name + "_delete", defaults={"label": f"{model_name}_删除"}
-            )
-            await Permission.get_or_create(
-                codename=model_name + "_list", defaults={"label": f"{model_name}_查看"}
-            )
+    async def migrate_permissions(self):
+        await Permission.migrate_permissions()
 
-    async def login(self):
+    async def login(self, username="admin", password="123456"):
         response = await self.client.post(
             "/admin/login",
             headers={"ContentType": "application/x-www-form-urlencoded"},
-            data={"username": "admin", "password": "admin"},
+            data={"username": username, "password": password},
         )
-        assert response.status_code == 302
-        assert response.headers.get("location") == "http://test/admin/"
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.headers.get("location"), "http://test/admin/")

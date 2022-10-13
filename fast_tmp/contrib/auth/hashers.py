@@ -1,5 +1,6 @@
 import base64
-import binascii
+
+# import binascii
 import functools
 import hashlib
 import importlib
@@ -7,13 +8,8 @@ import math
 import warnings
 from typing import Any, Optional
 
-from fast_tmp.utils.crypto import (
-    RANDOM_STRING_CHARS,
-    constant_time_compare,
-    get_random_string,
-    md5,
-    pbkdf2,
-)
+from fast_tmp.utils.crypto import RANDOM_STRING_CHARS  # md5,
+from fast_tmp.utils.crypto import constant_time_compare, get_random_string, pbkdf2
 
 UNUSABLE_PASSWORD_PREFIX = "!"  # This will never be a valid encoded hash
 UNUSABLE_PASSWORD_SUFFIX_LENGTH = 40  # number of random chars to add after UNUSABLE_PASSWORD_PREFIX
@@ -81,7 +77,8 @@ def make_password(password, salt=None, hasher="default"):
 
 @functools.lru_cache(maxsize=None)
 def get_hashers():
-    hashers = [PBKDF2PasswordHasher(), PBKDF2SHA1PasswordHasher, MD5PasswordHasher]
+    # hashers = [PBKDF2PasswordHasher(), PBKDF2SHA1PasswordHasher, MD5PasswordHasher]
+    hashers = [PBKDF2PasswordHasher(), PBKDF2SHA1PasswordHasher]
     return hashers
 
 
@@ -320,311 +317,312 @@ class PBKDF2SHA1PasswordHasher(PBKDF2PasswordHasher):
     digest = hashlib.sha1
 
 
-class Argon2PasswordHasher(BasePasswordHasher):
-    """
-    Secure password hashing using the argon2 algorithm.
-
-    This is the winner of the Password Hashing Competition 2013-2015
-    (https://password-hashing.net). It requires the argon2-cffi library which
-    depends on native C code and might cause portability issues.
-    """
-
-    algorithm = "argon2"
-    library = "argon2"
-
-    time_cost = 2
-    memory_cost = 102400
-    parallelism = 8
-
-    def encode(self, password, salt):
-        argon2 = self._load_library()
-        params = self.params()
-        data = argon2.low_level.hash_secret(
-            password.encode(),
-            salt.encode(),
-            time_cost=params.time_cost,
-            memory_cost=params.memory_cost,
-            parallelism=params.parallelism,
-            hash_len=params.hash_len,
-            type=params.type,
-        )
-        return self.algorithm + data.decode("ascii")
-
-    def decode(self, encoded):
-        argon2 = self._load_library()
-        algorithm, rest = encoded.split("$", 1)
-        assert algorithm == self.algorithm
-        params = argon2.extract_parameters("$" + rest)
-        variety, *_, b64salt, hash = rest.split("$")
-        # Add padding.
-        b64salt += "=" * (-len(b64salt) % 4)
-        salt = base64.b64decode(b64salt).decode("latin1")
-        return {
-            "algorithm": algorithm,
-            "hash": hash,
-            "memory_cost": params.memory_cost,
-            "parallelism": params.parallelism,
-            "salt": salt,
-            "time_cost": params.time_cost,
-            "variety": variety,
-            "version": params.version,
-            "params": params,
-        }
-
-    def verify(self, password, encoded):
-        argon2 = self._load_library()
-        algorithm, rest = encoded.split("$", 1)
-        assert algorithm == self.algorithm
-        try:
-            return argon2.PasswordHasher().verify("$" + rest, password)
-        except argon2.exceptions.VerificationError:
-            return False
-
-    def safe_summary(self, encoded):
-        decoded = self.decode(encoded)
-        return {
-            "algorithm": decoded["algorithm"],
-            "variety": decoded["variety"],
-            "version": decoded["version"],
-            "memory cost": decoded["memory_cost"],
-            "time cost": decoded["time_cost"],
-            "parallelism": decoded["parallelism"],
-            "salt": mask_hash(decoded["salt"]),
-            "hash": mask_hash(decoded["hash"]),
-        }
-
-    def must_update(self, encoded):
-        decoded = self.decode(encoded)
-        current_params = decoded["params"]
-        new_params = self.params()
-        # Set salt_len to the salt_len of the current parameters because salt
-        # is explicitly passed to argon2.
-        new_params.salt_len = current_params.salt_len
-        update_salt = must_update_salt(decoded["salt"], self.salt_entropy)
-        return (current_params != new_params) or update_salt
-
-    def harden_runtime(self, password, encoded):
-        # The runtime for Argon2 is too complicated to implement a sensible
-        # hardening algorithm.
-        pass
-
-    def params(self):
-        argon2 = self._load_library()
-        # salt_len is a noop, because we provide our own salt.
-        return argon2.Parameters(
-            type=argon2.low_level.Type.ID,
-            version=argon2.low_level.ARGON2_VERSION,
-            salt_len=argon2.DEFAULT_RANDOM_SALT_LENGTH,
-            hash_len=argon2.DEFAULT_HASH_LENGTH,
-            time_cost=self.time_cost,
-            memory_cost=self.memory_cost,
-            parallelism=self.parallelism,
-        )
-
-
-class BCryptSHA256PasswordHasher(BasePasswordHasher):
-    """
-    Secure password hashing using the bcrypt algorithm (recommended)
-
-    This is considered by many to be the most secure algorithm but you
-    must first install the bcrypt library.  Please be warned that
-    this library depends on native C code and might cause portability
-    issues.
-    """
-
-    algorithm = "bcrypt_sha256"
-    digest: Optional[Any] = hashlib.sha256
-    library = ("bcrypt", "bcrypt")
-    rounds = 12
-
-    def salt(self):
-        bcrypt = self._load_library()
-        return bcrypt.gensalt(self.rounds)
-
-    def encode(self, password, salt):
-        bcrypt = self._load_library()
-        password = password.encode()
-        # Hash the password prior to using bcrypt to prevent password
-        # truncation as described in #20138.
-        if self.digest is not None:
-            # Use binascii.hexlify() because a hex encoded bytestring is str.
-            password = binascii.hexlify(self.digest(password).digest())
-
-        data = bcrypt.hashpw(password, salt)
-        return "%s$%s" % (self.algorithm, data.decode("ascii"))
-
-    def decode(self, encoded):
-        algorithm, empty, algostr, work_factor, data = encoded.split("$", 4)
-        assert algorithm == self.algorithm
-        return {
-            "algorithm": algorithm,
-            "algostr": algostr,
-            "checksum": data[22:],
-            "salt": data[:22],
-            "work_factor": int(work_factor),
-        }
-
-    def verify(self, password, encoded):
-        algorithm, data = encoded.split("$", 1)
-        assert algorithm == self.algorithm
-        encoded_2 = self.encode(password, data.encode("ascii"))
-        return constant_time_compare(encoded, encoded_2)
-
-    def safe_summary(self, encoded):
-        decoded = self.decode(encoded)
-        return {
-            "algorithm": decoded["algorithm"],
-            "work factor": decoded["work_factor"],
-            "salt": mask_hash(decoded["salt"]),
-            "checksum": mask_hash(decoded["checksum"]),
-        }
-
-    def must_update(self, encoded):
-        decoded = self.decode(encoded)
-        return decoded["work_factor"] != self.rounds
-
-    def harden_runtime(self, password, encoded):
-        _, data = encoded.split("$", 1)
-        salt = data[:29]  # Length of the salt in bcrypt.
-        rounds = data.split("$")[2]
-        # work factor is logarithmic, adding one doubles the load.
-        diff = 2 ** (self.rounds - int(rounds)) - 1
-        while diff > 0:
-            self.encode(password, salt.encode("ascii"))
-            diff -= 1
-
-
-class BCryptPasswordHasher(BCryptSHA256PasswordHasher):
-    """
-    Secure password hashing using the bcrypt algorithm
-
-    This is considered by many to be the most secure algorithm but you
-    must first install the bcrypt library.  Please be warned that
-    this library depends on native C code and might cause portability
-    issues.
-
-    This hasher does not first hash the password which means it is subject to
-    bcrypt's 72 bytes password truncation. Most use cases should prefer the
-    BCryptSHA256PasswordHasher.
-    """
-
-    algorithm = "bcrypt"
-    digest = None
-
-
-class ScryptPasswordHasher(BasePasswordHasher):
-    """
-    Secure password hashing using the Scrypt algorithm.
-    """
-
-    algorithm = "scrypt"
-    block_size = 8
-    maxmem = 0
-    parallelism = 1
-    work_factor = 2**14
-
-    def encode(self, password, salt, n=None, r=None, p=None):
-        self._check_encode_args(password, salt)
-        n = n or self.work_factor
-        r = r or self.block_size
-        p = p or self.parallelism
-        hash_ = hashlib.scrypt(
-            password.encode(),
-            salt=salt.encode(),
-            n=n,
-            r=r,
-            p=p,
-            maxmem=self.maxmem,
-            dklen=64,
-        )
-        hash_ = base64.b64encode(hash_).decode("ascii").strip()
-        return "%s$%d$%s$%d$%d$%s" % (self.algorithm, n, salt, r, p, hash_)
-
-    def decode(self, encoded):
-        algorithm, work_factor, salt, block_size, parallelism, hash_ = encoded.split("$", 6)
-        assert algorithm == self.algorithm
-        return {
-            "algorithm": algorithm,
-            "work_factor": int(work_factor),
-            "salt": salt,
-            "block_size": int(block_size),
-            "parallelism": int(parallelism),
-            "hash": hash_,
-        }
-
-    def verify(self, password, encoded):
-        decoded = self.decode(encoded)
-        encoded_2 = self.encode(
-            password,
-            decoded["salt"],
-            decoded["work_factor"],
-            decoded["block_size"],
-            decoded["parallelism"],
-        )
-        return constant_time_compare(encoded, encoded_2)
-
-    def safe_summary(self, encoded):
-        decoded = self.decode(encoded)
-        return {
-            "algorithm": decoded["algorithm"],
-            "work factor": decoded["work_factor"],
-            "block size": decoded["block_size"],
-            "parallelism": decoded["parallelism"],
-            "salt": mask_hash(decoded["salt"]),
-            "hash": mask_hash(decoded["hash"]),
-        }
-
-    def must_update(self, encoded):
-        decoded = self.decode(encoded)
-        return (
-            decoded["work_factor"] != self.work_factor
-            or decoded["block_size"] != self.block_size
-            or decoded["parallelism"] != self.parallelism
-        )
-
-    def harden_runtime(self, password, encoded):
-        # The runtime for Scrypt is too complicated to implement a sensible
-        # hardening algorithm.
-        pass
-
-
-class MD5PasswordHasher(BasePasswordHasher):
-    """
-    The Salted MD5 password hashing algorithm (not recommended)
-    """
-
-    algorithm = "md5"
-
-    def encode(self, password, salt):
-        self._check_encode_args(password, salt)
-        hash = md5((salt + password).encode()).hexdigest()
-        return "%s$%s$%s" % (self.algorithm, salt, hash)
-
-    def decode(self, encoded):
-        algorithm, salt, hash = encoded.split("$", 2)
-        assert algorithm == self.algorithm
-        return {
-            "algorithm": algorithm,
-            "hash": hash,
-            "salt": salt,
-        }
-
-    def verify(self, password, encoded):
-        decoded = self.decode(encoded)
-        encoded_2 = self.encode(password, decoded["salt"])
-        return constant_time_compare(encoded, encoded_2)
-
-    def safe_summary(self, encoded):
-        decoded = self.decode(encoded)
-        return {
-            "algorithm": decoded["algorithm"],
-            "salt": mask_hash(decoded["salt"], show=2),
-            "hash": mask_hash(decoded["hash"]),
-        }
-
-    def must_update(self, encoded):
-        decoded = self.decode(encoded)
-        return must_update_salt(decoded["salt"], self.salt_entropy)
-
-    def harden_runtime(self, password, encoded):
-        pass
+#
+# class Argon2PasswordHasher(BasePasswordHasher):
+#     """
+#     Secure password hashing using the argon2 algorithm.
+#
+#     This is the winner of the Password Hashing Competition 2013-2015
+#     (https://password-hashing.net). It requires the argon2-cffi library which
+#     depends on native C code and might cause portability issues.
+#     """
+#
+#     algorithm = "argon2"
+#     library = "argon2"
+#
+#     time_cost = 2
+#     memory_cost = 102400
+#     parallelism = 8
+#
+#     def encode(self, password, salt):
+#         argon2 = self._load_library()
+#         params = self.params()
+#         data = argon2.low_level.hash_secret(
+#             password.encode(),
+#             salt.encode(),
+#             time_cost=params.time_cost,
+#             memory_cost=params.memory_cost,
+#             parallelism=params.parallelism,
+#             hash_len=params.hash_len,
+#             type=params.type,
+#         )
+#         return self.algorithm + data.decode("ascii")
+#
+#     def decode(self, encoded):
+#         argon2 = self._load_library()
+#         algorithm, rest = encoded.split("$", 1)
+#         assert algorithm == self.algorithm
+#         params = argon2.extract_parameters("$" + rest)
+#         variety, *_, b64salt, hash = rest.split("$")
+#         # Add padding.
+#         b64salt += "=" * (-len(b64salt) % 4)
+#         salt = base64.b64decode(b64salt).decode("latin1")
+#         return {
+#             "algorithm": algorithm,
+#             "hash": hash,
+#             "memory_cost": params.memory_cost,
+#             "parallelism": params.parallelism,
+#             "salt": salt,
+#             "time_cost": params.time_cost,
+#             "variety": variety,
+#             "version": params.version,
+#             "params": params,
+#         }
+#
+#     def verify(self, password, encoded):
+#         argon2 = self._load_library()
+#         algorithm, rest = encoded.split("$", 1)
+#         assert algorithm == self.algorithm
+#         try:
+#             return argon2.PasswordHasher().verify("$" + rest, password)
+#         except argon2.exceptions.VerificationError:
+#             return False
+#
+#     def safe_summary(self, encoded):
+#         decoded = self.decode(encoded)
+#         return {
+#             "algorithm": decoded["algorithm"],
+#             "variety": decoded["variety"],
+#             "version": decoded["version"],
+#             "memory cost": decoded["memory_cost"],
+#             "time cost": decoded["time_cost"],
+#             "parallelism": decoded["parallelism"],
+#             "salt": mask_hash(decoded["salt"]),
+#             "hash": mask_hash(decoded["hash"]),
+#         }
+#
+#     def must_update(self, encoded):
+#         decoded = self.decode(encoded)
+#         current_params = decoded["params"]
+#         new_params = self.params()
+#         # Set salt_len to the salt_len of the current parameters because salt
+#         # is explicitly passed to argon2.
+#         new_params.salt_len = current_params.salt_len
+#         update_salt = must_update_salt(decoded["salt"], self.salt_entropy)
+#         return (current_params != new_params) or update_salt
+#
+#     def harden_runtime(self, password, encoded):
+#         # The runtime for Argon2 is too complicated to implement a sensible
+#         # hardening algorithm.
+#         pass
+#
+#     def params(self):
+#         argon2 = self._load_library()
+#         # salt_len is a noop, because we provide our own salt.
+#         return argon2.Parameters(
+#             type=argon2.low_level.Type.ID,
+#             version=argon2.low_level.ARGON2_VERSION,
+#             salt_len=argon2.DEFAULT_RANDOM_SALT_LENGTH,
+#             hash_len=argon2.DEFAULT_HASH_LENGTH,
+#             time_cost=self.time_cost,
+#             memory_cost=self.memory_cost,
+#             parallelism=self.parallelism,
+#         )
+#
+#
+# class BCryptSHA256PasswordHasher(BasePasswordHasher):
+#     """
+#     Secure password hashing using the bcrypt algorithm (recommended)
+#
+#     This is considered by many to be the most secure algorithm but you
+#     must first install the bcrypt library.  Please be warned that
+#     this library depends on native C code and might cause portability
+#     issues.
+#     """
+#
+#     algorithm = "bcrypt_sha256"
+#     digest: Optional[Any] = hashlib.sha256
+#     library = ("bcrypt", "bcrypt")
+#     rounds = 12
+#
+#     def salt(self):
+#         bcrypt = self._load_library()
+#         return bcrypt.gensalt(self.rounds)
+#
+#     def encode(self, password, salt):
+#         bcrypt = self._load_library()
+#         password = password.encode()
+#         # Hash the password prior to using bcrypt to prevent password
+#         # truncation as described in #20138.
+#         if self.digest is not None:
+#             # Use binascii.hexlify() because a hex encoded bytestring is str.
+#             password = binascii.hexlify(self.digest(password).digest())
+#
+#         data = bcrypt.hashpw(password, salt)
+#         return "%s$%s" % (self.algorithm, data.decode("ascii"))
+#
+#     def decode(self, encoded):
+#         algorithm, empty, algostr, work_factor, data = encoded.split("$", 4)
+#         assert algorithm == self.algorithm
+#         return {
+#             "algorithm": algorithm,
+#             "algostr": algostr,
+#             "checksum": data[22:],
+#             "salt": data[:22],
+#             "work_factor": int(work_factor),
+#         }
+#
+#     def verify(self, password, encoded):
+#         algorithm, data = encoded.split("$", 1)
+#         assert algorithm == self.algorithm
+#         encoded_2 = self.encode(password, data.encode("ascii"))
+#         return constant_time_compare(encoded, encoded_2)
+#
+#     def safe_summary(self, encoded):
+#         decoded = self.decode(encoded)
+#         return {
+#             "algorithm": decoded["algorithm"],
+#             "work factor": decoded["work_factor"],
+#             "salt": mask_hash(decoded["salt"]),
+#             "checksum": mask_hash(decoded["checksum"]),
+#         }
+#
+#     def must_update(self, encoded):
+#         decoded = self.decode(encoded)
+#         return decoded["work_factor"] != self.rounds
+#
+#     def harden_runtime(self, password, encoded):
+#         _, data = encoded.split("$", 1)
+#         salt = data[:29]  # Length of the salt in bcrypt.
+#         rounds = data.split("$")[2]
+#         # work factor is logarithmic, adding one doubles the load.
+#         diff = 2 ** (self.rounds - int(rounds)) - 1
+#         while diff > 0:
+#             self.encode(password, salt.encode("ascii"))
+#             diff -= 1
+#
+#
+# class BCryptPasswordHasher(BCryptSHA256PasswordHasher):
+#     """
+#     Secure password hashing using the bcrypt algorithm
+#
+#     This is considered by many to be the most secure algorithm but you
+#     must first install the bcrypt library.  Please be warned that
+#     this library depends on native C code and might cause portability
+#     issues.
+#
+#     This hasher does not first hash the password which means it is subject to
+#     bcrypt's 72 bytes password truncation. Most use cases should prefer the
+#     BCryptSHA256PasswordHasher.
+#     """
+#
+#     algorithm = "bcrypt"
+#     digest = None
+#
+#
+# class ScryptPasswordHasher(BasePasswordHasher):
+#     """
+#     Secure password hashing using the Scrypt algorithm.
+#     """
+#
+#     algorithm = "scrypt"
+#     block_size = 8
+#     maxmem = 0
+#     parallelism = 1
+#     work_factor = 2**14
+#
+#     def encode(self, password, salt, n=None, r=None, p=None):
+#         self._check_encode_args(password, salt)
+#         n = n or self.work_factor
+#         r = r or self.block_size
+#         p = p or self.parallelism
+#         hash_ = hashlib.scrypt(
+#             password.encode(),
+#             salt=salt.encode(),
+#             n=n,
+#             r=r,
+#             p=p,
+#             maxmem=self.maxmem,
+#             dklen=64,
+#         )
+#         hash_ = base64.b64encode(hash_).decode("ascii").strip()
+#         return "%s$%d$%s$%d$%d$%s" % (self.algorithm, n, salt, r, p, hash_)
+#
+#     def decode(self, encoded):
+#         algorithm, work_factor, salt, block_size, parallelism, hash_ = encoded.split("$", 6)
+#         assert algorithm == self.algorithm
+#         return {
+#             "algorithm": algorithm,
+#             "work_factor": int(work_factor),
+#             "salt": salt,
+#             "block_size": int(block_size),
+#             "parallelism": int(parallelism),
+#             "hash": hash_,
+#         }
+#
+#     def verify(self, password, encoded):
+#         decoded = self.decode(encoded)
+#         encoded_2 = self.encode(
+#             password,
+#             decoded["salt"],
+#             decoded["work_factor"],
+#             decoded["block_size"],
+#             decoded["parallelism"],
+#         )
+#         return constant_time_compare(encoded, encoded_2)
+#
+#     def safe_summary(self, encoded):
+#         decoded = self.decode(encoded)
+#         return {
+#             "algorithm": decoded["algorithm"],
+#             "work factor": decoded["work_factor"],
+#             "block size": decoded["block_size"],
+#             "parallelism": decoded["parallelism"],
+#             "salt": mask_hash(decoded["salt"]),
+#             "hash": mask_hash(decoded["hash"]),
+#         }
+#
+#     def must_update(self, encoded):
+#         decoded = self.decode(encoded)
+#         return (
+#             decoded["work_factor"] != self.work_factor
+#             or decoded["block_size"] != self.block_size
+#             or decoded["parallelism"] != self.parallelism
+#         )
+#
+#     def harden_runtime(self, password, encoded):
+#         # The runtime for Scrypt is too complicated to implement a sensible
+#         # hardening algorithm.
+#         pass
+#
+#
+# class MD5PasswordHasher(BasePasswordHasher):
+#     """
+#     The Salted MD5 password hashing algorithm (not recommended)
+#     """
+#
+#     algorithm = "md5"
+#
+#     def encode(self, password, salt):
+#         self._check_encode_args(password, salt)
+#         hash = md5((salt + password).encode()).hexdigest()
+#         return "%s$%s$%s" % (self.algorithm, salt, hash)
+#
+#     def decode(self, encoded):
+#         algorithm, salt, hash = encoded.split("$", 2)
+#         assert algorithm == self.algorithm
+#         return {
+#             "algorithm": algorithm,
+#             "hash": hash,
+#             "salt": salt,
+#         }
+#
+#     def verify(self, password, encoded):
+#         decoded = self.decode(encoded)
+#         encoded_2 = self.encode(password, decoded["salt"])
+#         return constant_time_compare(encoded, encoded_2)
+#
+#     def safe_summary(self, encoded):
+#         decoded = self.decode(encoded)
+#         return {
+#             "algorithm": decoded["algorithm"],
+#             "salt": mask_hash(decoded["salt"], show=2),
+#             "hash": mask_hash(decoded["hash"]),
+#         }
+#
+#     def must_update(self, encoded):
+#         decoded = self.decode(encoded)
+#         return must_update_salt(decoded["salt"], self.salt_entropy)
+#
+#     def harden_runtime(self, password, encoded):
+#         pass
