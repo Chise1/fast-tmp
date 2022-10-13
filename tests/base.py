@@ -85,5 +85,5 @@ class BaseSite(SimpleTestCase):
             headers={"ContentType": "application/x-www-form-urlencoded"},
             data={"username": username, "password": password},
         )
-        assert response.status_code == 302
-        assert response.headers.get("location") == "http://test/admin/"
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.headers.get("location"), "http://test/admin/")

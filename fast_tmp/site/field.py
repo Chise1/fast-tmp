@@ -25,7 +25,7 @@ class Password(StrControl):
         else:
             if not value:
                 raise TmpValueError("password can not be none.")
-            await super().set_value(request, obj, value)
+            await super().set_value(request, obj, make_password(value))
 
     def get_control(self, request: Request) -> Control:
         if not self._control:

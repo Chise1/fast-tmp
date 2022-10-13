@@ -19,9 +19,7 @@ class TestPermission(BaseSite):
         await group.permissions.add(*perms)
         assert await user.has_perm("book_list")
         assert await user.has_perms({"book_list", "book_create"})
-        await self.login(
-            "user1",
-        )
+        await self.login("user1")
         response = await self.client.get("/admin/site")
         self.assertEqual(
             response.json(),
@@ -191,3 +189,55 @@ class TestPermission(BaseSite):
         # delete
         response = await self.client.delete("/admin/Book/delete/1")
         self.assertEqual(response.status_code, 200)
+
+    async def test_auth(self):
+        user: User = await self.create_user("user3")
+        group = Group(name="group3")
+        await group.save()
+        await group.users.add(user)
+        perms = await Permission.filter(
+            Q(codename__startswith="user")
+            | Q(codename__startswith="group")
+            | Q(codename__startswith="permission")
+        )
+        await group.permissions.add(*perms)
+        await self.login("user3")
+        # create user
+        response = await self.client.get("/admin/User/select/groups")
+        self.assertEqual(
+            response.json(),
+            {"status": 0, "msg": "", "data": {"options": [{"value": 1, "label": "group3"}]}},
+        )
+        response = await self.client.post(
+            "/admin/User/create",
+            json={
+                "username": "user4",
+                "password": "123456",
+                "name": "user4",
+                "groups": str(group.pk),
+                "is_active": "True",
+                "is_staff": "True",
+                "is_superuser": "False",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        await self.login("user4")
+        await self.login("user3")
+        # group
+        response = await self.client.get("/admin/Group/list")
+        self.assertEqual(
+            response.json(),
+            {"status": 0, "msg": "", "data": {"items": [{"name": "group3", "pk": 1}], "total": 1}},
+        )
+        response = await self.client.get(f"/admin/Group/select/users?pk={group.pk}")
+        self.assertEqual(
+            response.json(),
+            {
+                "status": 0,
+                "msg": "",
+                "data": {
+                    "items": [{"value": 2, "label": "user3"}, {"value": 3, "label": "user4"}],
+                    "total": 2,
+                },
+            },
+        )
