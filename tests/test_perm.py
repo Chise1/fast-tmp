@@ -156,13 +156,13 @@ class TestPermission(BaseSite):
             response = await self.client.post("/admin/Book/file/cover", files={"file": f})
         self.assertEqual(
             response.json(),
-            {"status": 0, "msg": "", "data": {"value": "/media/book/cover/avatar1.jpeg"}},
+            {"status": 0, "msg": "", "data": {"value": "/media/Book/cover/avatar1.jpeg"}},
         )
         data = {
             "name": "book1",
             "author": 1,
             "rating": 123,
-            "cover": "/media/book/cover/avatar1.jpeg",
+            "cover": "/media/Book/cover/avatar1.jpeg",
         }
         response = await self.client.post("/admin/Book/create", json=data)
         self.assertEqual(response.status_code, 200)
@@ -178,7 +178,7 @@ class TestPermission(BaseSite):
                             "name": "book1",
                             "author": {"label": "author1", "value": 1},
                             "rating": 123.0,
-                            "cover": "/media/book/cover/avatar1.jpeg",
+                            "cover": "/media/Book/cover/avatar1.jpeg",
                             "pk": 1,
                         }
                     ],

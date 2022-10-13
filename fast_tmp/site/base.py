@@ -152,7 +152,7 @@ class BaseAdminControl(AbstractAmisAdminDB, AbstractControl, AmisOrm):
         super().__init__(name, prefix, **kwargs)
         self._field = field  # type: ignore
         self.name = name
-        self.label = kwargs.get("label") or self.name
+        self.label = kwargs.get("label") or field.description or self.name
 
     async def validate(self, value: Any) -> Any:
         value = self.amis_2_orm(value)

@@ -18,8 +18,8 @@ from fast_tmp.exceptions import NotFoundError, PermError
 from fast_tmp.models import Permission
 from fast_tmp.responses import ListDataWithPage
 from fast_tmp.site.base import ModelFilter, ModelSession, RegisterRouter
+from fast_tmp.site.field import BaseAdminControl, RelationSelectApi, create_column
 from fast_tmp.site.filter import make_filter_by_str
-from fast_tmp.site.util import BaseAdminControl, RelationSelectApi, create_column
 
 logger = logging.getLogger(__file__)
 
@@ -338,10 +338,11 @@ class ModelAdmin(ModelSession, RegisterRouter):  # todo inline字段必须都在
             raise NotFoundError("can not found field:" + name)
         return ret
 
-    def __init__(self, prefix: str = None):
+    def __init__(self, prefix: str = None, label: Optional[str] = None):
         if not prefix:
             prefix = self.model.__name__
-        super().__init__(prefix, self.model.__name__.lower())
+
+        super().__init__(prefix, label or self.model.__name__.lower())
         if not self.fields:
             self.fields = {}
         self.make_fields()
@@ -369,8 +370,7 @@ class ModelAdmin(ModelSession, RegisterRouter):  # todo inline字段必须都在
         """
         return await self.selct_defs[name](request, pk, perPage, page)
 
-    async def check_perm(self, request: Request, base_codename: str):
-        codename: str = self.name + "_" + base_codename
+    async def check_perm(self, request: Request, codename: str):
         user = request.user
         if not await user.has_perm(codename.lower()):
             raise PermError()

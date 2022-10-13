@@ -8,12 +8,8 @@ import math
 import warnings
 from typing import Any, Optional
 
-from fast_tmp.utils.crypto import (
-    RANDOM_STRING_CHARS,  # md5,
-    constant_time_compare,
-    get_random_string,
-    pbkdf2,
-)
+from fast_tmp.utils.crypto import RANDOM_STRING_CHARS  # md5,
+from fast_tmp.utils.crypto import constant_time_compare, get_random_string, pbkdf2
 
 UNUSABLE_PASSWORD_PREFIX = "!"  # This will never be a valid encoded hash
 UNUSABLE_PASSWORD_SUFFIX_LENGTH = 40  # number of random chars to add after UNUSABLE_PASSWORD_PREFIX

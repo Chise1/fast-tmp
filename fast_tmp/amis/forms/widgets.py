@@ -167,7 +167,7 @@ class TimeItem(Control):
     body: Optional[Dict[str, Any]]
     value: Optional[datetime.time]  # 默认值
     timeFormat: str = "HH:mm:ss"  # 时间选择器值格式，更多格式类型请参考 moment
-    format: Optional[str]  # = "X"  # 时间选择器值格式，更多格式类型请参考 moment
+    format: str = "HH:mm:ss"  # = "X"  # 时间选择器值格式，更多格式类型请参考 moment
     inputFormat: str = "HH:mm:ss"  # 时间选择器显示格式，即时间戳格式，更多格式类型请参考 moment
     placeholder: Optional[str]  # 占位文本
     clearable: Optional[bool]  # 是否可清除
