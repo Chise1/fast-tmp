@@ -193,6 +193,8 @@ class TimeControl(BaseAdminControl):
 
 class JsonControl(TextControl):  # fixme 用代码编辑器重构？
     def amis_2_orm(self, value: Any) -> Any:
+        if not value:
+            return None
         return json.loads(value)
 
     def orm_2_amis(self, value: Any) -> Any:
