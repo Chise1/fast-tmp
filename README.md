@@ -89,3 +89,7 @@ fast-tmp createsuperuser
 from fast_tmp.conf import settings
 ...
 ```
+## 联系
+欢迎各位pythoner到这里来沟通
+qq群： 142289799
+![142289799](./docs/images/qq群.jpg)
