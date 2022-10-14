@@ -86,7 +86,7 @@ class TestPermission(BaseSite):
                                 {
                                     "type": "custom",
                                     "name": "author",
-                                    'label': 'author',
+                                    "label": "author",
                                     "onMount": "const text = document.createTextNode(value.label);dom.appendChild(text);$author=value.value;",
                                     "onUpdate": "const value=data.author;dom.current.firstChild.textContent=value.label;$author=value.value;",
                                 },
