@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, Dict, List
 
 from pydantic import BaseModel
 
@@ -12,3 +12,10 @@ class BaseRes(BaseModel):
     status: int = 0
     msg: str = ""
     data: Any = {}
+
+
+class FieldErrorRes(BaseRes):
+    status: int = 422
+    msg: str = ""
+    data: Any = None
+    errors: Dict[str, str]

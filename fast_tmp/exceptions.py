@@ -1,8 +1,8 @@
-from typing import Optional
+from typing import Dict, Optional
 
 from fastapi import HTTPException
 
-from fast_tmp.responses import BaseRes
+from fast_tmp.responses import BaseRes, FieldErrorRes
 
 
 class FastTmpError(HTTPException):
@@ -31,3 +31,12 @@ class NotFoundError(FastTmpError):
 class PermError(FastTmpError):
     def __init__(self, content: Optional[str] = None):
         self.detail = BaseRes(status=400, msg=content or "you have no permission").json()
+
+
+class FieldsError(FastTmpError):
+    """
+    返回给amis的字段校验错误认证
+    """
+
+    def __init__(self, error_info: Dict[str, str]):
+        self.detail = FieldErrorRes(errors=error_info).json()

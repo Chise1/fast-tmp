@@ -35,6 +35,7 @@ class NumberItem(Control):
     step: Optional[int]  # 选择的步长
     value: Optional[int]
     showSteps: Optional[bool] = False
+    big: Optional[bool]
 
 
 class NativeNumber(Control):

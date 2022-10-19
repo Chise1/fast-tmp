@@ -1,5 +1,6 @@
 import datetime
 import json
+from decimal import Decimal
 from typing import Any, Coroutine, List, Optional
 
 from starlette.requests import Request
@@ -16,6 +17,7 @@ from fast_tmp.amis.forms.widgets import (
     DatetimeItem,
     FileItem,
     ImageItem,
+    NumberItem,
     PickerItem,
     PickerSchema,
     SelectItem,
@@ -43,6 +45,29 @@ class TextControl(StrControl):
 
 class IntControl(BaseAdminControl):
     _control_type = ControlEnum.number
+
+
+class DecimalControl(BaseAdminControl):
+    _control_type = ControlEnum.number
+
+    def get_control(self, request: Request) -> Control:
+        if not self._control:
+            self._control = NumberItem(
+                type=self._control_type, name=self.name, label=self.label, big=True
+            )
+            self._control.precision = self._field.decimal_places  # type: ignore
+            self._control.max = self._field.max_digits * 9  # type: ignore
+            if not self._field.null:  # type: ignore
+                self._control.required = True
+            if self._field.default is not None:  # type: ignore
+                self._control.value = self.orm_2_amis(self._field.default)  # type: ignore
+        return self._control
+
+    def amis_2_orm(self, value: Any) -> Any:
+        return Decimal(value)
+
+    def orm_2_amis(self, value: Any) -> Any:
+        return str(value)
 
 
 class IntEnumControl(BaseAdminControl):
@@ -561,6 +586,8 @@ def create_column(
         return ImageControl(field_name, field_type, prefix)
     elif isinstance(field_type, FileField):
         return FileControl(field_name, field_type, prefix)
+    elif isinstance(field_type, fields.DecimalField):
+        return DecimalControl(field_name, field_type, prefix)
     else:
         raise AmisStructError("create_column error:", type(field_type))
 

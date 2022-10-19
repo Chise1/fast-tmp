@@ -2,6 +2,8 @@ import logging
 from typing import Any, Callable, Coroutine, Dict, List, Optional, Set, Tuple, Type, Union
 
 from starlette.requests import Request
+from tortoise import transactions
+from tortoise.exceptions import ValidationError
 from tortoise.models import Model
 from tortoise.queryset import QuerySet
 
@@ -14,7 +16,7 @@ from fast_tmp.amis.forms import Form
 from fast_tmp.amis.forms.filter import FilterModel
 from fast_tmp.amis.frame import Dialog
 from fast_tmp.amis.page import Page
-from fast_tmp.exceptions import NotFoundError, PermError
+from fast_tmp.exceptions import FieldsError, NotFoundError, PermError
 from fast_tmp.models import Permission
 from fast_tmp.responses import ListDataWithPage
 from fast_tmp.site.base import ModelFilter, ModelSession, RegisterRouter
@@ -202,9 +204,15 @@ class ModelAdmin(ModelSession, RegisterRouter):  # todo inline字段必须都在
 
     async def update(self, request: Request, pk: str, data: Dict[str, Any]) -> Model:
         obj = await self.get_instance(request, pk)
+        err_fields = {}
         for field_name in self.update_fields:
             control = self.get_control_field(field_name)
-            await control.set_value(request, obj, data[field_name])
+            try:
+                await control.set_value(request, obj, data[field_name])
+            except ValidationError as e:
+                err_fields[field_name] = str(e)
+        if err_fields:
+            raise FieldsError(err_fields)
         await obj.save()
         return obj
 
@@ -217,22 +225,39 @@ class ModelAdmin(ModelSession, RegisterRouter):  # todo inline字段必须都在
 
     async def patch(self, request: Request, pk: str, data: Dict[str, Any]) -> Model:
         obj = await self.get_instance(request, pk)
+        err_fields = {}
         for field_name in self.inline:
             control = self.get_control_field(field_name)
-            await control.set_value(request, obj, data[field_name])
+            try:
+                await control.set_value(request, obj, data[field_name])
+            except ValidationError as e:
+                err_fields[field_name] = str(e)
+        if err_fields:
+            raise FieldsError(err_fields)
         await obj.save()
         return obj
 
     async def create(self, request: Request, data: Dict[str, Any]) -> Model:
         obj = self.model()
         cors = []
+        field_errors = {}
         for field_name, field in self.get_create_fields().items():
-            cor = await field.set_value(request, obj, data.get(field_name))  # 只有create可能有返回协程
-            if cor:
-                cors.append(cor)
-        await obj.save()
-        for cor in cors:
-            await cor
+            try:
+                cor = await field.set_value(request, obj, data.get(field_name))  # 只有create可能有返回协程
+                if cor:
+                    cors.append(cor)
+            except ValidationError as e:
+                field_errors[field_name] = str(e)
+        if field_errors:
+            raise FieldsError(field_errors)
+
+        @transactions.atomic()
+        async def save_all():
+            await obj.save()
+            for cor in cors:
+                await cor
+
+        await save_all()
         return obj
 
     async def delete(self, request: Request, pk: str):
@@ -293,6 +318,9 @@ class ModelAdmin(ModelSession, RegisterRouter):  # todo inline字段必须都在
         return instance
 
     async def permission_code(self, request: Request):
+        """
+        判断用户拥有的权限
+        """
         if self._permissions is None:
             self._permissions = [
                 self.name + "_list",
