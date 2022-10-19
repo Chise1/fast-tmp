@@ -374,7 +374,7 @@ class ForeignKeyControl(BaseAdminControl, RelationSelectApi):
 
     def orm_2_amis(self, value: Any) -> Any:
         if not value:
-            return {}
+            return {"label": "-", "value": None}
         return {"label": str(value), "value": value.pk}
 
     async def set_value(self, request: Request, obj: Model, value: Any):
