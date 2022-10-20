@@ -7,7 +7,6 @@ from tortoise.models import Model
 from tortoise.queryset import QuerySet
 
 from fast_tmp.amis.forms import Column, ColumnInline, Control, ControlEnum, QuickEdit
-from fast_tmp.amis.page import Page
 from fast_tmp.amis.response import AmisStructError
 from fast_tmp.exceptions import NotFoundError
 from fast_tmp.responses import BaseRes, ListDataWithPage
