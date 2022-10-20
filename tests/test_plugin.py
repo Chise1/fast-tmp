@@ -3,5 +3,6 @@
 """
 from fast_tmp.amis.forms import Control
 
+
 class MarkdownItem(Control):
     """"""

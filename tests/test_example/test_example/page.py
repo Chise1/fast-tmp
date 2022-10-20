@@ -18,7 +18,13 @@ class UserSelfInfo(RegisterRouter):
         super().__init__("info", "info")
 
     async def get_app_page(self, request: Request) -> dict:
-        return Page(title="userselfinfo", body=[Form(
-            name="form", body=[MarkdownItem(langeuage="markdown", name="markdown", label="markdown")],
-            api="/form-test"
-        )]).dict(exclude_none=True)
+        return Page(
+            title="userselfinfo",
+            body=[
+                Form(
+                    name="form",
+                    body=[MarkdownItem(langeuage="markdown", name="markdown", label="markdown")],
+                    api="/form-test",
+                )
+            ],
+        ).dict(exclude_none=True)

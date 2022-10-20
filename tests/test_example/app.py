@@ -4,18 +4,20 @@ from starlette.requests import Request
 
 os.environ.setdefault("FASTAPI_SETTINGS_MODULE", "test_example.settings")
 
+from test_example.admin import AuthorModel, BookModel, FieldTestingModel
+from test_example.page import UserSelfInfo
+from tortoise.contrib.fastapi import register_tortoise
+
 from fast_tmp.admin.register import register_static_service
 from fast_tmp.conf import settings
 from fast_tmp.factory import create_app
 from fast_tmp.models import User
 from fast_tmp.responses import BaseRes
 from fast_tmp.site import register_model_site
-from test_example.admin import AuthorModel, BookModel, FieldTestingModel
-from tortoise.contrib.fastapi import register_tortoise
 
-from test_example.page import UserSelfInfo
-
-register_model_site({"fieldtesting": [FieldTestingModel(), BookModel(), AuthorModel(), UserSelfInfo()]})
+register_model_site(
+    {"fieldtesting": [FieldTestingModel(), BookModel(), AuthorModel(), UserSelfInfo()]}
+)
 app = create_app()
 app.title = "test_example"
 
