@@ -595,7 +595,6 @@ def create_column(
 # todo 以后考虑创建更新的control分离
 class Password(StrControl):
     _control_type = ControlEnum.input_password
-    _update_control = None
 
     async def get_value(self, request: Request, obj: Model) -> Any:
         return None

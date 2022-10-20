@@ -197,7 +197,7 @@ class RegisterRouter:
     _name: str
     _prefix: str
 
-    async def get_app_page(self, request: Request) -> Page:
+    async def get_app_page(self, request: Request) -> dict:
         raise AttributeError("need write")
 
     def __init__(self, prefix: str, name: str):
