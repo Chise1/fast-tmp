@@ -373,6 +373,8 @@ class ForeignKeyControl(BaseAdminControl, RelationSelectApi):
         return self._control
 
     def orm_2_amis(self, value: Any) -> Any:
+        if not value:
+            return {"label": "-", "value": None}
         return {"label": str(value), "value": value.pk}
 
     async def set_value(self, request: Request, obj: Model, value: Any):
@@ -401,8 +403,8 @@ class ManyToManyControl(BaseAdminControl, RelationSelectApi):
                             title=self.label,
                             body=CRUD(
                                 api="get:"
-                                + self._field.model.__name__  # type: ignore
-                                + f"/select/{self.name}?pk=$pk",
+                                    + self._field.model.__name__  # type: ignore
+                                    + f"/select/{self.name}?pk=$pk",
                                 columns=[
                                     Column(label="pk", name="pk"),
                                     Column(label="label", name="label"),
