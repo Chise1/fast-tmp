@@ -143,6 +143,10 @@ class RichTextItem(Control):
     # 目前富文本编辑器基于两个库：froala 和 tinymce，默认使用 tinymce。
     type = ControlEnum.rich_text
     body: Optional[Dict[str, Any]]
+    options: Optional[Dict[str, Any]]
+    receiver: Optional[str]
+    videoReceiver: Optional[str]
+    fileField: Optional[str]
 
 
 class TextItem(Control):

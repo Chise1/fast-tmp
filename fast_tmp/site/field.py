@@ -20,6 +20,7 @@ from fast_tmp.amis.forms.widgets import (
     NumberItem,
     PickerItem,
     PickerSchema,
+    RichTextItem,
     SelectItem,
     TimeItem,
     TransferItem,
@@ -27,7 +28,7 @@ from fast_tmp.amis.forms.widgets import (
 from fast_tmp.amis.frame import Dialog
 from fast_tmp.amis.response import AmisStructError
 from fast_tmp.contrib.auth.hashers import make_password
-from fast_tmp.contrib.tortoise.fields import FileClass, FileField, ImageField
+from fast_tmp.contrib.tortoise.fields import FileClass, FileField, ImageField, RichTextField
 from fast_tmp.exceptions import TmpValueError
 from fast_tmp.responses import ListDataWithPage
 from fast_tmp.site.base import BaseAdminControl
@@ -403,8 +404,8 @@ class ManyToManyControl(BaseAdminControl, RelationSelectApi):
                             title=self.label,
                             body=CRUD(
                                 api="get:"
-                                    + self._field.model.__name__  # type: ignore
-                                    + f"/select/{self.name}?pk=$pk",
+                                + self._field.model.__name__  # type: ignore
+                                + f"/select/{self.name}?pk=$pk",
                                 columns=[
                                     Column(label="pk", name="pk"),
                                     Column(label="label", name="label"),
@@ -553,6 +554,19 @@ class ImageControl(BaseAdminControl):
         return None
 
 
+class RichTextControl(BaseAdminControl):
+    _control_type = ControlEnum.rich_text
+
+    def get_control(self, request: Request) -> Control:
+        if not self._control:
+            self._control = RichTextItem(type=self._control_type, name=self.name, label=self.label)
+            if not self._field.null:  # type: ignore
+                self._control.required = True
+            if self._field.default is not None:  # type: ignore
+                self._control.value = self.orm_2_amis(self._field.default)  # type: ignore
+        return self._control
+
+
 def create_column(
     field_name: str,
     field_type: fields.Field,
@@ -586,10 +600,13 @@ def create_column(
         return ManyToManyControl(field_name, field_type, prefix)
     elif isinstance(field_type, ImageField):
         return ImageControl(field_name, field_type, prefix)
+    elif isinstance(field_type, RichTextField):
+        return RichTextControl(field_name, field_type, prefix)
     elif isinstance(field_type, FileField):
         return FileControl(field_name, field_type, prefix)
     elif isinstance(field_type, fields.DecimalField):
         return DecimalControl(field_name, field_type, prefix)
+
     else:
         raise AmisStructError("create_column error:", type(field_type))
 

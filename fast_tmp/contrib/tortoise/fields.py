@@ -1,5 +1,6 @@
 import os
 import os.path
+import warnings
 from typing import Any, Type, Union
 
 from fastapi import UploadFile
@@ -87,3 +88,35 @@ class ImageField(Field[FileClass], FileClass):  # type: ignore
         if value is not None and not isinstance(value, self.field_type):
             value = self.field_type(value)  # pylint: disable=E1102
         return value.path
+
+
+class RichTextField(Field[str], str):  # type: ignore
+    indexable = False
+    SQL_TYPE = "TEXT"
+
+    def __init__(
+        self, pk: bool = False, unique: bool = False, index: bool = False, **kwargs: Any
+    ) -> None:
+        if pk:
+            warnings.warn(
+                "RichTextField as a PrimaryKey is Deprecated, use CharField instead",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        if unique:
+            raise ConfigurationError(
+                "RichTextField doesn't support unique indexes, consider CharField or another strategy"
+            )
+        if index:
+            raise ConfigurationError("RichTextField can't be indexed, consider CharField")
+
+        super().__init__(pk=pk, **kwargs)
+
+    class _db_mysql:
+        SQL_TYPE = "LONGTEXT"
+
+    class _db_mssql:
+        SQL_TYPE = "NVARCHAR(MAX)"
+
+    class _db_oracle:
+        SQL_TYPE = "NCLOB"
