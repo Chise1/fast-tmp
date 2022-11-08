@@ -371,6 +371,8 @@ class ForeignKeyControl(BaseAdminControl, RelationSelectApi):
             )
             if not self._field.null:  # type: ignore
                 self._control.required = True
+            else:
+                self._control.clearable = True
         return self._control
 
     def orm_2_amis(self, value: Any) -> Any:
