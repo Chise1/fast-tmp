@@ -15,10 +15,8 @@ class FileClass(str):
         self.path = path
 
     def get_file(self):
-        from fast_tmp.conf import settings
-
         if self.path is not None:
-            value = os.path.join(os.getcwd(), settings.MEDIA_PATH, self.path)
+            value = os.path.join(os.getcwd(), self.path)
             return UploadFile(filename=value)
         return None
 
@@ -29,19 +27,12 @@ class FileClass(str):
         return self.path
 
     def get_static_path(self):
-        from fast_tmp.conf import settings
-
-        return "/" + "/".join([settings.MEDIA_ROOT, self.path])
+        return self.path
 
     @classmethod
     def from_static_path(cls, path: str):
-        from fast_tmp.conf import settings
-
         if not path:
             return None
-        if path.startswith("/" + settings.MEDIA_ROOT):  # 去除静态头
-            header_len = len(settings.MEDIA_ROOT) + 2
-            path = path[header_len:]
         return cls(path)
 
     def __len__(self):
