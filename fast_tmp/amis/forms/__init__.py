@@ -6,12 +6,13 @@ from fast_tmp.amis.column import AbstractControl
 
 class Form(BaseAmisModel):
     type = "form"
-    name: str
+    name: Optional[str]
     title: Optional[str]
     submitText: Optional[str]
     wrapWithPanel: Optional[bool]
-    api: str
+    api: Optional[str]
     initApi: Optional[str]
     # interval: int = 3000??
     primaryField: Optional[str]  # 设置主键"id"
     body: List[AbstractControl]
+
