@@ -19,14 +19,14 @@ from fast_tmp.amis.page import Page
 from fast_tmp.exceptions import FieldsError, NotFoundError, PermError
 from fast_tmp.models import Permission
 from fast_tmp.responses import ListDataWithPage
-from fast_tmp.site.base import ModelFilter, ModelSession, RegisterRouter
+from fast_tmp.site.base import ModelFilter, ModelSession, PageRouter
 from fast_tmp.site.field import BaseAdminControl, RelationSelectApi, create_column
 from fast_tmp.site.filter import make_filter_by_str
 
 logger = logging.getLogger(__file__)
 
 
-class ModelAdmin(ModelSession, RegisterRouter):  # todo inline字段必须都在update_fields内
+class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在update_fields内
     model: Type[Model]  # model
     list_display: Tuple[str, ...] = ()
     inline: Tuple[str, ...] = ()
@@ -404,11 +404,11 @@ class ModelAdmin(ModelSession, RegisterRouter):  # todo inline字段必须都在
             raise PermError()
 
 
-model_list: Dict[str, List[RegisterRouter]] = {}
+model_list: Dict[str, List[PageRouter]] = {}
 resources: Set[str] = set()
 
 
-def register_model_site(model_group: Dict[str, List[RegisterRouter]]):
+def register_model_site(model_group: Dict[str, List[PageRouter]]):
     for models in model_group.values():
         for model in models:
             if model.prefix in resources:
@@ -418,7 +418,7 @@ def register_model_site(model_group: Dict[str, List[RegisterRouter]]):
     model_list.update(model_group)
 
 
-def get_model_site(resource: str) -> Optional[RegisterRouter]:
+def get_model_site(resource: str) -> Optional[PageRouter]:
     for m_l in model_list.values():
         for i in m_l:
             if i.prefix == resource:

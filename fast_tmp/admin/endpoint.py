@@ -8,7 +8,7 @@ from fast_tmp.admin.depends import get_staff
 from fast_tmp.conf import settings
 from fast_tmp.exceptions import PermError
 from fast_tmp.responses import BaseRes
-from fast_tmp.site import ModelSession, RegisterRouter, get_model_site
+from fast_tmp.site import ModelSession, PageRouter, get_model_site
 
 router = APIRouter()
 
@@ -110,7 +110,7 @@ async def delete_func(
 @router.get("/{resource}/schema", dependencies=[Depends(get_staff)])
 async def get_schema(
     request: Request,
-    page: RegisterRouter = Depends(get_model_site),
+    page: PageRouter = Depends(get_model_site),
 ):
     return BaseRes(data=(await page.get_app_page(request)).dict(exclude_none=True))
 
@@ -149,7 +149,7 @@ async def update_file(
 async def extra_func(
     request: Request,
     prefix: str,
-    page: RegisterRouter = Depends(get_model_site),
+    page: PageRouter = Depends(get_model_site),
 ):
     method = request.method
     return await page.router(request, prefix, method)

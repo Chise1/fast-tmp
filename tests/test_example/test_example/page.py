@@ -5,7 +5,7 @@ from starlette.requests import Request
 
 from fast_tmp.amis.forms import Control, Form
 from fast_tmp.amis.page import Page
-from fast_tmp.site.base import RegisterRouter
+from fast_tmp.site.base import PageRouter
 
 
 class MarkdownItem(Control):
@@ -13,7 +13,7 @@ class MarkdownItem(Control):
     type = "editor"
 
 
-class UserSelfInfo(RegisterRouter):
+class UserSelfInfo(PageRouter):
     def __init__(self):
         super().__init__("info", "info")
 

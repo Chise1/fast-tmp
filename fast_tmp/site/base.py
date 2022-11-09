@@ -197,7 +197,7 @@ class ModelFilter:
         self.kwargs = kwargs
 
 
-class RegisterRouter:
+class PageRouter:
     _name: str
     _prefix: str
 
