@@ -380,7 +380,7 @@ class FileItem(FormItem):
 
 class ImageItem(FormItem):
     type = FormItemEnum.input_image
-
+    multiple: Optional[bool]  # 多选
     receiver: str
 
 
@@ -441,4 +441,4 @@ class InputTable(FormItem):
     needConfirm: Optional[bool]  # true	是否需要确认操作，，可用来控控制表格的操作交互
     canAccessSuperData: Optional[bool]  # false	是否可以访问父级数据，也就是表单中的同级数据，通常需要跟 strictMode 搭配使用
     strictMode: Optional[bool]  # true	为了性能，默认其他表单项项值变化不会让当前表格更新，有时候为了同步获取其他表单项字段，需要开启这个。
-    columns: Optional[List[ColumnInline]]  # 列信息
+    columns: Optional[List[Column]]  # 列信息
