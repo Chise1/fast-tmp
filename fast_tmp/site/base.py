@@ -1,4 +1,5 @@
 import logging
+from abc import abstractmethod
 from typing import Any, Coroutine, Dict, List, Optional
 
 from starlette.requests import Request
@@ -79,16 +80,19 @@ class AbstractControl:
     用户自定义的column组件
     """
 
+    @abstractmethod
     def get_column(self, request: Request) -> Column:
         """
         获取column模型
         """
 
+    @abstractmethod
     def get_column_inline(self, request: Request) -> Column:
         """
         获取内联修改的column
         """
 
+    @abstractmethod
     def get_control(self, request: Request) -> Control:
         """
         获取内联修改的column
@@ -183,7 +187,7 @@ class ModelFilter:
         name: str,
         field: AmisOrm,
         type: str = "input-text",
-        label: str = None,
+        label: Optional[str] = None,
         **kwargs,
     ):
         self.name = name
@@ -222,6 +226,7 @@ class ModelSession:
     后台管理页面数据库操作基类，包含后台页面对数据操作的所有需要的方法
     """
 
+    @abstractmethod
     async def list(
         self,
         request: Request,
@@ -231,38 +236,38 @@ class ModelSession:
         """
         获取数据列表
         """
-        pass
 
+    @abstractmethod
     async def get_instance(self, request: Request, pk: Any) -> Optional[Model]:
         """
         根据pk获取一个实例
         """
-        pass
 
+    @abstractmethod
     async def patch(self, request: Request, pk: str, data: Dict[str, Any]) -> Model:
         """
         对在表单上快速编辑的（inline类型）数据的进行修改
         """
-        pass
 
+    @abstractmethod
     async def create(self, request: Request, data: Dict[str, Any]) -> Model:
         """
         创建数据
         """
-        pass
 
+    @abstractmethod
     async def delete(self, request: Request, pk: str):
         """
         删除某条数据
         """
-        pass
 
+    @abstractmethod
     async def get_update(self, request: Request, pk: str) -> dict:
         """
         获取要更新的数据
         """
-        pass
 
+    @abstractmethod
     async def select_options(
         self,
         request: Request,
@@ -277,13 +282,13 @@ class ModelSession:
         [{"label":"xxx","value":"xxx"}]
         value可以使数字或字符串
         """
-        pass
 
+    @abstractmethod
     async def update(self, request: Request, pk: str, data: Dict[str, Any]) -> Model:
         """
         更新数据
         """
-        pass
 
+    @abstractmethod
     async def check_perm(self, request: Request, base_codename: str):
-        pass
+        ...

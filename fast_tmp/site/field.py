@@ -1,5 +1,6 @@
 import datetime
 import json
+from abc import abstractmethod
 from decimal import Decimal
 from typing import Any, Coroutine, List, Optional
 
@@ -244,6 +245,7 @@ class RelationSelectApi:
     增加一个查询foreign外键所有字段的接口
     """
 
+    @abstractmethod
     async def get_selects(
         self,
         request: Request,
@@ -251,7 +253,7 @@ class RelationSelectApi:
         perPage: Optional[int],
         page: Optional[int],
     ) -> List[dict]:
-        pass
+        ...
 
 
 class ForeignKeyPickerControl(BaseAdminControl, RelationSelectApi):  # todo 支持搜索功能

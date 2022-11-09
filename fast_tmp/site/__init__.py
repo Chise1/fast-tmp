@@ -366,7 +366,7 @@ class ModelAdmin(ModelSession, RegisterRouter):  # todo inline字段必须都在
             raise NotFoundError("can not found field:" + name)
         return ret
 
-    def __init__(self, prefix: str = None, label: Optional[str] = None):
+    def __init__(self, prefix: Optional[str] = None, label: Optional[str] = None):
         if not prefix:
             prefix = self.model.__name__
 
