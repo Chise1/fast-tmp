@@ -14,7 +14,7 @@ class WizardStep(BaseModel):
     initApi: Optional[str]  # 初始化数据接口
     initFetch: Optional[bool]  # 初始是否拉取数据。
     initFetchOn: Optional[str]  # 初始是否拉取数据，通过表达式来配置
-    Body: List[FormItem]  # 当前步骤的表单项集合，请参考 FormItem。
+    body: List[FormItem]  # 当前步骤的表单项集合，请参考 FormItem。
 
 
 class Wizard(BaseAmisModel):
