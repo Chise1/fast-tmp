@@ -1,54 +1,6 @@
 from enum import Enum
 
 
-class FormWidgetSize(
-    str,
-    Enum,
-):
-    full = "full"
-    lg = "lg"  # 大
-    md = "md"  # 中,默认值
-    sm = "sm"  # 小
-    xs = "xs"  # 极小
-
-
-class ControlEnum(str, Enum):
-    text = "text"
-    textarea = "textarea"
-    input_text = "input-text"
-    switch = "switch"  # 开关
-    select = "select"
-    number = "input-number"
-    native_number = "native-number"  # exploer natave number
-    array = "array"
-    date = "input-date"
-    datetime = "input-datetime"
-    uuid = "uuid"
-    rich_text = "rich-text"
-    time = "input-time"
-    mapping = "mapping"
-    transfer = "transfer"
-    checkboxes = "checkboxes"
-    picker = "picker"
-    custom = "custom"
-    input_password = "input-password"
-    input_image = "input-image"
-    input_file = "input-file"
-
-
-class ItemModel(str, Enum):
-    horizontal = "horizontal"
-    inline = "inline"
-    normal = "normal"
-
-
-class WidgetSize:
-    lg = "lg"  # 大
-    md = "md"  # 中,默认值
-    sm = "sm"  # 小
-    xs = "xs"  # 极小
-
-
 class ValidateEnum(str, Enum):
     isEmptyString = "isEmptyString"  # 必须是空白字符。注意！ 该格式校验是值，校验空白字符，而不是当前表单项是否为空，想校验是否为空，请配置
     isEmail = "isEmail"  # 必须是Email。

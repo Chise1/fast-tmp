@@ -9,7 +9,7 @@ from tortoise.queryset import QuerySet
 
 from fast_tmp.amis.actions import AjaxAction, DialogAction
 from fast_tmp.amis.base import BaseAmisModel, _Action
-from fast_tmp.amis.buttons import Operation
+from fast_tmp.amis.column import Operation
 from fast_tmp.amis.crud import CRUD
 from fast_tmp.amis.enums import ButtonLevelEnum
 from fast_tmp.amis.forms import Form

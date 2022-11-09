@@ -14,6 +14,11 @@ class CardHeader(BaseModel):
 
 
 class Card(BaseAmisModel):
+    """
+    卡片
+    https://aisuda.bce.baidu.com/amis/zh-CN/components/card
+    """
+
     type: str = "card"
     header: CardHeader
     body: Any

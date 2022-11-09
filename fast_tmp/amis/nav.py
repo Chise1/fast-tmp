@@ -2,8 +2,6 @@ from pydantic.main import BaseModel
 
 from fast_tmp.amis.base import BaseAmisModel
 
-from .enums import TypeEnum
-
 
 class NavLinks(BaseModel):
     label: str
@@ -11,6 +9,6 @@ class NavLinks(BaseModel):
 
 
 class Nav(BaseAmisModel):
-    type = TypeEnum.nav
+    type = "nav"
     stacked: bool = True
     className: str = "w-md"

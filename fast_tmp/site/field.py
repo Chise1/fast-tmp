@@ -9,11 +9,11 @@ from tortoise import ForeignKeyFieldInstance, ManyToManyFieldInstance, Model, fi
 from tortoise.fields.data import CharEnumFieldInstance, IntEnumFieldInstance
 
 from fast_tmp.amis.actions import DialogAction
-from fast_tmp.amis.buttons import Operation
-from fast_tmp.amis.crud import CRUD
-from fast_tmp.amis.custom import Custom
-from fast_tmp.amis.forms import Column, Control, ControlEnum
-from fast_tmp.amis.forms.widgets import (
+from fast_tmp.amis.column import Column, Operation
+from fast_tmp.amis.control import (
+    Control,
+    ControlEnum,
+    Custom,
     DateItem,
     DatetimeItem,
     FileItem,
@@ -26,6 +26,7 @@ from fast_tmp.amis.forms.widgets import (
     TimeItem,
     TransferItem,
 )
+from fast_tmp.amis.crud import CRUD
 from fast_tmp.amis.frame import Dialog
 from fast_tmp.amis.response import AmisStructError
 from fast_tmp.contrib.auth.hashers import make_password
@@ -50,7 +51,7 @@ class IntControl(BaseAdminControl):
 
 
 class DecimalControl(BaseAdminControl):
-    _control_type = ControlEnum.number
+    _control_type = ControlEnum.input_number
 
     def get_control(self, request: Request) -> Control:
         if not self._control:
@@ -136,7 +137,7 @@ class StrEnumControl(IntEnumControl):
 
 
 class DateTimeControl(BaseAdminControl):
-    _control_type = ControlEnum.datetime
+    _control_type = ControlEnum.input_datetime
 
     def get_control(self, request: Request) -> Control:
         if not self._control:
@@ -210,7 +211,7 @@ class TimeControl(BaseAdminControl):
             return None
         return datetime.time.fromisoformat(value)
 
-    def orm_2_amis(self, value: datetime.time) -> Any:
+    def orm_2_amis(self, value: Optional[datetime.time]) -> Any:
         if value is None:
             return None
         if callable(value):
@@ -559,7 +560,7 @@ class ImageControl(BaseAdminControl):
 
 
 class RichTextControl(BaseAdminControl):
-    _control_type = ControlEnum.rich_text
+    _control_type = ControlEnum.input_rich_text
 
     def get_control(self, request: Request) -> Control:
         if not self._control:

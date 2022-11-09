@@ -2,7 +2,7 @@ from typing import Optional, TypeVar
 
 from pydantic.main import BaseModel
 
-from fast_tmp.amis.enums import ActionTypeEnum, ButtonLevelEnum, ButtonSize, TypeEnum
+from fast_tmp.amis.enums import ActionTypeEnum, ButtonLevelEnum, ButtonSize
 
 
 class BaseAmisModel(BaseModel):
@@ -21,7 +21,7 @@ class _Action(BaseAmisModel):
     操作按钮
     """
 
-    type = TypeEnum.action
+    type = "button"
     label: str
     actionType: ActionTypeEnum
     icon: Optional[str]

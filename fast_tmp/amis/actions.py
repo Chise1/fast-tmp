@@ -1,11 +1,10 @@
 from typing import Optional, Union
 
-from pydantic import HttpUrl
 from pydantic.main import BaseModel
 
-from .base import _Action
-from .enums import ActionTypeEnum, ButtonLevelEnum, TypeEnum
-from .frame import Dialog, Drawer
+from fast_tmp.amis.base import _Action
+from fast_tmp.amis.enums import ActionTypeEnum
+from fast_tmp.amis.frame import Dialog, Drawer
 
 
 class FeedBack(BaseModel):  # 和弹窗一致
@@ -34,23 +33,6 @@ class AjaxAction(_Action):
     message: Optional[ActionMessage] = None  # 修改默认toast信息
 
 
-# class LinkAction(_Action):
-#     """
-#     单页跳转(暂不支持)
-#     """
-#     actionType = ActionTypeEnum.link
-#     level = ButtonLevelEnum.info
-class UrlAction(_Action):
-    """
-    单页跳转(暂不支持)
-    """
-
-    actionType = ActionTypeEnum.url
-    level = ButtonLevelEnum.success
-    url: HttpUrl
-    blank: bool = False
-
-
 class CopyAction(_Action):
     """
     复制文本
@@ -60,13 +42,8 @@ class CopyAction(_Action):
     content: str  # 制定要复制的内容
 
 
-# class ReloadAction(_Action):
-#     type = ActionTypeEnum.reload
-#     target: str  # 需要刷新的目标组件名字（组件的name值，自己配置的），多个请用 , 号隔开。
-
-
 class DialogAction(_Action):
-    type = TypeEnum.button
+    type = "button"
     actionType = ActionTypeEnum.dialog
     dialog: Dialog
 

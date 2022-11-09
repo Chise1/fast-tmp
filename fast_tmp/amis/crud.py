@@ -1,14 +1,12 @@
 from typing import List, Optional, Union
 
 from fast_tmp.amis.base import BaseAmisModel, _Action
-from fast_tmp.amis.buttons import Operation
-from fast_tmp.amis.enums import TypeEnum
-from fast_tmp.amis.forms import Column
+from fast_tmp.amis.column import Column, Operation
 from fast_tmp.amis.forms.filter import FilterModel
 
 
 class CRUD(BaseAmisModel):
-    type = TypeEnum.crud
+    type = "crud"
     api: str  # 相对路径
     # 可以在后面跟上按钮，则默认每一行都有按钮，
     # 参考：https://baidu.gitee.io/amis/docs/components/dialog?page=1

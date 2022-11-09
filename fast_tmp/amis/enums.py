@@ -45,18 +45,6 @@ class ActionTypeEnum(str, Enum):
     close = "close"
 
 
-class TypeEnum(str, Enum):
-    page = "page"
-    crud = "crud"
-    button = "button"
-    action = "action"  # 行为按钮
-    form = "form"
-    operation = "operation"  # 这是啥？？
-    hbox = "hbox"
-    nav = "nav"
-    app = "app"  # 多页应用
-
-
 class ButtonSize(
     str,
     Enum,

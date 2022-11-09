@@ -2,11 +2,9 @@ from typing import List, Optional, Tuple, Union
 
 from fast_tmp.amis.base import BaseAmisModel
 
-from .enums import TypeEnum
-
 
 class Page(BaseAmisModel):
-    type = TypeEnum.page
+    type = "page"
     title: Optional[str]
     subTitle: Optional[str]
     remark: Optional[str]
@@ -24,7 +22,7 @@ class Page(BaseAmisModel):
 
 
 class HBox(BaseAmisModel):
-    type = TypeEnum.hbox
+    type = "hbox"
     className: Optional[str]
     columns: List[BaseAmisModel]
 
