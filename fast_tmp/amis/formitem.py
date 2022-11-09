@@ -13,7 +13,8 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 from pydantic import BaseModel
 
-from .column import Column, SelectOption
+from .column import AbstractControl, Column, SelectOption
+from .forms import Form
 from .style import FormWidgetSize, Mode
 
 
@@ -72,10 +73,6 @@ class FormItemEnum(str, Enum):
     input_image = "input-image"
     input_file = "input-file"
     picker = "picker"
-
-
-class AbstractControl(Column):
-    pass
 
 
 class FormItem(AbstractControl):
@@ -395,3 +392,22 @@ class Custom(Column):
     html: Optional[str]
     inline: Optional[bool]
     id: Optional[str]
+
+
+class SubForm(FormItem):
+    """
+    InputSubForm 子表单
+    https://aisuda.bce.baidu.com/amis/zh-CN/components/form/input-sub-form
+    """
+
+    type = "input-sub-form"
+    multiple: Optional[bool]  # 是否为多选模式
+    btnLabel: Optional[str]  # 按钮默认名称
+    minLength: Optional[int]  # 限制最小个数。
+    maxLength: Optional[int]  # 限制最大个数。
+    draggable: Optional[bool]  # 是否可拖拽排序
+    addable: Optional[bool]  # 是否可新增
+    removable: Optional[bool]  # 是否可删除
+    form: Form
+    addButtonText: Optional[str]  # 自定义新增一项的文本
+    showErrorMsg: Optional[bool]  # 是否在左下角显示报错信息

@@ -1,7 +1,7 @@
 from typing import List, Optional
 
 from fast_tmp.amis.base import BaseAmisModel
-from fast_tmp.amis.formitem import AbstractControl
+from fast_tmp.amis.column import AbstractControl
 
 
 class Form(BaseAmisModel):

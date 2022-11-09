@@ -61,3 +61,7 @@ class Operation(Column):
     label = "操作"
     buttons: List[_Action] = []
     name: str = ""
+
+
+class AbstractControl(Column):
+    pass
