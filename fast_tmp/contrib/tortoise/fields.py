@@ -15,28 +15,37 @@ class FileClass(str):
         self.path = path
 
     def get_file(self):
+        from fast_tmp.conf import settings
+
         if self.path is not None:
-            value = os.path.join(os.getcwd(), self.path)
+            value = os.path.join(os.getcwd(), settings.MEDIA_PATH, self.path)
             return UploadFile(filename=value)
         return None
+
+    def get_static_path(self):
+        from fast_tmp.conf import settings
+
+        return "/" + "/".join([settings.MEDIA_ROOT, self.path])
+
+    @classmethod
+    def from_static_path(cls, path: str):
+        from fast_tmp.conf import settings
+
+        if not path:
+            return None
+        if path.startswith("/" + settings.MEDIA_ROOT):  # 去除静态头
+            header_len = len(settings.MEDIA_ROOT) + 2
+            path = path[header_len:]
+        return cls(path)
+
+    def __len__(self):
+        return len(self.path)
 
     def __repr__(self):
         return self.path
 
     def __str__(self):
         return self.path
-
-    def get_static_path(self):
-        return self.path
-
-    @classmethod
-    def from_static_path(cls, path: str):
-        if not path:
-            return None
-        return cls(path)
-
-    def __len__(self):
-        return len(self.path)
 
 
 class FileField(Field[FileClass], FileClass):  # type: ignore
@@ -86,7 +95,7 @@ class RichTextField(Field[str], str):  # type: ignore
     SQL_TYPE = "TEXT"
 
     def __init__(
-        self, pk: bool = False, unique: bool = False, index: bool = False, **kwargs: Any
+            self, pk: bool = False, unique: bool = False, index: bool = False, **kwargs: Any
     ) -> None:
         if pk:
             warnings.warn(
