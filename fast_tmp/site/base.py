@@ -218,6 +218,9 @@ class PageRouter:
         return self._name
 
     async def router(self, request: Request, prefix: str, method: str) -> BaseRes:
+        """
+        用于自定义接口的方法
+        """
         raise NotFoundError("not found function.")
 
 

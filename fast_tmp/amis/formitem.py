@@ -282,6 +282,7 @@ class TimeItem(FormItem):
 class UUIDItem(FormItem):
     # 随机生成一个 id，可以用于防止表单重复提交。
     type = FormItemEnum.uuid
+    label = ""
     name: Optional[str]  # type: ignore
     length: Optional[int]
 
@@ -418,7 +419,7 @@ class InputTable(FormItem):
     表格
     """
 
-    type = "table"
+    type = "input-table"
     addable: Optional[bool]  # 是否可新增
     editable: Optional[bool]  # 是否可编辑
     removable: Optional[bool]  # 是否可删除

@@ -47,7 +47,7 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
     selct_defs: Dict[
         str,
         Callable[
-            [Request, Optional[str], Optional[int], Optional[int]], Coroutine[Any, Any, List[dict]]
+            [Request, Optional[str], Optional[int], Optional[int],Optional[Any]], Coroutine[Any, Any, List[dict]]
         ],
     ]
     _filters = None
