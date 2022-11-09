@@ -14,10 +14,10 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from pydantic import BaseModel
 
 from .column import Column, SelectOption
-from .style import FormWidgetSize, ItemModel
+from .style import FormWidgetSize, Mode
 
 
-class ControlEnum(str, Enum):
+class FormItemEnum(str, Enum):
     form = "form"  # 表单
     button_group_select = "button-group-select"  # 按钮点选
     chained_select = "chained-select"  # 链式下拉框
@@ -78,7 +78,7 @@ class AbstractControl(Column):
     pass
 
 
-class Control(AbstractControl):
+class FormItem(AbstractControl):
     """
     用户form表单等写入
     """
@@ -105,7 +105,7 @@ class Control(AbstractControl):
     className: Optional[str]  # 表单最外层类名
     inputClassName: Optional[str]  # 表单控制器类名
     labelClassName: Optional[str]  # label 的类名
-    mode: Optional[ItemModel]
+    mode: Optional[Mode]
     size: Optional[FormWidgetSize]
 
     class Config:
@@ -131,8 +131,8 @@ class ItemValidationError(BaseModel):
     pass
 
 
-class NumberItem(Control):
-    type: ControlEnum = ControlEnum.input_number
+class NumberItem(FormItem):
+    type: FormItemEnum = FormItemEnum.input_number
     min: Optional[int]
     max: Optional[int]
     precision: Optional[int]  # 小数点后几位
@@ -142,12 +142,12 @@ class NumberItem(Control):
     big: Optional[bool]
 
 
-class NativeNumber(Control):
-    type: ControlEnum = ControlEnum.native_number
+class NativeNumber(FormItem):
+    type: FormItemEnum = FormItemEnum.native_number
 
 
-class SelectItem(Control):
-    type: ControlEnum = ControlEnum.select
+class SelectItem(FormItem):
+    type: FormItemEnum = FormItemEnum.select
     options: Optional[Union[List[str], List[int], List[SelectOption]]]
     source: Optional[str]  # 通过数据源里面获取，也可以配置地址从远程获取，值格式为:options:[{label:..,value:...,}]
     # children: Optional[List[Union[SelectOption, str, int]]]  # 这个在树结构在考虑
@@ -189,8 +189,8 @@ class SelectItemCanModifyItem(SelectItem):
     deleteApi: Optional[str]  # 配置删除接口
 
 
-class ArrayItem(Control):
-    type: ControlEnum = ControlEnum.array
+class ArrayItem(FormItem):
+    type: FormItemEnum = FormItemEnum.array
     items: str = "text"  # 这个到时候改为枚举
     addable: bool = True  # 是否可新增
     removable: bool = True  # 是否可删除
@@ -202,8 +202,8 @@ class ArrayItem(Control):
     maxLength: Optional[int]  # 最长长度
 
 
-class DatetimeItem(Control):
-    type: ControlEnum = ControlEnum.input_datetime
+class DatetimeItem(FormItem):
+    type: FormItemEnum = FormItemEnum.input_datetime
     value: Optional[str]
     format: str = "YYYY-MM-DD HH:mm:ss"  # 'X'为时间戳格式,参考文档：
     # https://baidu.gitee.io/amis/zh-CN/docs/components/form/datetime
@@ -219,8 +219,8 @@ class DatetimeItem(Control):
         orm_mode = True
 
 
-class DateItem(Control):
-    type = ControlEnum.date
+class DateItem(FormItem):
+    type = FormItemEnum.date
     value: Optional[str]
     format: str = "YYYY-MM-DD"  # 格式请参考文档：https://baidu.gitee.io/amis/zh-CN/docs/components/form/date  # 'X'为时间戳格式
     inputFormat: str = "YYYY-MM-DD"  # 'X'为时间戳格式
@@ -232,18 +232,18 @@ class DateItem(Control):
         orm_mode = True
 
 
-class SwitchItem(Control):
+class SwitchItem(FormItem):
     # Switch 开关
-    type = ControlEnum.switch
+    type = FormItemEnum.switch
     option: Optional[str]
     trueValue: Optional[int]
     falseValue: Optional[int]
     value: Optional[bool]
 
 
-class RichTextItem(Control):
+class RichTextItem(FormItem):
     # 目前富文本编辑器基于两个库：froala 和 tinymce，默认使用 tinymce。
-    type = ControlEnum.input_rich_text
+    type = FormItemEnum.input_rich_text
     body: Optional[Dict[str, Any]]
     options: Optional[Dict[str, Any]]
     receiver: Optional[str]
@@ -251,25 +251,25 @@ class RichTextItem(Control):
     fileField: Optional[str]
 
 
-class TextItem(Control):
-    type = ControlEnum.input_text
+class TextItem(FormItem):
+    type = FormItemEnum.input_text
     body: Optional[Dict[str, Any]]
     trimContents: Optional[bool]  # 是否去除首尾空白文本。
     # resetValue: str = ""  # 清除后设置此配置项给定的值。
 
 
-class TextareaItem(Control):
+class TextareaItem(FormItem):
     # Textarea 多行文本输入框
-    type = ControlEnum.textarea
+    type = FormItemEnum.textarea
     body: Optional[Dict[str, Any]]
     minRows: Optional[int]  # 最小行数
     maxRows: Optional[int]  # 最大行数
     trimContents: Optional[bool]  # 是否去除首尾空白文本。
 
 
-class TimeItem(Control):
+class TimeItem(FormItem):
     # Time 时间
-    type = ControlEnum.time
+    type = FormItemEnum.time
     body: Optional[Dict[str, Any]]
     value: Optional[datetime.time]  # 默认值
     timeFormat: str = "HH:mm:ss"  # 时间选择器值格式，更多格式类型请参考 moment
@@ -282,19 +282,19 @@ class TimeItem(Control):
         orm_mode = True
 
 
-class UUIDItem(Control):
+class UUIDItem(FormItem):
     # 随机生成一个 id，可以用于防止表单重复提交。
-    type = ControlEnum.uuid
+    type = FormItemEnum.uuid
     name: Optional[str]  # type: ignore
     length: Optional[int]
 
 
-class CheckboxesItem(Control):
+class CheckboxesItem(FormItem):
     """
     复选框
     """
 
-    type = ControlEnum.checkboxes
+    type = FormItemEnum.checkboxes
     optional: Optional[Union[List[Dict[str, str]]]]  # 选项组
     source: str  # 动态选项组
     delimeter: bool = False  # 拼接符
@@ -323,9 +323,9 @@ class DynaticCheckboxesItem(CheckboxesItem):
     deleteApi: Optional[str]  # 配置删除选项接口
 
 
-class TransferItem(Control):
+class TransferItem(FormItem):
     # Transfer 穿梭器
-    type = ControlEnum.transfer
+    type = FormItemEnum.transfer
     options: Optional[List[Union[dict, str]]]  # 选项组
     source: Optional[str]  # 动态选项组
     delimeter: Optional[str]  # 拼接符
@@ -358,9 +358,9 @@ class PickerSchema(BaseModel):
     columns: Optional[List[Column]]
 
 
-class PickerItem(Control):
+class PickerItem(FormItem):
     # 列表选取，在功能上和 Select 类似，但它能显示更复杂的信息。默认和 Select 很像，但请看后面的 pickerSchema 设置。
-    type = ControlEnum.picker
+    type = FormItemEnum.picker
     options: Optional[List[Dict[str, str]]]  # 动态选项组
     source: Optional[str]
     multiple: bool = False
@@ -375,14 +375,14 @@ class PickerItem(Control):
     embed: Optional[bool]  # 是否使用内嵌模式
 
 
-class FileItem(Control):
-    type = ControlEnum.input_file
+class FileItem(FormItem):
+    type = FormItemEnum.input_file
     receiver: str
     asBase64: bool = True
 
 
-class ImageItem(Control):
-    type = ControlEnum.input_image
+class ImageItem(FormItem):
+    type = FormItemEnum.input_image
 
     receiver: str
 

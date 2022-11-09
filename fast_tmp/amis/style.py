@@ -21,7 +21,7 @@ class FormWidgetSize(
     xs = "xs"  # 极小
 
 
-class ItemModel(str, Enum):
+class Mode(str, Enum):
     horizontal = "horizontal"
     inline = "inline"
     normal = "normal"

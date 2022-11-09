@@ -10,13 +10,14 @@ from tortoise.fields.data import CharEnumFieldInstance, IntEnumFieldInstance
 
 from fast_tmp.amis.actions import DialogAction
 from fast_tmp.amis.column import Column, Operation
-from fast_tmp.amis.control import (
-    Control,
-    ControlEnum,
+from fast_tmp.amis.crud import CRUD
+from fast_tmp.amis.formitem import (
     Custom,
     DateItem,
     DatetimeItem,
     FileItem,
+    FormItem,
+    FormItemEnum,
     ImageItem,
     NumberItem,
     PickerItem,
@@ -26,7 +27,6 @@ from fast_tmp.amis.control import (
     TimeItem,
     TransferItem,
 )
-from fast_tmp.amis.crud import CRUD
 from fast_tmp.amis.frame import Dialog
 from fast_tmp.amis.response import AmisStructError
 from fast_tmp.contrib.auth.hashers import make_password
@@ -43,17 +43,17 @@ class StrControl(BaseAdminControl):
 
 
 class TextControl(StrControl):
-    _control_type = ControlEnum.textarea
+    _control_type = FormItemEnum.textarea
 
 
 class IntControl(BaseAdminControl):
-    _control_type = ControlEnum.native_number
+    _control_type = FormItemEnum.native_number
 
 
 class DecimalControl(BaseAdminControl):
-    _control_type = ControlEnum.input_number
+    _control_type = FormItemEnum.input_number
 
-    def get_control(self, request: Request) -> Control:
+    def get_formItem(self, request: Request) -> FormItem:
         if not self._control:
             self._control = NumberItem(
                 type=self._control_type, name=self.name, label=self.label, big=True
@@ -74,11 +74,11 @@ class DecimalControl(BaseAdminControl):
 
 
 class IntEnumControl(BaseAdminControl):
-    _control_type = ControlEnum.select
+    _control_type = FormItemEnum.select
 
-    def get_control(self, request: Request) -> Control:
+    def get_formItem(self, request: Request) -> FormItem:
         if not self._control:
-            super().get_control(request)
+            super().get_formItem(request)
             d = self._control.dict(exclude_none=True)
             d.pop("type")
             if self._field.null:  # type: ignore
@@ -107,7 +107,7 @@ class IntEnumControl(BaseAdminControl):
 
 
 class BooleanControl(IntEnumControl):
-    _control_type = ControlEnum.select
+    _control_type = FormItemEnum.select
 
     def options(self) -> List[str]:
         return ["True", "False"]
@@ -137,11 +137,11 @@ class StrEnumControl(IntEnumControl):
 
 
 class DateTimeControl(BaseAdminControl):
-    _control_type = ControlEnum.input_datetime
+    _control_type = FormItemEnum.input_datetime
 
-    def get_control(self, request: Request) -> Control:
+    def get_formItem(self, request: Request) -> FormItem:
         if not self._control:
-            super().get_control(request)
+            super().get_formItem(request)
             self._control = DatetimeItem.from_orm(self._control)
         return self._control
 
@@ -163,11 +163,11 @@ class DateTimeControl(BaseAdminControl):
 
 
 class DateControl(BaseAdminControl):
-    _control_type = ControlEnum.date
+    _control_type = FormItemEnum.date
 
-    def get_control(self, request: Request) -> Control:
+    def get_formItem(self, request: Request) -> FormItem:
         if not self._control:
-            super().get_control(request)
+            super().get_formItem(request)
             self._control = DateItem.from_orm(self._control)
         return self._control
 
@@ -190,11 +190,11 @@ class DateControl(BaseAdminControl):
 
 
 class TimeControl(BaseAdminControl):
-    _control_type = ControlEnum.time
+    _control_type = FormItemEnum.time
 
-    def get_control(self, request: Request) -> Control:
+    def get_formItem(self, request: Request) -> FormItem:
         if not self._control:
-            super().get_control(request)
+            super().get_formItem(request)
             self._control = TimeItem.from_orm(self._control)
         return self._control
 
@@ -228,9 +228,9 @@ class JsonControl(TextControl):  # fixme 用代码编辑器重构？
     def orm_2_amis(self, value: Any) -> Any:
         return json.dumps(value)
 
-    def get_control(self, request: Request) -> Control:
+    def get_formItem(self, request: Request) -> FormItem:
         if not self._control:
-            super().get_control(request)
+            super().get_formItem(request)
             self._control.validations = "isJson"
         return self._control
 
@@ -262,7 +262,7 @@ class ForeignKeyPickerControl(BaseAdminControl, RelationSelectApi):  # todo 支�
     当外键太多的时候可以使用这个来进行查看，这样可以更容易选择数据
     """
 
-    _control_type = ControlEnum.select
+    _control_type = FormItemEnum.select
     _field: fields.ForeignKeyRelation
 
     async def get_selects(
@@ -291,7 +291,7 @@ class ForeignKeyPickerControl(BaseAdminControl, RelationSelectApi):  # todo 支�
     def get_column_inline(self, request: Request) -> Column:
         raise AttributeError("foreignkey field can not be used in column inline.")
 
-    def get_control(self, request: Request) -> Control:
+    def get_formItem(self, request: Request) -> FormItem:
         if not self._control:
             self._control = PickerItem(
                 name=self.name,
@@ -325,7 +325,7 @@ class ForeignKeyPickerControl(BaseAdminControl, RelationSelectApi):  # todo 支�
 
 
 class ForeignKeyControl(BaseAdminControl, RelationSelectApi):
-    _control_type = ControlEnum.select
+    _control_type = FormItemEnum.select
 
     async def get_selects(
         self,
@@ -363,7 +363,7 @@ class ForeignKeyControl(BaseAdminControl, RelationSelectApi):
     def get_column_inline(self, request: Request) -> Column:
         raise AttributeError("foreignkey field can not be used in column inline.")
 
-    def get_control(self, request: Request) -> Control:
+    def get_formItem(self, request: Request) -> FormItem:
         if not self._control:
             self._control = SelectItem(
                 name=self.name,
@@ -393,7 +393,7 @@ class ForeignKeyControl(BaseAdminControl, RelationSelectApi):
 
 class ManyToManyControl(BaseAdminControl, RelationSelectApi):
     _many = True
-    _control_type = ControlEnum.select
+    _control_type = FormItemEnum.select
 
     def prefetch(self) -> Optional[str]:
         return "prefetch"
@@ -445,7 +445,7 @@ class ManyToManyControl(BaseAdminControl, RelationSelectApi):
             data = await queryset
             return {"options": [{"value": i.pk, "label": str(i)} for i in data]}
 
-    def get_control(self, request: Request) -> Control:
+    def get_formItem(self, request: Request) -> FormItem:
         if not self._control:
             self._control = TransferItem(
                 name=self.name,
@@ -503,9 +503,9 @@ class ManyToManyControl(BaseAdminControl, RelationSelectApi):
 
 
 class FileControl(BaseAdminControl):
-    _control_type = ControlEnum.input_file
+    _control_type = FormItemEnum.input_file
 
-    def get_control(self, request: Request) -> Control:
+    def get_formItem(self, request: Request) -> FormItem:
         if not self._control:
             self._control = FileItem(
                 name=self.name,
@@ -528,9 +528,9 @@ class FileControl(BaseAdminControl):
 
 
 class ImageControl(BaseAdminControl):
-    _control_type = ControlEnum.input_image
+    _control_type = FormItemEnum.input_image
 
-    def get_control(self, request: Request) -> Control:
+    def get_formItem(self, request: Request) -> FormItem:
         if not self._control:
             self._control = ImageItem(
                 name=self.name,
@@ -560,9 +560,9 @@ class ImageControl(BaseAdminControl):
 
 
 class RichTextControl(BaseAdminControl):
-    _control_type = ControlEnum.input_rich_text
+    _control_type = FormItemEnum.input_rich_text
 
-    def get_control(self, request: Request) -> Control:
+    def get_formItem(self, request: Request) -> FormItem:
         if not self._control:
             self._control = RichTextItem(type=self._control_type, name=self.name, label=self.label)
             if not self._field.null:  # type: ignore
@@ -618,7 +618,7 @@ def create_column(
 
 # todo 以后考虑创建更新的control分离
 class Password(StrControl):
-    _control_type = ControlEnum.input_password
+    _control_type = FormItemEnum.input_password
 
     async def get_value(self, request: Request, obj: Model) -> Any:
         return None
@@ -633,9 +633,9 @@ class Password(StrControl):
                 raise TmpValueError("password can not be none.")
             await super().set_value(request, obj, make_password(value))
 
-    def get_control(self, request: Request) -> Control:
+    def get_formItem(self, request: Request) -> FormItem:
         if not self._control:
-            self._control = Control(type=self._control_type, name=self.name, label=self.label)
+            self._control = FormItem(type=self._control_type, name=self.name, label=self.label)
             if not self._field.null:  # type: ignore
                 if self._field.default is not None:  # type: ignore
                     self._control.value = self.orm_2_amis(self._field.default)  # type: ignore

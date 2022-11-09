@@ -84,18 +84,18 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
         return queryset
 
     def get_create_fields(self) -> Dict[str, BaseAdminControl]:
-        return {i: self.get_control_field(i) for i in self.create_fields}
+        return {i: self.get_formitem_field(i) for i in self.create_fields}
 
     def get_update_fields(self) -> Dict[str, BaseAdminControl]:
-        return {i: self.get_control_field(i) for i in self.update_fields}
+        return {i: self.get_formitem_field(i) for i in self.update_fields}
 
     def get_update_fields_with_pk(self) -> Dict[str, BaseAdminControl]:
         ret = self.get_update_fields()
-        ret["pk"] = self.get_control_field("pk")
+        ret["pk"] = self.get_formitem_field("pk")
         return ret
 
     def get_create_dialogation_button(self, request: Request) -> List[_Action]:
-        controls = self.get_create_fields()
+        formitems = self.get_create_fields()
 
         return [
             DialogAction(
@@ -106,7 +106,7 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
                         name=f"新增{self.name}",
                         title=f"新增{self.name}",
                         # fixme 你的field字段传实例了吗？
-                        body=[(i.get_control(request)) for i in controls.values()],
+                        body=[(i.get_formItem(request)) for i in formitems.values()],
                         api=f"post:{self.prefix}/create",
                     ),
                 ),
@@ -132,7 +132,7 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
         )
 
     def get_update_one_button(self, request: Request):
-        body = [i.get_control(request) for i in self.get_update_fields().values()]
+        body = [i.get_formItem(request) for i in self.get_update_fields().values()]
         return DialogAction(
             label="修改",
             level=ButtonLevelEnum.link,
@@ -188,14 +188,14 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
         return body
 
     def get_list_distplay(self) -> Dict[str, BaseAdminControl]:
-        return {i: self.get_control_field(i) for i in self.list_display}
+        return {i: self.get_formitem_field(i) for i in self.list_display}
 
     def get_list_display_with_pk(self) -> Dict[str, BaseAdminControl]:
         """
         去除多对多字段
         """
         ret = self.get_list_distplay()
-        ret["pk"] = self.get_control_field("pk")
+        ret["pk"] = self.get_formitem_field("pk")
         return ret
 
     async def get_app_page(self, request: Request) -> Page:
@@ -206,7 +206,7 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
         obj = await self.get_instance(request, pk)
         err_fields = {}
         for field_name in self.update_fields:
-            control = self.get_control_field(field_name)
+            control = self.get_formitem_field(field_name)
             try:
                 await control.set_value(request, obj, data[field_name])
             except ValidationError as e:
@@ -227,7 +227,7 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
         obj = await self.get_instance(request, pk)
         err_fields = {}
         for field_name in self.inline:
-            control = self.get_control_field(field_name)
+            control = self.get_formitem_field(field_name)
             try:
                 await control.set_value(request, obj, data[field_name])
             except ValidationError as e:
@@ -360,7 +360,7 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
                         continue
                     self.fields[field] = field_(name=field, field=field_type, prefix=self.prefix)
 
-    def get_control_field(self, name: str) -> BaseAdminControl:
+    def get_formitem_field(self, name: str) -> BaseAdminControl:
         ret = self.fields.get(name)
         if ret is None:
             raise NotFoundError("can not found field:" + name)

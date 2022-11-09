@@ -3,12 +3,13 @@
 """
 from starlette.requests import Request
 
-from fast_tmp.amis.forms import Control, Form
+from fast_tmp.amis.formitem import FormItem
+from fast_tmp.amis.forms import Form
 from fast_tmp.amis.page import Page
 from fast_tmp.site.base import PageRouter
 
 
-class MarkdownItem(Control):
+class MarkdownItem(FormItem):
     langeuage: str
     type = "editor"
 

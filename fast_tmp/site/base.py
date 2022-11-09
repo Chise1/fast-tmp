@@ -8,7 +8,7 @@ from tortoise.models import Model
 from tortoise.queryset import QuerySet
 
 from fast_tmp.amis.column import Column, ColumnInline, QuickEdit
-from fast_tmp.amis.control import Control, ControlEnum
+from fast_tmp.amis.formitem import FormItem, FormItemEnum
 from fast_tmp.amis.page import Page
 from fast_tmp.amis.response import AmisStructError
 from fast_tmp.exceptions import NotFoundError
@@ -94,7 +94,7 @@ class AbstractControl:
         """
 
     @abstractmethod
-    def get_control(self, request: Request) -> Control:
+    def get_formItem(self, request: Request) -> FormItem:
         """
         获取内联修改的column
         """
@@ -107,10 +107,10 @@ class BaseAdminControl(AbstractAmisAdminDB, AbstractControl, AmisOrm):
 
     label: str
     _field: fields.Field
-    _control: Control = None  # type: ignore
+    _control: FormItem = None  # type: ignore
     _column: Column = None  # type: ignore
     _column_inline: ColumnInline = None  # type: ignore
-    _control_type: ControlEnum = ControlEnum.input_text
+    _control_type: FormItemEnum = FormItemEnum.input_text
     _many = False  # 多对多字段标记，查询的时候默认跳过
 
     def get_column(self, request: Request) -> Column:
@@ -118,9 +118,9 @@ class BaseAdminControl(AbstractAmisAdminDB, AbstractControl, AmisOrm):
             self._column = Column(name=self.name, label=self.label)
         return self._column
 
-    def get_control(self, request: Request) -> Control:
+    def get_formItem(self, request: Request) -> FormItem:
         if not self._control:
-            self._control = Control(type=self._control_type, name=self.name, label=self.label)
+            self._control = FormItem(type=self._control_type, name=self.name, label=self.label)
             if not self._field.null:  # type: ignore
                 self._control.required = True
             if self._field.default is not None:  # type: ignore
