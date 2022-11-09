@@ -95,7 +95,7 @@ class RichTextField(Field[str], str):  # type: ignore
     SQL_TYPE = "TEXT"
 
     def __init__(
-            self, pk: bool = False, unique: bool = False, index: bool = False, **kwargs: Any
+        self, pk: bool = False, unique: bool = False, index: bool = False, **kwargs: Any
     ) -> None:
         if pk:
             warnings.warn(

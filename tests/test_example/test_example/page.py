@@ -17,7 +17,7 @@ class UserSelfInfo(RegisterRouter):
     def __init__(self):
         super().__init__("info", "info")
 
-    async def get_app_page(self, request: Request) -> dict:
+    async def get_app_page(self, request: Request) -> Page:
         return Page(
             title="userselfinfo",
             body=[
@@ -27,4 +27,4 @@ class UserSelfInfo(RegisterRouter):
                     api="/form-test",
                 )
             ],
-        ).dict(exclude_none=True)
+        )

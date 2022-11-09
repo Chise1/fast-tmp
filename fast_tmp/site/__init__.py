@@ -198,9 +198,9 @@ class ModelAdmin(ModelSession, RegisterRouter):  # todo inline字段必须都在
         ret["pk"] = self.get_control_field("pk")
         return ret
 
-    async def get_app_page(self, request: Request):
+    async def get_app_page(self, request: Request) -> Page:
         codenames = await self.permission_code(request)
-        return Page(title=self.name, body=self.get_crud(request, codenames)).dict(exclude_none=True)
+        return Page(title=self.name, body=self.get_crud(request, codenames))
 
     async def update(self, request: Request, pk: str, data: Dict[str, Any]) -> Model:
         obj = await self.get_instance(request, pk)

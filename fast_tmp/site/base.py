@@ -7,6 +7,7 @@ from tortoise.models import Model
 from tortoise.queryset import QuerySet
 
 from fast_tmp.amis.forms import Column, ColumnInline, Control, ControlEnum, QuickEdit
+from fast_tmp.amis.page import Page
 from fast_tmp.amis.response import AmisStructError
 from fast_tmp.exceptions import NotFoundError
 from fast_tmp.responses import BaseRes, ListDataWithPage
@@ -196,7 +197,7 @@ class RegisterRouter:
     _name: str
     _prefix: str
 
-    async def get_app_page(self, request: Request) -> dict:
+    async def get_app_page(self, request: Request) -> Page:
         raise AttributeError("need write")
 
     def __init__(self, prefix: str, name: str):

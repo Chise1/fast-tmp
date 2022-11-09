@@ -112,7 +112,7 @@ async def get_schema(
     request: Request,
     page: RegisterRouter = Depends(get_model_site),
 ):
-    return BaseRes(data=await page.get_app_page(request))
+    return BaseRes(data=(await page.get_app_page(request)).dict(exclude_none=True))
 
 
 # todo 考虑清除没有被使用的文件 考虑对上传的文件进行校验，判断该字段是否应该上传文件
