@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 from pydantic import BaseModel
 
-from .column import AbstractControl, Column, SelectOption
+from .column import AbstractControl, Column, ColumnInline, SelectOption
 from .forms import Form
 from .style import FormWidgetSize, Mode
 
@@ -411,3 +411,34 @@ class SubForm(FormItem):
     form: Form
     addButtonText: Optional[str]  # 自定义新增一项的文本
     showErrorMsg: Optional[bool]  # 是否在左下角显示报错信息
+
+
+class InputTable(FormItem):
+    """
+    表格
+    """
+
+    type = "table"
+    addable: Optional[bool]  # 是否可新增
+    editable: Optional[bool]  # 是否可编辑
+    removable: Optional[bool]  # 是否可删除
+    showAddBtn: Optional[bool]  # 是否显示添加按钮
+    addApi: Optional[str]
+    updateApi: Optional[str]
+    deleteApi: Optional[str]
+    addBtnLabel: Optional[str]  # 增加按钮名称
+    addBtnIcon: Optional[str]  # "plus"	增加按钮图标
+    copyBtnLabel: Optional[str]  # 复制按钮文字
+    copyBtnIcon: Optional[str]  # "copy"	复制按钮图标
+    editBtnLabel: Optional[str]  # ""	编辑按钮名称
+    editBtnIcon: Optional[str]  # "pencil"	编辑按钮图标
+    deleteBtnLabel: Optional[str]  # ""	删除按钮名称
+    deleteBtnIcon: Optional[str]  # "minus"	删除按钮图标
+    confirmBtnLabel: Optional[str]  # ""	确认编辑按钮名称
+    confirmBtnIcon: Optional[str]  # "check"	确认编辑按钮图标
+    cancelBtnLabel: Optional[str]  # ""	取消编辑按钮名称
+    cancelBtnIcon: Optional[str]  # "times"	取消编辑按钮图标
+    needConfirm: Optional[bool]  # true	是否需要确认操作，，可用来控控制表格的操作交互
+    canAccessSuperData: Optional[bool]  # false	是否可以访问父级数据，也就是表单中的同级数据，通常需要跟 strictMode 搭配使用
+    strictMode: Optional[bool]  # true	为了性能，默认其他表单项项值变化不会让当前表格更新，有时候为了同步获取其他表单项字段，需要开启这个。
+    columns: Optional[List[ColumnInline]]  # 列信息

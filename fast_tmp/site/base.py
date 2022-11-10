@@ -94,7 +94,7 @@ class AbstractControl:
         """
 
     @abstractmethod
-    def get_formItem(self, request: Request) -> FormItem:
+    def get_formitem(self, request: Request) -> FormItem:
         """
         获取内联修改的column
         """
@@ -118,7 +118,7 @@ class BaseAdminControl(AbstractAmisAdminDB, AbstractControl, AmisOrm):
             self._column = Column(name=self.name, label=self.label)
         return self._column
 
-    def get_formItem(self, request: Request) -> FormItem:
+    def get_formitem(self, request: Request) -> FormItem:
         if not self._control:
             self._control = FormItem(type=self._control_type, name=self.name, label=self.label)
             if not self._field.null:  # type: ignore

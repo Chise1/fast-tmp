@@ -2,7 +2,7 @@ from typing import List, Optional, Union
 
 from fast_tmp.amis.base import BaseAmisModel, _Action
 from fast_tmp.amis.column import Column, Operation
-from fast_tmp.amis.forms.filter import FilterModel
+from fast_tmp.amis.forms import FilterModel
 
 
 class CRUD(BaseAmisModel):

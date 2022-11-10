@@ -12,8 +12,7 @@ from fast_tmp.amis.base import BaseAmisModel, _Action
 from fast_tmp.amis.column import Operation
 from fast_tmp.amis.crud import CRUD
 from fast_tmp.amis.enums import ButtonLevelEnum
-from fast_tmp.amis.forms import Form
-from fast_tmp.amis.forms.filter import FilterModel
+from fast_tmp.amis.forms import FilterModel, Form
 from fast_tmp.amis.frame import Dialog
 from fast_tmp.amis.page import Page
 from fast_tmp.exceptions import FieldsError, NotFoundError, PermError
@@ -106,7 +105,7 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
                         name=f"新增{self.name}",
                         title=f"新增{self.name}",
                         # fixme 你的field字段传实例了吗？
-                        body=[(i.get_formItem(request)) for i in formitems.values()],
+                        body=[(i.get_formitem(request)) for i in formitems.values()],
                         api=f"post:{self.prefix}/create",
                     ),
                 ),
@@ -132,7 +131,7 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
         )
 
     def get_update_one_button(self, request: Request):
-        body = [i.get_formItem(request) for i in self.get_update_fields().values()]
+        body = [i.get_formitem(request) for i in self.get_update_fields().values()]
         return DialogAction(
             label="修改",
             level=ButtonLevelEnum.link,
