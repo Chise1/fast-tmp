@@ -2,3 +2,4 @@ site_name: fast-tmp
 nav:
   - Home: index.md
   - About: about.md
+  - Page: page.md
