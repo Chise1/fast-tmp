@@ -199,13 +199,25 @@ class ModelFilter:
 
 
 class PageRouter:
+    """
+    页面基类，用于提供注册到admin管理页面的抽象类
+    """
+
     _name: str
     _prefix: str
 
+    @abstractmethod
     async def get_app_page(self, request: Request) -> Page:
-        raise AttributeError("need write")
+        """
+        继承该类并实现该接口,返回一个Page实例
+        该接口会被fast_tmp.admin.endpoint里面的```/{resource}/schema```接口调用
+        其中resource参数即为prefix
+        """
 
     def __init__(self, prefix: str, name: str):
+        """
+        name为左侧导航栏名字，prefix为接口的resource
+        """
         self._name = name
         self._prefix = prefix
 
@@ -220,6 +232,8 @@ class PageRouter:
     async def router(self, request: Request, prefix: str, method: str) -> BaseRes:
         """
         用于自定义接口的方法
+        当自定义该接口之后，会被fast_tmp.admin.endpoint里面的```/{resource}/extra/{prefix}```接口调用
+        支持的method为["POST", "GET", "DELETE", "PUT", "PATCH"]
         """
         raise NotFoundError("not found function.")
 
@@ -228,6 +242,7 @@ class PageRouter:
 class ModelSession:
     """
     后台管理页面数据库操作基类，包含后台页面对数据操作的所有需要的方法
+    注意，不是所有接口都需要实现，针对自己的需求实现部分接口即可
     """
 
     @abstractmethod
@@ -239,12 +254,6 @@ class ModelSession:
     ) -> ListDataWithPage:
         """
         获取数据列表
-        """
-
-    @abstractmethod
-    async def get_instance(self, request: Request, pk: Any) -> Optional[Model]:
-        """
-        根据pk获取一个实例
         """
 
     @abstractmethod
@@ -293,6 +302,13 @@ class ModelSession:
         更新数据
         """
 
-    @abstractmethod
     async def check_perm(self, request: Request, base_codename: str):
-        ...
+        """
+        检测权限是否满足
+        主要是被endpoint里面进行调用，create update,delete, list四个权限
+        如果需要检测权限，需要这里进行修改
+        示例：
+        user = request.user
+        if not await user.has_perm(codename.lower()):
+            raise PermError()
+        """
