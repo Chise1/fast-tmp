@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 from pydantic import BaseModel
 
-from .column import AbstractControl, Column, ColumnInline, SelectOption
+from .column import AbstractControl, Column, SelectOption
 from .forms import Form
 from .style import FormWidgetSize, Mode
 

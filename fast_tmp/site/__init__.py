@@ -47,7 +47,8 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
     selct_defs: Dict[
         str,
         Callable[
-            [Request, Optional[str], Optional[int], Optional[int],Optional[Any]], Coroutine[Any, Any, List[dict]]
+            [Request, Optional[str], Optional[int], Optional[int], Optional[Any]],
+            Coroutine[Any, Any, List[dict]],
         ],
     ]
     _filters = None
@@ -395,7 +396,7 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
         """
         外键的枚举获取值以及多对多获取对象列表
         """
-        return await self.selct_defs[name](request, pk, perPage, page)
+        return await self.selct_defs[name](request, pk, perPage, page, None)
 
     async def check_perm(self, request: Request, codename: str):
         user = request.user

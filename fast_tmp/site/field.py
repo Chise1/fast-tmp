@@ -253,7 +253,7 @@ class RelationSelectApi:
         pk: Optional[str],
         perPage: Optional[int],
         page: Optional[int],
-        filter: Any = None
+        filter: Any = None,
     ) -> List[dict]:
         """
         多对多或多对一的时候，用于选择项的读取
@@ -274,7 +274,7 @@ class ForeignKeyPickerControl(BaseAdminControl, RelationSelectApi):  # todo 支�
         pk: Optional[str],
         perPage: Optional[int],
         page: Optional[int],
-        filter: Any = None
+        filter: Any = None,
     ):
         field_model_all = self._field.related_model.all()  # type: ignore
         if filter:
@@ -342,7 +342,7 @@ class ForeignKeyControl(BaseAdminControl, RelationSelectApi):
         pk: Optional[str],
         perPage: Optional[int],
         page: Optional[int],
-        filter: Any = None
+        filter: Any = None,
     ):
         field_model_all = self._field.related_model.all()  # type: ignore
         if filter:
@@ -424,8 +424,8 @@ class ManyToManyControl(BaseAdminControl, RelationSelectApi):
                             title=self.label,
                             body=CRUD(
                                 api="get:"
-                                    + self._field.model.__name__  # type: ignore
-                                    + f"/select/{self.name}?pk=$pk",
+                                + self._field.model.__name__  # type: ignore
+                                + f"/select/{self.name}?pk=$pk",
                                 columns=[
                                     Column(label="pk", name="pk"),
                                     Column(label="label", name="label"),
@@ -443,7 +443,7 @@ class ManyToManyControl(BaseAdminControl, RelationSelectApi):
         pk: Optional[str],
         perPage: Optional[int],
         page: Optional[int],
-        filter: Any = None
+        filter: Any = None,
     ):
         related_model = self._field.related_model  # type: ignore
         if pk is not None:
