@@ -51,6 +51,11 @@ class IntControl(BaseAdminControl):
 
 
 class DecimalControl(BaseAdminControl):
+    """
+    amis并没有decimal，所以这里只能使用浮点数
+    建议使用int来替换dec，比如按照分来计算之类的
+    """
+
     _control_type = FormItemEnum.input_number
 
     def get_formitem(self, request: Request) -> FormItem:
@@ -66,11 +71,13 @@ class DecimalControl(BaseAdminControl):
                 self._control.value = self.orm_2_amis(self._field.default)  # type: ignore
         return self._control
 
-    def amis_2_orm(self, value: Any) -> Any:
-        return Decimal(value)
+    def amis_2_orm(self, value: float) -> Any:
+        if value is not None:
+            return Decimal(value)
 
-    def orm_2_amis(self, value: Any) -> Any:
-        return str(value)
+    def orm_2_amis(self, value: Decimal) -> Any:
+        if value is not None:
+            return float(value)
 
 
 class IntEnumControl(BaseAdminControl):

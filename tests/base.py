@@ -10,9 +10,9 @@ from fast_tmp.factory import create_app
 from fast_tmp.models import Permission, User
 from fast_tmp.site import register_model_site
 
-from .admin import AuthorModel, BookModel, RoleModel
+from .admin import AuthorModel, BookModel, DecModel, RoleModel
 
-register_model_site({"fieldtesting": [RoleModel(), BookModel(), AuthorModel()]})
+register_model_site({"fieldtesting": [RoleModel(), BookModel(), AuthorModel(), DecModel()]})
 app = create_app()
 register_static_service(app)
 

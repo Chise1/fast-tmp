@@ -2,6 +2,7 @@ import binascii
 import datetime
 import os
 import uuid
+from decimal import Decimal
 from enum import Enum, IntEnum
 
 from tortoise import fields
@@ -149,7 +150,7 @@ class Role(Model):
     age = fields.IntField()
     desc = fields.TextField()
     birthday = fields.DateField(null=True)
-    money = fields.DecimalField(max_digits=10, decimal_places=2, null=True)
+    money = fields.DecimalField(max_digits=10, decimal_places=2, null=True, default=Decimal(10))
     height = fields.FloatField(null=True)
     married = fields.BooleanField(default=False)
     gender = fields.CharEnumField(Gender)
@@ -163,3 +164,18 @@ class Role(Model):
     level = fields.SmallIntField(default=0)
     create_time = fields.DatetimeField(auto_now_add=True)
     update_time = fields.DatetimeField(auto_now=True)
+
+
+class Dec(Model):
+    dec1 = fields.DecimalField(max_digits=10, decimal_places=2)
+    dec2 = fields.DecimalField(max_digits=10, decimal_places=2, null=True, default=Decimal(10))
+
+
+class I1(IntEnum):
+    one = 1
+    two = 2
+
+
+class IntEnumField(Model):
+    e1 = fields.IntEnumField(I1, null=True)
+    e2 = fields.IntEnumField(I1, default=I1.one)

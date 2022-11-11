@@ -132,7 +132,7 @@ async def get_site(request: Request):
                             "url": model.prefix,
                             "schemaApi": model.prefix + "/schema",
                         }
-                        for model in ml
+                        for model in ml_p
                     ],
                 }
             )

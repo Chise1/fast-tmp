@@ -415,7 +415,13 @@ def register_model_site(model_group: Dict[str, List[PageRouter]]):
                 raise ValueError(f"prefix {model.prefix} can not be same!")
         else:
             resources.add(model.prefix)
-    model_list.update(model_group)
+    for bk, bv in model_group.items():
+        for k, v in model_list.items():
+            if bk == k:
+                v.extend(bv)
+                break
+        else:
+            model_list[bk] = bv
 
 
 def get_model_site(resource: str) -> Optional[PageRouter]:

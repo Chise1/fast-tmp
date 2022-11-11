@@ -26,6 +26,7 @@ class TestColumnField(BaseSite):
             "birthday": "2004-09-10",
             "config": '{"color":"green"}',
             "max_time_length": "00:23:19",
+            "money": 10.34,
         }
         response = await self.client.post("/admin/Role/create", json=role_data)
         assert response.status_code == 200
