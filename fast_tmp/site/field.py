@@ -30,10 +30,11 @@ from fast_tmp.amis.formitem import (
 from fast_tmp.amis.frame import Dialog
 from fast_tmp.amis.response import AmisStructError
 from fast_tmp.contrib.auth.hashers import make_password
-from fast_tmp.contrib.tortoise.fields import FileClass, FileField, ImageField, RichTextField
+from fast_tmp.contrib.tortoise.fields import FileField, ImageField, RichTextField
 from fast_tmp.exceptions import TmpValueError
 from fast_tmp.responses import ListDataWithPage
 from fast_tmp.site.base import BaseAdminControl
+from fast_tmp.utils import add_media_start, remove_media_start
 
 
 class StrControl(BaseAdminControl):
@@ -431,8 +432,8 @@ class ManyToManyControl(BaseAdminControl, RelationSelectApi):
                             title=self.label,
                             body=CRUD(
                                 api="get:"
-                                + self._field.model.__name__  # type: ignore
-                                + f"/select/{self.name}?pk=$pk",
+                                    + self._field.model.__name__  # type: ignore
+                                    + f"/select/{self.name}?pk=$pk",
                                 columns=[
                                     Column(label="pk", name="pk"),
                                     Column(label="label", name="label"),
@@ -546,13 +547,13 @@ class FileControl(BaseAdminControl):
                 self._control.value = self.orm_2_amis(self._field.default)  # type: ignore
         return self._control
 
-    def orm_2_amis(self, value: Any) -> Any:
+    def orm_2_amis(self, value: str) -> Any:
         if value is not None:
-            return value.get_static_path()
-        return value
+            return add_media_start(value)
 
     def amis_2_orm(self, value: Any) -> Any:
-        return FileClass.from_static_path(value)
+        if value is not None:
+            return remove_media_start(value)
 
 
 class ImageControl(BaseAdminControl):
@@ -576,15 +577,13 @@ class ImageControl(BaseAdminControl):
             self._column = Column(type="image", name=self.name, label=self.label)
         return self._column
 
-    def orm_2_amis(self, value: FileClass) -> Any:
+    def orm_2_amis(self, value: str) -> Any:
         if value is not None:
-            return value.get_static_path()
-        return value
+            return add_media_start(value)
 
     def amis_2_orm(self, value: Any) -> Any:
         if value is not None:
-            return FileClass.from_static_path(value)
-        return None
+            return remove_media_start(value)
 
 
 class RichTextControl(BaseAdminControl):
