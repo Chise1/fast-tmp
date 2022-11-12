@@ -48,7 +48,7 @@ class TextControl(StrControl):
 
 
 class IntControl(BaseAdminControl):
-    _control_type = FormItemEnum.native_number
+    _control_type = FormItemEnum.input_number
 
 
 class DecimalControl(BaseAdminControl):
