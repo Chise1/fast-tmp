@@ -135,8 +135,9 @@ class NumberItem(FormItem):
     precision: Optional[int]  # 小数点后几位
     step: Optional[int]  # 选择的步长
     value: Optional[int]
-    showSteps: Optional[bool] = False
+    showSteps: Optional[bool]
     big: Optional[bool]
+    displayMode:str = "enhance"
 
 
 class NativeNumber(FormItem):
