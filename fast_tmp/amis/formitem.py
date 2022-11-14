@@ -137,7 +137,7 @@ class NumberItem(FormItem):
     value: Optional[int]
     showSteps: Optional[bool]
     big: Optional[bool]
-    displayMode:str = "enhance"
+    displayMode: str = "enhance"
 
 
 class NativeNumber(FormItem):

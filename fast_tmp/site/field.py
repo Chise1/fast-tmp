@@ -20,8 +20,6 @@ from fast_tmp.amis.formitem import (
     FormItemEnum,
     ImageItem,
     NumberItem,
-    PickerItem,
-    PickerSchema,
     RichTextItem,
     SelectItem,
     TimeItem,
@@ -359,8 +357,8 @@ class ManyToManyControl(BaseAdminControl, RelationSelectApi):
                             title=self.label,
                             body=CRUD(
                                 api="get:"
-                                    + self._field.model.__name__  # type: ignore
-                                    + f"/select/{self.name}?pk=$pk",
+                                + self._field.model.__name__  # type: ignore
+                                + f"/select/{self.name}?pk=$pk",
                                 columns=[
                                     Column(label="pk", name="pk"),
                                     Column(label="label", name="label"),
