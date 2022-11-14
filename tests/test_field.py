@@ -52,4 +52,4 @@ class TestIntEnumControl(BaseSite):
         response = await self.client.post("/admin/IntEnumField/create", json=role_data)
         assert response.status_code == 200
         data = response.json()
-        self.assertEqual(data, {"status": 400, "msg": "e2 不能为 three", "data": {}})
+        self.assertEqual({"data": {}, "msg": "one: 1\ntwo: 2 不能为 three", "status": 400}, data)

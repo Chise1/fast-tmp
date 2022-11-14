@@ -349,7 +349,7 @@ class ManyToManyControl(BaseAdminControl, RelationSelectApi):
     def get_column(self, request: Request) -> Column:
         if not self._column:
             self._column = Operation(
-                label=self.name,
+                label=self.label,
                 buttons=[
                     DialogAction(
                         label="查看",
@@ -360,8 +360,8 @@ class ManyToManyControl(BaseAdminControl, RelationSelectApi):
                                 + self._field.model.__name__  # type: ignore
                                 + f"/select/{self.name}?pk=$pk",
                                 columns=[
-                                    Column(label="pk", name="pk"),
-                                    Column(label="label", name="label"),
+                                    Column(label="主键", name="pk"),
+                                    Column(label="名称", name="label"),
                                 ],
                             ),
                         ),

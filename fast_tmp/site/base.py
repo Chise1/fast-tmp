@@ -1,10 +1,10 @@
 import logging
+import re
 from abc import abstractmethod
 from typing import Any, Coroutine, Dict, List, Optional
 
 from starlette.requests import Request
-from tortoise import fields
-from tortoise.models import Model
+from tortoise import ManyToManyFieldInstance, Model, fields
 from tortoise.queryset import QuerySet
 
 from fast_tmp.amis.column import Column, ColumnInline, QuickEdit
@@ -15,6 +15,8 @@ from fast_tmp.exceptions import NotFoundError
 from fast_tmp.responses import BaseRes, ListDataWithPage
 
 logger = logging.getLogger(__file__)
+
+field_description = re.compile(r"^([^();]+)(\(.+\))?(:.*?)?;?")
 
 
 class AbstractAmisAdminDB:
@@ -106,6 +108,8 @@ class BaseAdminControl(AbstractAmisAdminDB, AbstractControl, AmisOrm):
     """
 
     label: str
+    description: Optional[str]
+    placeholder: Optional[str]
     _field: fields.Field
     _control: FormItem = None  # type: ignore
     _column: Column = None  # type: ignore
@@ -120,7 +124,13 @@ class BaseAdminControl(AbstractAmisAdminDB, AbstractControl, AmisOrm):
 
     def get_formitem(self, request: Request) -> FormItem:
         if not self._control:
-            self._control = FormItem(type=self._control_type, name=self.name, label=self.label)
+            self._control = FormItem(
+                type=self._control_type,
+                name=self.name,
+                label=self.label,
+                description=self.description,
+                placeholder=self.placeholder,
+            )
             if not self._field.null:  # type: ignore
                 self._control.required = True
             if self._field.default is not None:  # type: ignore
@@ -157,7 +167,16 @@ class BaseAdminControl(AbstractAmisAdminDB, AbstractControl, AmisOrm):
         super().__init__(name, prefix, **kwargs)
         self._field = field  # type: ignore
         self.name = name
-        self.label = kwargs.get("label") or self.name
+        label, description, placeholder = None, None, None
+        if field.description:
+            values = field_description.match(field.description)
+            if values and not isinstance(
+                self._field, ManyToManyFieldInstance  # type: ignore
+            ):  # todo 还没想好多对多怎么处理 一对多也没想好怎么处理 枚举类型description默认有值，需要自己进行覆盖
+                label, description, placeholder = values.groups()
+        self.label = kwargs.get("label") or label or name
+        self.description = kwargs.get("description") or description
+        self.placeholder = kwargs.get("placeholder") or placeholder
 
     async def validate(self, value: Any) -> Any:
         value = self.amis_2_orm(value)

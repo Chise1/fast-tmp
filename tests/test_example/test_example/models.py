@@ -28,7 +28,7 @@ class Author(Model):
 class Book(Model):
     name = fields.CharField(max_length=255)
     author: fields.ForeignKeyRelation[Author] = fields.ForeignKeyField(
-        "fast_tmp.Author", related_name="books"
+        "fast_tmp.Author", related_name="books", description="作者"
     )
     cover = ImageField()
     rating = fields.FloatField()
@@ -166,35 +166,19 @@ class FieldTesting(Model):
     uuid = fields.UUIDField(default=uuid.uuid4)
     level = fields.SmallIntField(default=0)
     name_inline = fields.CharField(null=True, max_length=32)
-    age_inline = fields.IntField(
-        null=True,
-    )
-    desc_inline = fields.TextField(
-        null=True,
-    )
-    birthday_inline = fields.DateField(
-        null=True,
-    )
+    age_inline = fields.IntField(null=True)
+    desc_inline = fields.TextField(null=True)
+    birthday_inline = fields.DateField(null=True)
     money_inline = fields.DecimalField(null=True, max_digits=10, decimal_places=2)
-    height_inline = fields.FloatField(
-        null=True,
-    )
+    height_inline = fields.FloatField(null=True)
     married_inline = fields.BooleanField(null=True, default=False)
     gender_inline = fields.CharEnumField(Gender, null=True)
     degree_inline = fields.IntEnumField(Degree, null=True)
     game_length_inline = fields.BigIntField(null=True, default=0)  # 游戏时长，按秒计算
-    avator_inline = fields.BinaryField(
-        null=True,
-    )  # 头像
-    config_inline = fields.JSONField(
-        null=True,
-    )
-    waiting_length_inline = fields.TimeDeltaField(
-        null=True,
-    )  # 等待时长
+    avator_inline = fields.BinaryField(null=True)  # 头像
+    config_inline = fields.JSONField(null=True)
+    waiting_length_inline = fields.TimeDeltaField(null=True)  # 等待时长
     max_time_length_inline = fields.TimeField(null=True, default=datetime.time())  # 最长游戏时长
-    uuid_inline = fields.UUIDField(
-        null=True,
-    )
+    uuid_inline = fields.UUIDField(null=True)
     level_inline = fields.SmallIntField(null=True, default=0)
     created_time = fields.DatetimeField(auto_now_add=True, null=True)
