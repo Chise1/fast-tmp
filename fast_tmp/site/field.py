@@ -653,7 +653,7 @@ class Password(StrControl):
     async def set_value(self, request: Request, obj: Model, value: Any):
         if obj.pk is not None:
             old_password = getattr(obj, self.name)
-            if value != old_password and len(value) > 0:
+            if value and value != old_password and len(value) > 0:
                 setattr(obj, self.name, make_password(value))
         else:
             if not value:
