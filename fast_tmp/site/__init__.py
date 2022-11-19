@@ -369,6 +369,18 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
     def __init__(self, prefix: Optional[str] = None, label: Optional[str] = None):
         if not prefix:
             prefix = self.model.__name__
+        if not label:
+            try:
+                self._name = self.model.table_description  # type: ignore
+            except AttributeError:
+                doc = self.model.__doc__
+                if doc:
+                    docs = doc.split("\n")
+                    for i in docs:
+                        if i:
+                            label = i.replace(" ", "")
+                            break
+                pass
 
         super().__init__(prefix, label or self.model.__name__.lower())
         if not self.fields:

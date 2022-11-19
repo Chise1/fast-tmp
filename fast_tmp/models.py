@@ -4,8 +4,12 @@ from tortoise import Model, fields
 
 
 class Permission(Model):
-    label = fields.CharField(max_length=128)
-    codename = fields.CharField(max_length=128, unique=True)
+    """
+    权限
+    """
+
+    label = fields.CharField(max_length=128, description="权限名")
+    codename = fields.CharField(max_length=128, unique=True, description="权限码")
     groups: fields.ManyToManyRelation["Group"]
 
     def __eq__(self, other) -> bool:
@@ -45,13 +49,17 @@ class Permission(Model):
 
 
 class User(Model):
-    username = fields.CharField(max_length=128, unique=True)
-    password = fields.CharField(max_length=255)
-    name = fields.CharField(max_length=128)
-    avatar = fields.CharField(max_length=128, null=True)
-    is_active = fields.BooleanField(default=True)
-    is_staff = fields.BooleanField(default=False)
-    is_superuser = fields.BooleanField(default=False)
+    """
+    用户
+    """
+
+    username = fields.CharField(max_length=128, unique=True, description="用户名")
+    password = fields.CharField(max_length=255, description="密码")
+    name = fields.CharField(max_length=128, description="名称")
+    avatar = fields.CharField(max_length=255, null=True, description="头像(base64)")
+    is_active = fields.BooleanField(default=True, description="活跃(False则账户无法使用)")
+    is_staff = fields.BooleanField(default=False, description="职员(False则无法登录管理界面)")
+    is_superuser = fields.BooleanField(default=False, description="超级管理员")
     groups: fields.ManyToManyRelation["Group"]
 
     # class Meta:
@@ -101,12 +109,16 @@ class User(Model):
 
 
 class Group(Model):
-    name = fields.CharField(max_length=128, unique=True)
+    """
+    组
+    """
+
+    name = fields.CharField(max_length=128, unique=True, description="组名")
     permissions: fields.ManyToManyRelation[Permission] = fields.ManyToManyField(
-        "fast_tmp.Permission", related_name="groups"
+        "fast_tmp.Permission", related_name="groups", description="权限"
     )
     users: fields.ManyToManyRelation[User] = fields.ManyToManyField(
-        "fast_tmp.User", related_name="groups"
+        "fast_tmp.User", related_name="groups", description="用户"
     )
 
     def __str__(self):
