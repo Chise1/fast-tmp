@@ -12,11 +12,11 @@ logger = logging.Logger(__file__)
 
 
 class Settings(BaseSettings):
-    SECRET_KEY: str = ""
+    SECRET_KEY: str = ""  # 用户加密用字符串
     ALGORITHM: str = "HS256"
     AUTH_USER_MODEL_NAME: str = "User"
     AUTH_APP_NAME: str = "fast_tmp"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # token过期时间
     BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = []
     FASTAPI_SETTINGS_MODULE: str
     DEBUG: bool = True
@@ -26,6 +26,14 @@ class Settings(BaseSettings):
     MEDIA_ROOT = "media"
     MEDIA_PATH = "media"
     LOCAL_FILE: bool = False  # 是否使用本地amis静态文件
+
+    @validator("ACCESS_TOKEN_EXPIRE_MINUTES", pre=True, allow_reuse=True)
+    def set_token_out(cls, v: Any) -> int:
+        if isinstance(v, str):
+            v = int(v)
+        if v <= 0:
+            raise ValueError('ACCESS_TOKEN_EXPIRE_MINUTES must bigger than 0')
+        return v
 
     @validator("DEBUG", pre=True, allow_reuse=True)
     def get_debug(cls, v: str) -> bool:
@@ -64,10 +72,12 @@ class Settings(BaseSettings):
         for setting in dir(mod):
             if setting.isupper():
                 setting_value = getattr(mod, setting)
-                if hasattr(self, setting):
+                if hasattr(self, setting) and not os.getenv(setting):
                     setattr(self, setting, setting_value)
                 else:
-                    self.EXTRA_SETTINGS[setting] = setting_value
+                    env_val = os.getenv(setting)
+                    self.EXTRA_SETTINGS[setting] = type(setting_value)(
+                        env_val) if env_val else setting_value
 
     def _init_model(self):
         if not getattr(self, "TORTOISE_ORM"):
