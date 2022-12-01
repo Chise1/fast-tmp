@@ -1,66 +1,73 @@
+from datetime import timedelta
+
 from tortoise.expressions import Q
 
 from fast_tmp.models import Group, Permission, User
+from fast_tmp.utils.token import create_access_token
 
 from .base import BaseSite
 
 all_perms = {
-    "intenumfield_create",
-    "intenumfield_delete",
-    "intenumfield_list",
-    "intenumfield_update",
+    "address_create",
+    "address_delete",
+    "address_list",
+    "address_update",
+    "author_create",
+    "author_delete",
+    "author_list",
+    "author_update",
+    "booknoconstraint_create",
+    "booknoconstraint_delete",
+    "booknoconstraint_list",
+    "booknoconstraint_update",
     "dec_create",
     "dec_delete",
     "dec_list",
     "dec_update",
-    "tournament_delete",
-    "team_create",
-    "author_list",
-    "author_create",
-    "address_delete",
-    "address_create",
-    "tree_create",
+    "event_create",
+    "event_delete",
     "event_list",
-    "tree_update",
-    "user_update",
-    "tournament_create",
-    "address_update",
     "event_update",
-    "user_delete",
+    "group_create",
+    "group_delete",
+    "group_list",
+    "group_update",
+    "intenumfield_create",
+    "intenumfield_delete",
+    "intenumfield_list",
+    "intenumfield_update",
     "node_create",
-    "author_update",
-    "address_list",
-    "tournament_list",
     "node_delete",
     "node_list",
-    "team_list",
-    "user_list",
+    "node_update",
+    "permission_create",
+    "permission_delete",
+    "permission_list",
+    "permission_update",
+    "reporter_create",
+    "reporter_delete",
     "reporter_list",
     "reporter_update",
-    "group_delete",
-    "tree_list",
-    "reporter_delete",
-    "permission_delete",
-    "group_list",
-    "tree_delete",
-    "role_update",
+    "role_create",
     "role_delete",
     "role_list",
-    "author_delete",
-    "group_update",
-    "role_create",
+    "role_update",
+    "team_create",
     "team_delete",
-    "user_create",
-    "permission_list",
-    "reporter_create",
+    "team_list",
     "team_update",
-    "group_create",
-    "event_delete",
-    "node_update",
-    "permission_update",
+    "tournament_create",
+    "tournament_delete",
+    "tournament_list",
     "tournament_update",
-    "permission_create",
-    "event_create",
+    "tree_create",
+    "tree_delete",
+    "tree_list",
+    "tree_update",
+    "user_create",
+    "user_delete",
+    "user_list",
+    "user_update",
 }
 
 
@@ -68,6 +75,36 @@ class TestPermission(BaseSite):
     """
     测试权限
     """
+
+    async def test_token(self):
+        """
+        测试token获取用户
+        """
+        token = create_access_token(
+            data={"sub": "zhangsan", "id": 10}, expires_delta=timedelta(minutes=10)
+        )
+        self.client.cookies.set("access_token", token)
+        response = await self.client.get("/admin/site")
+        self.assertEqual(302, response.status_code)
+        self.assertEqual("http://test/admin/login", response.next_request.url)
+        user = await self.create_user("zhangsan", is_active=False)
+        token = create_access_token(
+            data={"sub": "zhangsan", "id": user.pk}, expires_delta=timedelta(minutes=10)
+        )
+        self.client.cookies.set("access_token", token)
+        response = await self.client.get("/admin/site")
+        self.assertEqual(302, response.status_code)
+        self.assertEqual("http://test/admin/login", response.next_request.url)
+        self.client.cookies.set("access_token", "asdfasdfasdfasdf")
+        response = await self.client.get("/admin/site")
+        self.assertEqual(302, response.status_code)
+        self.assertEqual("http://test/admin/login", response.next_request.url)
+
+        token = create_access_token(data={"id": 10}, expires_delta=timedelta(minutes=10))
+        self.client.cookies.set("access_token", token)
+        response = await self.client.get("/admin/site")
+        self.assertEqual(302, response.status_code)
+        self.assertEqual("http://test/admin/login", response.next_request.url)
 
     async def test_perm(self):
         user: User = await self.create_user("user1")
@@ -346,14 +383,24 @@ class TestPermission(BaseSite):
                 },
             },
         )
-        # await Permission.filter(codename__startswith="book").delete()
-        # perms = await Permission.all().values("codename")
-        # perms = {perm["codename"] for perm in perms}
-        # self.assertEqual(perms, all_perms)
-        # response = await self.client.post("/admin/Permission/extra/migrate")
-        # self.assertEqual(
-        #     response.json(), {"status": 0, "msg": "success update table permission", "data": {}}
-        # )
-        # perms2 = await Permission.all().values("codename")
-        # perms2 = {perm["codename"] for perm in perms2}
-        # self.assertEqual(perms2, all_perms)
+        await Permission.filter(codename__startswith="book_").delete()
+        perms = await Permission.all().values("codename")
+        perms = {perm["codename"] for perm in perms}
+        self.assertEqual(all_perms, perms)
+        response = await self.client.post("/admin/Permission/extra/migrate")
+        self.assertEqual(
+            response.json(), {"status": 0, "msg": "success update table permission", "data": {}}
+        )
+        perms2 = await Permission.all().values("codename")
+        perms2 = {perm["codename"] for perm in perms2}
+        new_all_perms = set()
+        new_all_perms.update(all_perms)
+        new_all_perms.update(
+            {
+                "book_create",
+                "book_delete",
+                "book_list",
+                "book_update",
+            }
+        )
+        self.assertEqual(new_all_perms, perms2)

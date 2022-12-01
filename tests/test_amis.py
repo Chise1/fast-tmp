@@ -1,6 +1,8 @@
 from fast_tmp.amis.nav import Nav, NavLinks
+from fast_tmp.amis.validate import ValidateEnum
 from fast_tmp.amis.view.card import Card, CardHeader
 from fast_tmp.amis.view.divider import Divider
+from fast_tmp.amis.wizard import Wizard
 
 from .base import BaseSite
 
@@ -16,3 +18,6 @@ class TestAmis(BaseSite):
     Divider()
     card_header = CardHeader(title="header", subTitle="dd", description="..", avatar="....")
     Card(header=card_header)
+    x = ValidateEnum
+    x = Wizard
+    del x

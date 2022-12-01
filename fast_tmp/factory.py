@@ -3,7 +3,6 @@ from starlette.middleware.cors import CORSMiddleware
 
 from fast_tmp.admin.server import admin
 from fast_tmp.conf import settings
-from fast_tmp.depends.auth import register_app
 
 
 def create_app() -> FastAPI:
@@ -13,7 +12,6 @@ def create_app() -> FastAPI:
     """
     app = FastAPI(debug=settings.DEBUG)
     # 注册app的位置
-    register_app(app)
     if settings.BACKEND_CORS_ORIGINS:
         app.add_middleware(
             CORSMiddleware,
