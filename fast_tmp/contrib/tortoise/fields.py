@@ -12,7 +12,6 @@ class FileField(Field[str], str):  # type: ignore
         """
         default file path: media/model_name/file_name/xxx.file
         """
-        super(FileField, self).__init__()
         if int(max_length) < 1:
             raise ConfigurationError("'max_length' must be >= 1")
         self.max_length = int(max_length)
@@ -25,17 +24,50 @@ class FileField(Field[str], str):  # type: ignore
         self.validate(value)
         return value
 
+    @property
+    def constraints(self) -> dict:
+        return {"max_length": self.max_length}
+
+    @property
+    def SQL_TYPE(self) -> str:  # type: ignore
+        return f"VARCHAR({self.max_length})"
+
+    class _db_oracle:
+        def __init__(self, field: "FileField") -> None:
+            self.field = field
+
+        @property
+        def SQL_TYPE(self) -> str:
+            return f"NVARCHAR2({self.field.max_length})"
+
 
 class ImageField(Field[str], str):  # type: ignore
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, max_length: int = 255, **kwargs: Any) -> None:
         """
         default file path: media/model_name/file_name/xxx.image
         """
-        super(ImageField, self).__init__()
-        self.max_length = 255
+        if int(max_length) < 1:
+            raise ConfigurationError("'max_length' must be >= 1")
+        self.max_length = int(max_length)
         super().__init__(**kwargs)
         self.validators.append(FilePathValidator(self.max_length))
         self.validators.append(ImagePathValidator())
+
+    @property
+    def constraints(self) -> dict:
+        return {"max_length": self.max_length}
+
+    @property
+    def SQL_TYPE(self) -> str:  # type: ignore
+        return f"VARCHAR({self.max_length})"
+
+    class _db_oracle:
+        def __init__(self, field: "FileField") -> None:
+            self.field = field
+
+        @property
+        def SQL_TYPE(self) -> str:
+            return f"NVARCHAR2({self.field.max_length})"
 
 
 class RichTextField(Field[str], str):  # type: ignore
