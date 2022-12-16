@@ -38,8 +38,6 @@ test: deps
 test_html:
 	$(py_warn) FASTAPI_SETTINGS_MODULE=tests.settings TORTOISE_TEST_DB=sqlite://:memory: pytest --cov-report html $(pytest_opts)
 
-publish: check
-	poetry publish
 
 cov: deps
 	$(py_warn) FASTAPI_SETTINGS_MODULE=tests.settings TORTOISE_TEST_DB=sqlite://:memory: pytest --cov-report xml $(pytest_opts)
