@@ -1,7 +1,7 @@
 import logging
 import re
 from abc import abstractmethod
-from typing import Any, Coroutine, Dict, List, Optional
+from typing import Any, Coroutine, Dict, Iterable, List, Optional
 
 from starlette.requests import Request
 from tortoise import ManyToManyFieldInstance, Model, fields
@@ -96,7 +96,7 @@ class AbstractControl:
         """
 
     @abstractmethod
-    def get_formitem(self, request: Request) -> FormItem:
+    def get_formitem(self, request: Request, codenames: Iterable[str]) -> FormItem:
         """
         获取内联修改的column
         """
@@ -122,7 +122,11 @@ class BaseAdminControl(AbstractAmisAdminDB, AbstractControl, AmisOrm):
             self._column = Column(name=self.name, label=self.label)
         return self._column
 
-    def get_formitem(self, request: Request) -> FormItem:
+    def get_formitem(self, request: Request, codenames: Iterable[str]) -> FormItem:
+        """
+        获取页面表单字段，由于某些字段可以支持其他页面的创建，所以这里需要权限功能
+        另 column_inline不应支持权限功能
+        """
         if not self._control:
             self._control = FormItem(
                 type=self._control_type,

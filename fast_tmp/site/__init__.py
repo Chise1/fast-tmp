@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Callable, Coroutine, Dict, List, Optional, Set, Tuple, Type, Union
+from typing import Any, Callable, Coroutine, Dict, Iterable, List, Optional, Set, Tuple, Type, Union
 
 from starlette.requests import Request
 from tortoise import transactions
@@ -94,7 +94,9 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
         ret["pk"] = self.get_formitem_field("pk")
         return ret
 
-    def get_create_dialogation_button(self, request: Request) -> List[_Action]:
+    def get_create_dialogation_button(
+        self, request: Request, codenames: Iterable[str]
+    ) -> List[_Action]:
         formitems = self.get_create_fields()
 
         return [
@@ -105,8 +107,8 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
                     body=Form(
                         name=f"新增{self.name}",
                         title=f"新增{self.name}",
-                        # fixme 你的field字段传实例了吗？
-                        body=[(i.get_formitem(request)) for i in formitems.values()],
+                        # tips: 你的field字段传实例了吗？
+                        body=[(i.get_formitem(request, codenames)) for i in formitems.values()],
                         api=f"post:{self.prefix}/create",
                     ),
                 ),
@@ -131,8 +133,8 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
             api="delete:" + self.prefix + "/delete/$pk",
         )
 
-    def get_update_one_button(self, request: Request):
-        body = [i.get_formitem(request) for i in self.get_update_fields().values()]
+    def get_update_one_button(self, request: Request, codenames: Iterable[str]):
+        body = [i.get_formitem(request, codenames) for i in self.get_update_fields().values()]
         return DialogAction(
             label="修改",
             level=ButtonLevelEnum.link,
@@ -151,7 +153,7 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
     def get_operation(self, request: Request, codenames: List[str]):
         buttons = []
         if "put" in self.methods and self.update_fields and self.name + "_update" in codenames:
-            buttons.append(self.get_update_one_button(request))
+            buttons.append(self.get_update_one_button(request, codenames))
         if "delete" in self.methods and self.name + "_delete" in codenames:
             buttons.append(self.get_del_one_button())
         if len(buttons) > 0:
@@ -170,7 +172,7 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
         body: List[BaseAmisModel] = []
         columns = []
         if "create" in self.methods and self.create_fields and self.name + "_create" in codenames:
-            body.extend(self.get_create_dialogation_button(request))
+            body.extend(self.get_create_dialogation_button(request, codenames))
         if "list" in self.methods and self.list_display and self.name + "_list" in codenames:
             columns.extend(self.get_list_page(request))
         buttons = self.get_operation(request, codenames)
@@ -421,6 +423,9 @@ resources: Set[str] = set()
 
 
 def register_model_site(model_group: Dict[str, List[PageRouter]]):
+    """
+    注册PageRouter,并保证prefix不重复
+    """
     for models in model_group.values():
         for model in models:
             if model.prefix in resources:

@@ -10,7 +10,7 @@ def make_filter_by_str(request: Request, name: str, field: BaseAdminControl) -> 
     """
     根据字符串自动生成model对应field的搜索功能
     """
-    control = field.get_formitem(request)
+    control = field.get_formitem(request, [])  # fixme: 是否在filter字段也需要权限类型？
     filter_info = control.dict(exclude_none=True)
     filter_info["name"] = name
     filter_info["label"] = name

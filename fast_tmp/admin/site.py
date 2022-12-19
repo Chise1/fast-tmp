@@ -1,4 +1,4 @@
-from typing import List
+from typing import Iterable, List
 
 from starlette.requests import Request
 
@@ -48,8 +48,10 @@ class PermissionAdmin(ModelAdmin):
     create_fields = ("label", "codename", "groups")
     update_fields = ("label", "codename", "groups")
 
-    def get_create_dialogation_button(self, request: Request) -> List[_Action]:
-        buttons = super().get_create_dialogation_button(request)
+    def get_create_dialogation_button(
+        self, request: Request, codenames: Iterable[str]
+    ) -> List[_Action]:
+        buttons = super().get_create_dialogation_button(request, codenames)
         buttons.append(AjaxAction(label="同步权限", api=f"post:{self.prefix}/extra/migrate"))
         return buttons
 
