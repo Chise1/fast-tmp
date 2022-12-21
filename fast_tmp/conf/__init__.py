@@ -32,7 +32,7 @@ class Settings(BaseSettings):
         if isinstance(v, str):
             v = int(v)
         if v <= 0:
-            raise ValueError('ACCESS_TOKEN_EXPIRE_MINUTES must bigger than 0')
+            raise ValueError("ACCESS_TOKEN_EXPIRE_MINUTES must bigger than 0")
         return v
 
     @validator("DEBUG", pre=True, allow_reuse=True)
@@ -76,8 +76,9 @@ class Settings(BaseSettings):
                     setattr(self, setting, setting_value)
                 else:
                     env_val = os.getenv(setting)
-                    self.EXTRA_SETTINGS[setting] = type(setting_value)(
-                        env_val) if env_val else setting_value
+                    self.EXTRA_SETTINGS[setting] = (
+                        type(setting_value)(env_val) if env_val else setting_value
+                    )
 
     def _init_model(self):
         if not getattr(self, "TORTOISE_ORM"):
