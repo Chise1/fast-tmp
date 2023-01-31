@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     AUTH_APP_NAME: str = "fast_tmp"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # token过期时间
     BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = []
-    FASTAPI_SETTINGS_MODULE: str
+    FASTAPI_SETTINGS_MODULE: str = ""
     DEBUG: bool = True
     LOGIN_URL: str = "/api-token-auth"
     STATIC_ROOT = "static"
@@ -56,10 +56,28 @@ class Settings(BaseSettings):
 
     def __init__(self):
         super(Settings, self).__init__()
+        workdir = os.getcwd()  # 把工作路径加入到代码执行里面
         if not self.FASTAPI_SETTINGS_MODULE:
-            logger.warning("envirment FASTAPI_SETTINGS_MODULE is null")
+            import toml  # type:ignore
+
+            pyproject_path = os.path.join(workdir, "pyproject.toml")
+            if os.path.exists(pyproject_path):
+                with open(pyproject_path, "r") as f:
+                    doc = toml.load(f)
+                    if doc.get("tool") and doc["tool"].get("aerich"):
+                        self.FASTAPI_SETTINGS_MODULE = doc["tool"]["aerich"]["tortoise_orm"]
+                    elif doc.get("tool") and doc["tool"].get("fast-tmp"):
+                        self.FASTAPI_SETTINGS_MODULE = doc["tool"]["fast-tmp"]["tortoise_orm"]
+                    else:
+                        logger.warning("envirment FASTAPI_SETTINGS_MODULE is null")
+                # 去除后缀 只导入模块
+                if self.FASTAPI_SETTINGS_MODULE.endswith(".TORTOISE_ORM"):
+                    self.FASTAPI_SETTINGS_MODULE = self.FASTAPI_SETTINGS_MODULE.replace(
+                        ".TORTOISE_ORM", ""
+                    )
+            else:
+                logger.warning("envirment FASTAPI_SETTINGS_MODULE is null")
         try:
-            workdir = os.getcwd()  # 把工作路径加入到代码执行里面
             for path in sys.path:
                 if path == workdir:
                     break

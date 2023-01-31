@@ -1,9 +1,4 @@
-import os
-
 from starlette.requests import Request
-
-os.environ.setdefault("FASTAPI_SETTINGS_MODULE", "test_example.settings")
-
 from test_example.admin import AuthorModel, BookModel, FieldTestingModel
 from test_example.page import UserSelfInfo
 from tortoise.contrib.fastapi import register_tortoise

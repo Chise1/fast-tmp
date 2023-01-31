@@ -123,7 +123,7 @@ class Team(Model):
     """
 
     id = fields.IntField(pk=True)
-    name = fields.TextField()
+    name = fields.CharField(max_length=255)
 
     events: fields.ManyToManyRelation[Event]
     alias = fields.IntField(null=True)
