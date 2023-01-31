@@ -336,10 +336,10 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
         """
         if self._permissions is None:
             self._permissions = [
-                self.name + "_list",
-                self.name + "_create",
-                self.name + "_update",
-                self.name + "_delete",
+                self.prefix.lower() + "_list",
+                self.prefix.lower() + "_create",
+                self.prefix.lower() + "_update",
+                self.prefix.lower() + "_delete",
             ]
         user = request.user
         if user.is_superuser:
