@@ -10,7 +10,7 @@
 通过docker拉镜像：
 
 ```shell
-sudo docker run -p 8000:8000 chise123/fast-tmp-example:v1.0.1
+sudo docker run -p 8000:8000 chise123/fast-tmp-example:v1.0.2
 ```
 
 然后访问```http://127.0.0.1:8000/admin```即可，
