@@ -118,14 +118,13 @@ class TestPermission(BaseSite):
         await self.login("user1")
         response = await self.client.get("/admin/site")
         self.assertEqual(
-            response.json(),
             {
                 "data": {
                     "pages": [
-                        {"label": "book", "redirect": "Book", "url": "/"},
+                        {"label": "Book", "redirect": "book", "url": "/"},
                         {
                             "children": [
-                                {"label": "book", "schemaApi": "Book/schema", "url": "Book"}
+                                {"label": "Book", "schemaApi": "book/schema", "url": "book"}
                             ],
                             "label": "fieldtesting",
                         },
@@ -134,6 +133,7 @@ class TestPermission(BaseSite):
                 "msg": "",
                 "status": 0,
             },
+            response.json(),
         )
         perms2 = []
         for p in perms:
@@ -143,14 +143,13 @@ class TestPermission(BaseSite):
         await group.permissions.add(*perms2)
         response = await self.client.get("/admin/site")
         self.assertEqual(
-            response.json(),
             {
                 "data": {
                     "pages": [
-                        {"label": "book", "redirect": "Book", "url": "/"},
+                        {"label": "Book", "redirect": "book", "url": "/"},
                         {
                             "children": [
-                                {"label": "book", "schemaApi": "Book/schema", "url": "Book"}
+                                {"label": "Book", "schemaApi": "book/schema", "url": "book"}
                             ],
                             "label": "fieldtesting",
                         },
@@ -159,20 +158,20 @@ class TestPermission(BaseSite):
                 "msg": "",
                 "status": 0,
             },
-        )
-        response = await self.client.get("/admin/Book/schema")
-        self.assertEqual(
             response.json(),
+        )
+        response = await self.client.get("/admin/book/schema")
+        self.assertEqual(
             {
                 "status": 0,
                 "msg": "",
                 "data": {
                     "type": "page",
-                    "title": "book",
+                    "title": "Book",
                     "body": [
                         {
                             "type": "crud",
-                            "api": "Book/list",
+                            "api": "book/list",
                             "columns": [
                                 {"name": "name", "label": "name"},
                                 {
@@ -186,7 +185,7 @@ class TestPermission(BaseSite):
                                 {"label": "cover", "name": "cover", "type": "image"},
                             ],
                             "affixHeader": False,
-                            "quickSaveItemApi": "Book/patch/$pk",
+                            "quickSaveItemApi": "book/patch/$pk",
                             "syncLocation": False,
                             "filter": {
                                 "title": "过滤",
@@ -203,8 +202,9 @@ class TestPermission(BaseSite):
                     ],
                 },
             },
+            response.json(),
         )
-        response = await self.client.get("/admin/User/list")
+        response = await self.client.get("/admin/user/list")
         self.assertEqual(
             response.json(), {"status": 400, "msg": "you have no permission", "data": {}}
         )
@@ -221,13 +221,12 @@ class TestPermission(BaseSite):
         await self.login("user2")
         # 创建author
         response = await self.client.post(
-            "/admin/Author/create", json={"name": "author_name1", "birthday": "2022-10-13"}
+            "/admin/author/create", json={"name": "author_name1", "birthday": "2022-10-13"}
         )
         self.assertEqual(response.status_code, 200)
         # 查询author
-        response = await self.client.get("/admin/Author/list?page=1&perPage=10")
+        response = await self.client.get("/admin/author/list?page=1&perPage=10")
         self.assertEqual(
-            response.json(),
             {
                 "status": 0,
                 "msg": "",
@@ -236,29 +235,30 @@ class TestPermission(BaseSite):
                     "total": 1,
                 },
             },
+            response.json(),
         )
         # 修改作者姓名
         response = await self.client.put(
-            "/admin/Author/update/1", json={"name": "author1", "birthday": "2022-10-13", "pk": 3}
+            "/admin/author/update/1", json={"name": "author1", "birthday": "2022-10-13", "pk": 3}
         )
         self.assertEqual(response.status_code, 200)
         # 创建book
         # 上传图片
         with open("./tests/image/avatar1.jpeg", "rb") as f:
-            response = await self.client.post("/admin/Book/file/cover", files={"file": f})
+            response = await self.client.post("/admin/book/file/cover", files={"file": f})
         self.assertEqual(
             response.json(),
-            {"status": 0, "msg": "", "data": {"value": "/media/Book/cover/avatar1.jpeg"}},
+            {"status": 0, "msg": "", "data": {"value": "/media/book/cover/avatar1.jpeg"}},
         )
         data = {
             "name": "book1",
             "author": 1,
             "rating": 123,
-            "cover": "/media/Book/cover/avatar1.jpeg",
+            "cover": "/media/book/cover/avatar1.jpeg",
         }
-        response = await self.client.post("/admin/Book/create", json=data)
+        response = await self.client.post("/admin/book/create", json=data)
         self.assertEqual(response.status_code, 200)
-        response = await self.client.get("/admin/Book/list?page=1&perPage=10")
+        response = await self.client.get("/admin/book/list?page=1&perPage=10")
         self.assertEqual(
             response.json(),
             {
@@ -270,7 +270,7 @@ class TestPermission(BaseSite):
                             "name": "book1",
                             "author": {"label": "author1", "value": 1},
                             "rating": 123.0,
-                            "cover": "/media/Book/cover/avatar1.jpeg",
+                            "cover": "/media/book/cover/avatar1.jpeg",
                             "pk": 1,
                         }
                     ],
@@ -279,7 +279,7 @@ class TestPermission(BaseSite):
             },
         )
         # delete
-        response = await self.client.delete("/admin/Book/delete/1")
+        response = await self.client.delete("/admin/book/delete/1")
         self.assertEqual(response.status_code, 200)
 
     async def test_auth(self):
@@ -295,13 +295,13 @@ class TestPermission(BaseSite):
         await group.permissions.add(*perms)
         await self.login("user3")
         # create user
-        response = await self.client.get("/admin/User/select/groups")
+        response = await self.client.get("/admin/user/select/groups")
         self.assertEqual(
             response.json(),
             {"status": 0, "msg": "", "data": {"options": [{"value": 1, "label": "group3"}]}},
         )
         response = await self.client.post(
-            "/admin/User/create",
+            "/admin/user/create",
             json={
                 "username": "user4",
                 "password": "123456",
@@ -315,7 +315,7 @@ class TestPermission(BaseSite):
         self.assertEqual(response.status_code, 200)
         user4 = await User.get(username="user4")
         response = await self.client.post(
-            f"/admin/User/patch/{user4.pk}",
+            f"/admin/user/patch/{user4.pk}",
             json={
                 "is_active": "True",
                 "is_staff": "True",
@@ -326,7 +326,7 @@ class TestPermission(BaseSite):
             },
         )
         self.assertEqual(response.json(), {"status": 0, "msg": "", "data": {}})
-        response = await self.client.get("/admin/User/list")
+        response = await self.client.get("/admin/user/list")
         self.assertEqual(
             response.json(),
             {
@@ -335,7 +335,7 @@ class TestPermission(BaseSite):
                 "data": {
                     "items": [
                         {
-                            "id":1,
+                            "id": 1,
                             "name": "admin",
                             "username": "admin",
                             "is_active": "True",
@@ -344,7 +344,7 @@ class TestPermission(BaseSite):
                             "pk": 1,
                         },
                         {
-                            "id":2,
+                            "id": 2,
                             "name": "user3",
                             "username": "user3",
                             "is_active": "True",
@@ -353,7 +353,7 @@ class TestPermission(BaseSite):
                             "pk": 2,
                         },
                         {
-                            "id":3,
+                            "id": 3,
                             "name": "user4",
                             "username": "user4",
                             "is_active": "True",
@@ -369,12 +369,12 @@ class TestPermission(BaseSite):
         await self.login("user4")
         await self.login("user3")
         # group
-        response = await self.client.get("/admin/Group/list")
+        response = await self.client.get("/admin/group/list")
         self.assertEqual(
             response.json(),
             {"status": 0, "msg": "", "data": {"items": [{"name": "group3", "pk": 1}], "total": 1}},
         )
-        response = await self.client.get(f"/admin/Group/select/users?pk={group.pk}")
+        response = await self.client.get(f"/admin/group/select/users?pk={group.pk}")
         self.assertEqual(
             response.json(),
             {
@@ -390,7 +390,7 @@ class TestPermission(BaseSite):
         perms = await Permission.all().values("codename")
         perms = {perm["codename"] for perm in perms}
         self.assertEqual(all_perms, perms)
-        response = await self.client.post("/admin/Permission/extra/migrate")
+        response = await self.client.post("/admin/permission/extra/migrate")
         self.assertEqual(
             response.json(), {"status": 0, "msg": "success update table permission", "data": {}}
         )

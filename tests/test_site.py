@@ -9,7 +9,7 @@ class TestColumnField(BaseSite):
         data = response.json()
         # todo 增加数据验证
         assert data["status"] == 0
-        response = await self.client.get("/admin/Role/schema")
+        response = await self.client.get("/admin/role/schema")
         assert response.status_code == 200
         data = response.json()
         # todo 增加数据验证
@@ -28,10 +28,10 @@ class TestColumnField(BaseSite):
             "max_time_length": "00:23:19",
             "money": 10.34,
         }
-        response = await self.client.post("/admin/Role/create", json=role_data)
+        response = await self.client.post("/admin/role/create", json=role_data)
         assert response.status_code == 200
         # get数据
-        response = await self.client.get("/admin/Role/list")
+        response = await self.client.get("/admin/role/list")
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == 0
@@ -39,13 +39,13 @@ class TestColumnField(BaseSite):
         assert data["data"]["items"][0]["name"] == "John"
         # update
         pk = data["data"]["items"][0]["pk"]
-        response = await self.client.get(f"/admin/Role/update/{pk}")
+        response = await self.client.get(f"/admin/role/update/{pk}")
         assert response.status_code == 200
         assert response.json()["status"] == 0
         role_data["name"] = "Amd"
-        response = await self.client.put(f"/admin/Role/update/{pk}", json=role_data)
+        response = await self.client.put(f"/admin/role/update/{pk}", json=role_data)
         assert response.status_code == 200
-        response = await self.client.get("/admin/Role/list")
+        response = await self.client.get("/admin/role/list")
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == 0

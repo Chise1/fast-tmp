@@ -117,7 +117,7 @@ async def get_site(request: Request):
         for name, ml in model_list.items():
             ml_p = []
             for model in ml:
-                if model.name + "_list" in perms:
+                if model.prefix + "_list" in perms:
                     if not index_page:
                         index_page = model
                     ml_p.append(model)

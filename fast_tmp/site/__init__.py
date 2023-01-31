@@ -159,9 +159,9 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
 
     def get_operation(self, request: Request, codenames: List[str]):
         buttons = []
-        if "put" in self.methods and self.update_fields and self.name + "_update" in codenames:
+        if "put" in self.methods and self.update_fields and self.prefix + "_update" in codenames:
             buttons.append(self.get_update_one_button(request, codenames))
-        if "delete" in self.methods and self.name + "_delete" in codenames:
+        if "delete" in self.methods and self.prefix + "_delete" in codenames:
             buttons.append(self.get_del_one_button())
         if len(buttons) > 0:
             return Operation(buttons=buttons)
@@ -178,9 +178,9 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
     def get_crud(self, request: Request, codenames: List[str]):
         body: List[BaseAmisModel] = []
         columns = []
-        if "create" in self.methods and self.create_fields and self.name + "_create" in codenames:
+        if "create" in self.methods and self.create_fields and self.prefix + "_create" in codenames:
             body.extend(self.get_create_dialogation_button(request, codenames))
-        if "list" in self.methods and self.list_display and self.name + "_list" in codenames:
+        if "list" in self.methods and self.list_display and self.prefix + "_list" in codenames:
             columns.extend(self.get_list_fields(request))
         buttons = self.get_operation(request, codenames)
         if buttons:
@@ -191,7 +191,7 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
             quickSaveItemApi=self._prefix + "/patch/" + "$pk",
             syncLocation=False,
         )
-        if len(self.get_filters(request)) > 0 and self.name + "_list" in codenames:
+        if len(self.get_filters(request)) > 0 and self.prefix + "_list" in codenames:
             crud.filter = self.get_filter_page(request)
         body.append(crud)
         return body
@@ -381,7 +381,7 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
 
     def __init__(self, prefix: Optional[str] = None, label: Optional[str] = None):
         if not prefix:
-            prefix = self.model.__name__
+            prefix = self.model.__name__.lower()
         if not label:
             try:
                 self._name = self.model.table_description  # type: ignore
@@ -395,7 +395,7 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
                             break
                 pass
 
-        super().__init__(prefix, label or self.model.__name__.lower())
+        super().__init__(prefix, label or self.model.__name__)
         if not self.fields:
             self.fields = {}
         self.make_fields()
