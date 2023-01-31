@@ -335,6 +335,7 @@ class TestPermission(BaseSite):
                 "data": {
                     "items": [
                         {
+                            "id":1,
                             "name": "admin",
                             "username": "admin",
                             "is_active": "True",
@@ -343,6 +344,7 @@ class TestPermission(BaseSite):
                             "pk": 1,
                         },
                         {
+                            "id":2,
                             "name": "user3",
                             "username": "user3",
                             "is_active": "True",
@@ -351,6 +353,7 @@ class TestPermission(BaseSite):
                             "pk": 2,
                         },
                         {
+                            "id":3,
                             "name": "user4",
                             "username": "user4",
                             "is_active": "True",

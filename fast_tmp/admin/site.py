@@ -12,7 +12,8 @@ from fast_tmp.site.field import Password
 
 class UserAdmin(ModelAdmin):
     model = User
-    list_display = ("name", "username", "is_active", "is_superuser", "is_staff")
+    list_display = ("id", "name", "username", "is_active", "is_superuser", "is_staff")
+    ordering = ("id", "name", "username")
     inline = ("is_active", "is_superuser", "is_staff")
     create_fields = (
         "username",
@@ -38,6 +39,7 @@ class UserAdmin(ModelAdmin):
 class GroupAdmin(ModelAdmin):
     model = Group
     list_display = ("name", "users", "permissions")
+    ordering = ("name",)
     create_fields = ("name", "users", "permissions")
     update_fields = ("name", "users", "permissions")
 

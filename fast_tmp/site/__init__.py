@@ -9,7 +9,7 @@ from tortoise.queryset import QuerySet
 
 from fast_tmp.amis.actions import AjaxAction, DialogAction
 from fast_tmp.amis.base import BaseAmisModel, _Action
-from fast_tmp.amis.column import Operation
+from fast_tmp.amis.column import Column, Operation
 from fast_tmp.amis.crud import CRUD
 from fast_tmp.amis.enums import ButtonLevelEnum
 from fast_tmp.amis.forms import FilterModel, Form
@@ -31,7 +31,8 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
     inline: Tuple[str, ...] = ()
     # search list
     searchs: Tuple[str, ...] = ()
-    filters: Tuple[Union[str, ModelFilter], ...] = ()
+    filters: Tuple[Union[str, ModelFilter], ...] = ()  # 过滤字段的字典，字段名和对应的ModelFilter
+    ordering: Tuple[str, ...] = ()  # 定义哪些字段支持排序
     # create
     create_fields: Tuple[str, ...] = ()
     update_fields: Tuple[str, ...] = ()
@@ -44,13 +45,13 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
         "delete",
         # "deleteMany",
     )  # todo 需要retrieve？
-    selct_defs: Dict[
+    select_defs: Dict[
         str,
         Callable[
             [Request, Optional[str], Optional[int], Optional[int], Optional[Any]],
             Coroutine[Any, Any, List[dict]],
         ],
-    ]
+    ]  # 自定义的页面处理函数
     _filters = None
 
     def get_filters(self, request: Request) -> Dict[str, ModelFilter]:
@@ -115,13 +116,19 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
             )
         ]
 
-    def get_list_page(self, request: Request):
+    def get_list_fields(self, request: Request) -> List[Column]:
+        """
+        获取列表显示字段
+        """
         res = []
         for field_name, col in self.get_list_distplay().items():
             if field_name in self.inline:
-                res.append(col.get_column_inline(request))
+                column = col.get_column_inline(request)
             else:
-                res.append(col.get_column(request))
+                column = col.get_column(request)
+            if field_name in self.ordering:
+                column.sortable = True
+            res.append(column)
         return res
 
     def get_del_one_button(self):
@@ -174,7 +181,7 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
         if "create" in self.methods and self.create_fields and self.name + "_create" in codenames:
             body.extend(self.get_create_dialogation_button(request, codenames))
         if "list" in self.methods and self.list_display and self.name + "_list" in codenames:
-            columns.extend(self.get_list_page(request))
+            columns.extend(self.get_list_fields(request))
         buttons = self.get_operation(request, codenames)
         if buttons:
             columns.append(buttons)
@@ -294,10 +301,14 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
         request: Request,
         perPage: int = 10,
         page: int = 1,
+        orderBy: Optional[str] = None,
+        orderDir: Optional[str] = None,
     ) -> ListDataWithPage:
         base_queryset = self.queryset(request)
         base_queryset = self.queryset_filter(request, base_queryset)
         queryset = self.prefetch(request, base_queryset, self.get_list_distplay())
+        if orderBy and orderBy in self.ordering:
+            queryset = queryset.order_by("-" + orderBy if orderDir == "desc" else orderBy)
         datas = await queryset.limit(perPage).offset((page - 1) * perPage)
         res = []
         for i in datas:
@@ -394,10 +405,10 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
                 logger.warning("inline field " + i + " not in list_display")
 
         # 同步select或其他接口
-        self.selct_defs = {}
+        self.select_defs = {}
         for field_name, field in self.fields.items():
             if isinstance(field, RelationSelectApi):
-                self.selct_defs[field_name] = field.get_selects
+                self.select_defs[field_name] = field.get_selects
 
     async def select_options(
         self,
@@ -410,7 +421,7 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
         """
         外键的枚举获取值以及多对多获取对象列表
         """
-        return await self.selct_defs[name](request, pk, perPage, page, None)
+        return await self.select_defs[name](request, pk, perPage, page, None)
 
     async def check_perm(self, request: Request, codename: str):
         user = request.user

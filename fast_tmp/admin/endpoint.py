@@ -20,9 +20,11 @@ async def list_view(
     page_model: ModelSession = Depends(get_model_site),
     perPage: int = 10,
     page: int = 1,
+    orderBy: Optional[str] = None,
+    orderDir: Optional[str] = None,
 ):
     await page_model.check_perm(request, resource + "_list")
-    datas = await page_model.list(request, perPage, page)
+    datas = await page_model.list(request, perPage, page, orderBy, orderDir)
     return BaseRes(data=datas)
 
 

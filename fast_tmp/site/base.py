@@ -274,6 +274,8 @@ class ModelSession:
         request: Request,
         perPage: int = 10,
         page: int = 1,
+        orderBy: Optional[str] = None,
+        orderDir: Optional[str] = None,
     ) -> ListDataWithPage:
         """
         获取数据列表

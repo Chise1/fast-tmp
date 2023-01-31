@@ -24,6 +24,7 @@ class Column(BaseModel):
     type: Optional[str]  # 把这个和schema获取的参数进行融合，保证schema获取的值可以使用
     name: str  # type: ignore
     label: str
+    sortable: Optional[bool]
 
 
 class QuickEdit(BaseModel):
