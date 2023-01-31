@@ -113,7 +113,7 @@ from fast_tmp.conf import settings
 ...
 ```
 
-## 配置文件路径
+## 配置文件路径[biz-perl0131.log](..%2F..%2F..%2FDownloads%2Fbiz-perl0131.log)
 
 fast-tmp可以通过读取pyproject.toml文件获取到settings.py文件所在位置
 只需要在pyproject.toml有这个配置：
