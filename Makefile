@@ -41,3 +41,6 @@ test_html:
 
 cov: deps
 	$(py_warn) FASTAPI_SETTINGS_MODULE=tests.settings TORTOISE_TEST_DB=sqlite://:memory: pytest --cov-report xml $(pytest_opts)
+
+build: deps
+    @poetry build
