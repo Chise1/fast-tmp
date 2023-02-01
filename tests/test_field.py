@@ -35,7 +35,7 @@ class TestIntEnumControl(BaseSite):
         data = response.json()
         assert data["status"] == 0
         # 测试写入数据
-        role_data = {"e2": "two"}
+        role_data = {"int_enum_2": "two", "bool_2": "False"}
         response = await self.client.post("/admin/intenumfield/create", json=role_data)
         assert response.status_code == 200
         data = response.json()
@@ -46,9 +46,11 @@ class TestIntEnumControl(BaseSite):
         data = response.json()
         assert data["status"] == 0
         assert data["data"]["total"] == 1
-        self.assertEqual(data["data"]["items"][0]["e1"], None)
-        assert data["data"]["items"][0]["e2"] == "two"
-        role_data = {"e2": "three"}
+        self.assertEqual(data["data"]["items"][0]["int_enum_1"], None)
+        assert data["data"]["items"][0]["int_enum_2"] == "two"
+        assert data["data"]["items"][0]["bool_2"] == "False"
+        assert data["data"]["items"][0]["bool_1"] == "None"
+        role_data = {"int_enum_2": "three", "bool_1": "xx"}
         response = await self.client.post("/admin/intenumfield/create", json=role_data)
         assert response.status_code == 200
         data = response.json()

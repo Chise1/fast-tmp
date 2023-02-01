@@ -73,6 +73,7 @@ class FormItemEnum(str, Enum):
     input_image = "input-image"
     input_file = "input-file"
     picker = "picker"
+    input_time = "input-time"
 
 
 class FormItem(AbstractControl):

@@ -158,8 +158,11 @@ class DateTimeControl(BaseAdminControl):
         return self._column_inline
 
     def amis_2_orm(self, value: Any) -> Any:
-        if (value == "None" or not value) and self._field.null:  # type: ignore
-            return None
+        if value == "None" or not value:  # type: ignore
+            if self._field.null:
+                return None
+            else:
+                raise TmpValueError(f"{self.label} 不能为 {value}")
         return datetime.datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
 
     def orm_2_amis(self, value: datetime.datetime) -> Any:
@@ -184,8 +187,11 @@ class DateControl(BaseAdminControl):
         return self._column_inline
 
     def amis_2_orm(self, value: Any) -> Any:
-        if (value == "None" or not value) and self._field.null:  # type: ignore
-            return None
+        if value == "None" or not value:  # type: ignore
+            if self._field.null:
+                return None
+            else:
+                raise TmpValueError(f"{self.label} 不能为 {value}")
         year, month, day = value.split("-")
         return datetime.date(int(year), int(month), int(day))
 
@@ -196,7 +202,7 @@ class DateControl(BaseAdminControl):
 
 
 class TimeControl(BaseAdminControl):
-    _control_type = FormItemEnum.time
+    _control_type = FormItemEnum.input_time
 
     def get_formitem(self, request: Request, codenames: Iterable[str]) -> FormItem:
         if not self._control:
@@ -238,6 +244,7 @@ class JsonControl(TextControl):  # fixme 用代码编辑器重构？
         if not self._control:
             super().get_formitem(request, codenames)
             self._control.validations = "isJson"
+            self._control.value = "{}"  # fixme jsonfield不能为空
         return self._control
 
     def get_column_inline(self, request: Request) -> Column:

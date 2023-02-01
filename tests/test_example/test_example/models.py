@@ -156,8 +156,8 @@ class FieldTesting(Model):
     money = fields.DecimalField(max_digits=10, decimal_places=2, null=True)
     height = fields.FloatField(null=True)
     married = fields.BooleanField(default=False)
-    gender = fields.CharEnumField(Gender)
-    degree = fields.IntEnumField(Degree, default=Degree.unknow)
+    gender = fields.CharEnumField(Gender, description="gender")
+    degree = fields.IntEnumField(Degree, default=Degree.unknow, description="degree")
     game_length = fields.BigIntField(default=0)  # 游戏时长，按秒计算
     avator = fields.BinaryField(null=True)  # 头像
     config = fields.JSONField(null=True)
@@ -173,7 +173,7 @@ class FieldTesting(Model):
     height_inline = fields.FloatField(null=True)
     married_inline = fields.BooleanField(null=True, default=False)
     gender_inline = fields.CharEnumField(Gender, null=True)
-    degree_inline = fields.IntEnumField(Degree, null=True)
+    degree_inline = fields.IntEnumField(Degree, null=True, description="degree")
     game_length_inline = fields.BigIntField(null=True, default=0)  # 游戏时长，按秒计算
     avator_inline = fields.BinaryField(null=True)  # 头像
     config_inline = fields.JSONField(null=True)

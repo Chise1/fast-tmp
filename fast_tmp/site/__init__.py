@@ -15,7 +15,7 @@ from fast_tmp.amis.enums import ButtonLevelEnum
 from fast_tmp.amis.forms import FilterModel, Form
 from fast_tmp.amis.frame import Dialog
 from fast_tmp.amis.page import Page
-from fast_tmp.exceptions import FieldsError, NotFoundError, PermError
+from fast_tmp.exceptions import FieldsError, NotFoundError, PermError, TmpValueError
 from fast_tmp.models import Permission
 from fast_tmp.responses import ListDataWithPage
 from fast_tmp.site.base import ModelFilter, ModelSession, PageRouter
@@ -220,6 +220,8 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
                 await control.set_value(request, obj, data[field_name])
             except ValidationError as e:
                 err_fields[field_name] = str(e)
+            except TmpValueError as e:
+                err_fields[field_name] = str(e)
         if err_fields:
             raise FieldsError(err_fields)
         await obj.save()
@@ -241,6 +243,8 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
                 await control.set_value(request, obj, data[field_name])
             except ValidationError as e:
                 err_fields[field_name] = str(e)
+            except TmpValueError as e:
+                err_fields[field_name] = str(e)
         if err_fields:
             raise FieldsError(err_fields)
         await obj.save()
@@ -256,6 +260,8 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
                 if cor:
                     cors.append(cor)
             except ValidationError as e:
+                field_errors[field_name] = str(e)
+            except TmpValueError as e:
                 field_errors[field_name] = str(e)
         if field_errors:
             raise FieldsError(field_errors)

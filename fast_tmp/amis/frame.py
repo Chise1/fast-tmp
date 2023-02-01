@@ -17,6 +17,7 @@ class Dialog(BaseModel):
 
 # 参考 https://baidu.gitee.io/amis/docs/components/dialog?page=1
 
+
 # 抽屉
 class Drawer(BaseModel):
     title: str

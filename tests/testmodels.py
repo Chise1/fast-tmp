@@ -177,5 +177,7 @@ class I1(IntEnum):
 
 
 class IntEnumField(Model):
-    e1 = fields.IntEnumField(I1, null=True)
-    e2 = fields.IntEnumField(I1, default=I1.one)
+    int_enum_1 = fields.IntEnumField(I1, null=True)
+    int_enum_2 = fields.IntEnumField(I1, default=I1.one)
+    bool_1 = fields.BooleanField(null=True)
+    bool_2 = fields.BooleanField(default=True)
