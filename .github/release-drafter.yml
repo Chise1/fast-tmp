@@ -20,6 +20,7 @@ categories:
     labels:
       - documentation
       - 'kind/doc'
+      - doc
   - title: 👻 Maintenance
     labels:
       - chore
