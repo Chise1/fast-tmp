@@ -167,7 +167,7 @@ class DateTimeControl(BaseAdminControl):
 
 
 class DateControl(BaseAdminControl):
-    _control_type = FormItemEnum.date
+    _control_type = FormItemEnum.input_date
 
     def get_formitem(self, request: Request, codenames: Iterable[str]) -> FormItem:
         if not self._control:
@@ -492,7 +492,7 @@ class ImageControl(BaseAdminControl):
             self._control = ImageItem(
                 name=self.name,
                 label=self.label,
-                receiver=f"{self._field.model.__name__}/file/{self.name}",  # type: ignore
+                receiver=f"{self._field.model.__name__.lower()}/file/{self.name}",  # type: ignore
             )
             if not self._field.null:  # type: ignore
                 self._control.required = True

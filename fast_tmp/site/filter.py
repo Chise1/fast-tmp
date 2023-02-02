@@ -14,7 +14,8 @@ def make_filter_by_str(request: Request, name: str, field: BaseAdminControl) -> 
     filter_info = control.dict(exclude_none=True)
     filter_info["name"] = name
     filter_info["label"] = name
-    filter_info.pop("required")
+    if filter_info.get("required") is not None:
+        filter_info.pop("required")
     return CommonFilter(field=field, **filter_info)
 
 

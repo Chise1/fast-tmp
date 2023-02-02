@@ -176,6 +176,13 @@ class I1(IntEnum):
     two = 2
 
 
+class For(Model):
+    name = fields.CharField(max_length=32)
+
+    def __str__(self):
+        return self.name
+
+
 class IntEnumField(Model):
     int_enum_1 = fields.IntEnumField(I1, null=True)
     int_enum_2 = fields.IntEnumField(I1, default=I1.one)
@@ -185,3 +192,4 @@ class IntEnumField(Model):
     datetime_2 = fields.DatetimeField(default=datetime.datetime.now)
     datetime_3 = fields.DatetimeField(default=datetime.datetime.fromtimestamp(0))
     datetime_4 = fields.DatetimeField()
+    foreignkey_1 = fields.ForeignKeyField("fast_tmp.For", null=True, related_name="foreignkey_1s")

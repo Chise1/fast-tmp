@@ -4,6 +4,7 @@
 import datetime
 
 from tests.base import BaseSite
+from tests.testmodels import For
 
 
 class TestDecimalControl(BaseSite):
@@ -36,6 +37,15 @@ class TestIntEnumControl(BaseSite):
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == 0
+        # 写入一个测试用的外键
+        await For(name="xx").save()
+        foreign_data = (await self.client.get("/admin/intenumfield/select/foreignkey_1")).json()
+        self.assertEqual(
+            {"status": 0, "msg": "", "data": {"options": [{"value": 1, "label": "xx"}]}},
+            foreign_data,
+        )
+        # self.assertEqual()
+
         # 测试写入数据
         role_data = {
             "int_enum_2": "two",

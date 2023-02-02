@@ -66,4 +66,4 @@ class AuthorModel(ModelAdmin):
     create_fields = ("name", "birthday")
     inline = ("name",)
     update_fields = ("name", "birthday")
-    filters = ["birthday", "birthday__gte", "birthday__lte"]
+    filters = ("birthday", "birthday__gte", "birthday__lte")

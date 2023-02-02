@@ -71,7 +71,7 @@ class DecModel(ModelAdmin):
 
 class IntEnumAdmin(ModelAdmin):
     model = IntEnumField
-    list_display = (
+    inline = (
         "int_enum_1",
         "int_enum_2",
         "bool_1",
@@ -81,9 +81,9 @@ class IntEnumAdmin(ModelAdmin):
         "datetime_3",
         "datetime_4",
     )
+    list_display = inline + ("foreignkey_1",)
     create_fields = list_display
     update_fields = list_display
-    inline = list_display
 
 
 register_model_site({"fieldtesting": [IntEnumAdmin()]})

@@ -19,7 +19,7 @@ def generate_token():
 
 class Author(Model):
     name = fields.CharField(max_length=255)
-    birthday = fields.DateField()
+    birthday = fields.DateField(default=datetime.date.today)
 
     def __str__(self):
         return self.name
