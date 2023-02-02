@@ -162,7 +162,7 @@ class FieldTesting(Model):
     avator = fields.BinaryField(null=True)  # 头像
     config = fields.JSONField(null=True)
     waiting_length = fields.TimeDeltaField(null=True)  # 等待时长
-    max_time_length = fields.TimeField(default=datetime.time())  # 最长游戏时长
+    max_time_length = fields.TimeField(default=datetime.time)  # 最长游戏时长
     uuid = fields.UUIDField(default=uuid.uuid4)
     level = fields.SmallIntField(default=0)
     name_inline = fields.CharField(null=True, max_length=32)
@@ -171,14 +171,16 @@ class FieldTesting(Model):
     birthday_inline = fields.DateField(null=True)
     money_inline = fields.DecimalField(null=True, max_digits=10, decimal_places=2)
     height_inline = fields.FloatField(null=True)
-    married_inline = fields.BooleanField(null=True, default=False)
+    married_inline = fields.BooleanField(null=True)
     gender_inline = fields.CharEnumField(Gender, null=True)
     degree_inline = fields.IntEnumField(Degree, null=True, description="degree")
     game_length_inline = fields.BigIntField(null=True, default=0)  # 游戏时长，按秒计算
     avator_inline = fields.BinaryField(null=True)  # 头像
     config_inline = fields.JSONField(null=True)
     waiting_length_inline = fields.TimeDeltaField(null=True)  # 等待时长
-    max_time_length_inline = fields.TimeField(null=True, default=datetime.time())  # 最长游戏时长
+    max_time_length_inline = fields.TimeField(null=True, default=datetime.time)  # 最长游戏时长
     uuid_inline = fields.UUIDField(null=True)
     level_inline = fields.SmallIntField(null=True, default=0)
-    created_time = fields.DatetimeField(auto_now_add=True, null=True)
+    created_time = fields.DatetimeField(auto_now_add=True)
+    def_time = fields.DatetimeField(null=True)  # 测试datetime为空的返回值
+    def_time2 = fields.DatetimeField(default=datetime.datetime.now)

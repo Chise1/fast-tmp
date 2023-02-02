@@ -18,6 +18,8 @@ class FieldTestingModel(ModelAdmin):
         "birthday",
         "config",
         "max_time_length",
+        "def_time",
+        "def_time2",
     )
     inline = (
         "name_inline",
@@ -28,12 +30,15 @@ class FieldTestingModel(ModelAdmin):
         "birthday",
         "config",
         "max_time_length",
+        "def_time",
+        "def_time2",
     )
     create_fields = (
         "name",
         "age",
         "desc",
         "married",
+        "married_inline",
         "degree",
         "degree_inline",
         "gender",
@@ -41,7 +46,10 @@ class FieldTestingModel(ModelAdmin):
         "birthday",
         "config",
         "max_time_length",
+        "def_time",
+        "def_time2",
     )
+    update_fields = create_fields
 
 
 class BookModel(ModelAdmin):

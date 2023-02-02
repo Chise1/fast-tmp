@@ -71,7 +71,16 @@ class DecModel(ModelAdmin):
 
 class IntEnumAdmin(ModelAdmin):
     model = IntEnumField
-    list_display = ("int_enum_1", "int_enum_2", "bool_1", "bool_2")
+    list_display = (
+        "int_enum_1",
+        "int_enum_2",
+        "bool_1",
+        "bool_2",
+        "datetime_1",
+        "datetime_2",
+        "datetime_3",
+        "datetime_4",
+    )
     create_fields = list_display
     update_fields = list_display
     inline = list_display

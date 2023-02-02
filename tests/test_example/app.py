@@ -30,7 +30,7 @@ async def create_user():
 
 @app.post("/form-test")
 async def test_form(request: Request):
-    print(await request.json())
+    await request.json()
     return BaseRes()
 
 

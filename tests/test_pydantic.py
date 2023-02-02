@@ -166,7 +166,7 @@ class TestPydantic(BaseSite):
         )
 
     def test_eventlist_schema(self):
-        print(self.Event_Pydantic_List.schema())
+        self.Event_Pydantic_List.schema()
         self.assertEqual(
             self.Event_Pydantic_List.schema(),
             {
@@ -313,7 +313,6 @@ class TestPydantic(BaseSite):
 
     async def test_eventlist(self):
         eventlp = await self.Event_Pydantic_List.from_queryset(Event.all())
-        # print(eventlp.json(indent=4))
         eventldict = eventlp.dict()["__root__"]
 
         # Remove timestamps
@@ -372,7 +371,6 @@ class TestPydantic(BaseSite):
 
     async def test_event(self):
         eventp = await self.Event_Pydantic.from_tortoise_orm(await Event.get(name="Test"))
-        # print(eventp.json(indent=4))
         eventdict = eventp.dict()
 
         # Remove timestamps

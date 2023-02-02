@@ -260,7 +260,6 @@ class TestPermission(BaseSite):
         self.assertEqual(response.status_code, 200)
         response = await self.client.get("/admin/book/list?page=1&perPage=10")
         self.assertEqual(
-            response.json(),
             {
                 "status": 0,
                 "msg": "",
@@ -277,6 +276,7 @@ class TestPermission(BaseSite):
                     "total": 1,
                 },
             },
+            response.json(),
         )
         # delete
         response = await self.client.delete("/admin/book/delete/1")

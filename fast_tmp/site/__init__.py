@@ -214,10 +214,9 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
     async def update(self, request: Request, pk: str, data: Dict[str, Any]) -> Model:
         obj = await self.get_instance(request, pk)
         err_fields = {}
-        for field_name in self.update_fields:
-            control = self.get_formitem_field(field_name)
+        for field_name, field in self.get_update_fields().items():
             try:
-                await control.set_value(request, obj, data[field_name])
+                await field.set_value(request, obj, data[field_name])
             except ValidationError as e:
                 err_fields[field_name] = str(e)
             except TmpValueError as e:

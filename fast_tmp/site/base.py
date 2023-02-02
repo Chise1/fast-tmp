@@ -52,9 +52,10 @@ class AbstractAmisAdminDB:
         """
         pass
 
-    def validate(self, value: Any) -> Any:
+    def validate(self, value: Any, is_create=False) -> Any:
         """
         对数据进行校验
+        is_create: 当model为创建的时候，如果默认值是函数，则会传空过来，这个时候需要调用函数生成值。
         """
         return value
 
@@ -135,10 +136,11 @@ class BaseAdminControl(AbstractAmisAdminDB, AbstractControl, AmisOrm):
                 description=self.description,
                 placeholder=self.placeholder,
             )
-            if not self._field.null:  # type: ignore
-                self._control.required = True
-            if self._field.default is not None:  # type: ignore
-                self._control.value = self.orm_2_amis(self._field.default)  # type: ignore
+            if not callable(self._field.default):  # type: ignore
+                if not self._field.null:  # type: ignore
+                    self._control.required = True
+                if self._field.default is not None:  # type: ignore
+                    self._control.value = self.orm_2_amis(self._field.default)  # type: ignore
         return self._control
 
     def options(self):
@@ -161,7 +163,7 @@ class BaseAdminControl(AbstractAmisAdminDB, AbstractControl, AmisOrm):
         return self._column_inline
 
     async def set_value(self, request: Request, obj: Model, value: Any):
-        value = await self.validate(value)
+        value = await self.validate(value, is_create=request.method == "POST")
         setattr(obj, self.name, value)
 
     async def get_value(self, request: Request, obj: Model) -> Any:
@@ -182,7 +184,12 @@ class BaseAdminControl(AbstractAmisAdminDB, AbstractControl, AmisOrm):
         self.description = kwargs.get("description") or description
         self.placeholder = kwargs.get("placeholder") or placeholder
 
-    async def validate(self, value: Any) -> Any:
+    async def validate(self, value: Any, is_create=False) -> Any:
+        if not value and is_create:
+            if (
+                callable(self._field.default) and not self._field.null  # type: ignore
+            ):  # 不为空且默认值是函数的时候，前段页面如果传null则使用默认值
+                return self._field.default()  # type: ignore
         value = self.amis_2_orm(value)
         self._field.validate(value)  # type: ignore
         return value

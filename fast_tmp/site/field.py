@@ -118,11 +118,8 @@ class BooleanControl(IntEnumControl):
     def options(self) -> List[str]:
         return ["True", "False"]
 
-    async def validate(self, value: Any) -> Any:
-        return self.amis_2_orm(value)
-
     def amis_2_orm(self, value: Any) -> Any:
-        if (value == "None" or not value) and self._field.null:  # type: ignore
+        if not value and self._field.null:  # type: ignore
             return None
         if value == "True":
             return True
@@ -132,7 +129,7 @@ class BooleanControl(IntEnumControl):
 
     def orm_2_amis(self, value: Any) -> Any:
         if value is None:
-            return "None"
+            return
         elif value:
             return "True"
         return "False"
@@ -157,18 +154,16 @@ class DateTimeControl(BaseAdminControl):
             self._column_inline.quickEdit.format = "YYYY-MM-DD HH:mm:ss"
         return self._column_inline
 
-    def amis_2_orm(self, value: Any) -> Any:
-        if value == "None" or not value:  # type: ignore
-            if self._field.null:
-                return None
-            else:
-                raise TmpValueError(f"{self.label} 不能为 {value}")
-        return datetime.datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
+    def amis_2_orm(self, value: str) -> Any:
+        if value:
+            return datetime.datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
+        if self._field.null:  # type: ignore
+            return None
+        raise TmpValueError(f"{self.label} 不能为 {value}")
 
     def orm_2_amis(self, value: datetime.datetime) -> Any:
-        if value is None:
-            return None
-        return value.strftime("%Y-%m-%d %H:%M:%S")
+        if value is not None:
+            return value.strftime("%Y-%m-%d %H:%M:%S")
 
 
 class DateControl(BaseAdminControl):
@@ -187,13 +182,12 @@ class DateControl(BaseAdminControl):
         return self._column_inline
 
     def amis_2_orm(self, value: Any) -> Any:
-        if value == "None" or not value:  # type: ignore
-            if self._field.null:
-                return None
-            else:
-                raise TmpValueError(f"{self.label} 不能为 {value}")
-        year, month, day = value.split("-")
-        return datetime.date(int(year), int(month), int(day))
+        if value:
+            year, month, day = value.split("-")
+            return datetime.date(int(year), int(month), int(day))
+        if self._field.null:  # type: ignore
+            return None
+        raise TmpValueError(f"{self.label} 不能为 {value}")
 
     def orm_2_amis(self, value: datetime.date) -> Any:
         if value is None:
@@ -219,19 +213,18 @@ class TimeControl(BaseAdminControl):
         return self._column_inline
 
     def amis_2_orm(self, value: Any) -> Any:
-        if not value:
+        if value:
+            return datetime.time.fromisoformat(value)
+        if self._field.null:  # type: ignore
             return None
-        return datetime.time.fromisoformat(value)
+        raise TmpValueError(f"{self.label} 不能为 {value}")
 
     def orm_2_amis(self, value: Optional[datetime.time]) -> Any:
-        if value is None:
-            return None
-        if callable(value):
-            return value().strftime("%H:%M:%S")
-        return value.strftime("%H:%M:%S")
+        if value is not None:
+            return value.strftime("%H:%M:%S")
 
 
-class JsonControl(TextControl):  # fixme 用代码编辑器重构？
+class JsonControl(TextControl):
     def amis_2_orm(self, value: Any) -> Any:
         if not value:
             return None
@@ -244,7 +237,10 @@ class JsonControl(TextControl):  # fixme 用代码编辑器重构？
         if not self._control:
             super().get_formitem(request, codenames)
             self._control.validations = "isJson"
-            self._control.value = "{}"  # fixme jsonfield不能为空
+            if not callable(self._field.default):  # type: ignore
+                self._control.required = True  # jsonfield不能为空不然写数据库必爆炸
+                if not self._control.value:  # 如果有默认值则已经在父类里面被调用
+                    self._control.value = "{}"
         return self._control
 
     def get_column_inline(self, request: Request) -> Column:
@@ -422,7 +418,7 @@ class ManyToManyControl(BaseAdminControl, RelationSelectApi):
             return value.split(",")
         return [i["value"] for i in value]
 
-    async def validate(self, value: Any) -> Any:
+    async def validate(self, value: Any, is_create=False) -> Any:
         if value is not None:
             pks = self.amis_2_orm(value)
             if len(pks) > 0:

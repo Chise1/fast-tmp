@@ -181,3 +181,7 @@ class IntEnumField(Model):
     int_enum_2 = fields.IntEnumField(I1, default=I1.one)
     bool_1 = fields.BooleanField(null=True)
     bool_2 = fields.BooleanField(default=True)
+    datetime_1 = fields.DatetimeField(null=True)
+    datetime_2 = fields.DatetimeField(default=datetime.datetime.now)
+    datetime_3 = fields.DatetimeField(default=datetime.datetime.fromtimestamp(0))
+    datetime_4 = fields.DatetimeField()
