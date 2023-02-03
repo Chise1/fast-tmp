@@ -31,12 +31,8 @@ class TestDecimalControl(BaseSite):
 
 
 class TestIntEnumControl(BaseSite):
-    async def test_intenum(self):
+    async def test_select(self):
         await self.login()
-        response = await self.client.get("/admin/intenumfield/schema")
-        assert response.status_code == 200
-        data = response.json()
-        assert data["status"] == 0
         # 写入一个测试用的外键
         await For(name="xx").save()
         foreign_data = (await self.client.get("/admin/intenumfield/select/foreignkey_1")).json()
@@ -45,6 +41,13 @@ class TestIntEnumControl(BaseSite):
             foreign_data,
         )
         # self.assertEqual()
+
+    async def test_intenum(self):
+        await self.login()
+        response = await self.client.get("/admin/intenumfield/schema")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == 0
 
         # 测试写入数据
         role_data = {

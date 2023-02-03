@@ -262,7 +262,7 @@ class RelationSelectApi:
         pk: Optional[str],
         perPage: Optional[int],
         page: Optional[int],
-        filter: Any = None,
+        filter: Any = None,  # todo 考虑支持页面选项搜索
     ) -> List[dict]:
         """
         多对多或多对一的时候，用于选择项的读取
@@ -281,22 +281,22 @@ class ForeignKeyControl(BaseAdminControl, RelationSelectApi):
         filter: Any = None,
     ):
         field_model_all = self._field.related_model.all()  # type: ignore
-        if filter:
-            if isinstance(filter, dict):
-                field_model_all = self._field.related_model.filter(**filter)  # type: ignore
-            else:
-                field_model_all = self._field.related_model.filter(filter)  # type: ignore
-        if perPage is not None and page is not None:
-            field_model = field_model_all.limit(perPage).offset((page - 1) * perPage)
-            count = await field_model_all.count()
-            data = await field_model
-            return ListDataWithPage(
-                total=count,
-                items=[{"value": i.pk, "label": str(i)} for i in data],
-            )
-        else:
-            data = await field_model_all
-            return {"options": [{"value": i.pk, "label": str(i)} for i in data]}
+        # if filter:
+        #     if isinstance(filter, dict):
+        #         field_model_all = self._field.related_model.filter(**filter)  # type: ignore
+        #     else:
+        #         field_model_all = self._field.related_model.filter(filter)  # type: ignore
+        # if perPage is not None and page is not None:
+        #     field_model = field_model_all.limit(perPage).offset((page - 1) * perPage)
+        #     count = await field_model_all.count()
+        #     data = await field_model
+        #     return ListDataWithPage(
+        #         total=count,
+        #         items=[{"value": i.pk, "label": str(i)} for i in data],
+        #     )
+        # else:
+        data = await field_model_all
+        return {"options": [{"value": i.pk, "label": str(i)} for i in data]}
 
     def prefetch(self) -> Optional[str]:
         return "select"
@@ -360,7 +360,7 @@ class ManyToManyControl(BaseAdminControl, RelationSelectApi):
                             title=self.label,
                             body=CRUD(
                                 api="get:"
-                                + self._field.model.__name__  # type: ignore
+                                + self._field.model.__name__.lower()  # type: ignore
                                 + f"/select/{self.name}?pk=$pk",
                                 columns=[
                                     Column(label="主键", name="pk"),
@@ -386,11 +386,11 @@ class ManyToManyControl(BaseAdminControl, RelationSelectApi):
             queryset = related_model.filter(**{self._field.related_name: pk})  # type: ignore
         else:
             queryset = related_model.all()
-        if filter:
-            if isinstance(filter, dict):
-                queryset = queryset.filter(**filter)
-            else:
-                queryset = queryset(filter)
+        # if filter:
+        #     if isinstance(filter, dict):
+        #         queryset = queryset.filter(**filter)
+        #     else:
+        #         queryset = queryset(filter)
         if pk is not None:
             count = await queryset.count()
             data = await queryset
