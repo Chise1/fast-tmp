@@ -62,12 +62,12 @@ class DecimalControl(BaseAdminControl):
             self._control = NumberItem(
                 type=self._control_type, name=self.name, label=self.label, big=True
             )
-            self._control.precision = self._field.decimal_places  # type: ignore
-            self._control.max = self._field.max_digits * 9  # type: ignore
-            if not self._field.null:  # type: ignore
+            self._control.precision = self._field.decimal_places
+            self._control.max = self._field.max_digits * 9
+            if not self._field.null:
                 self._control.required = True
-            if self._field.default is not None:  # type: ignore
-                self._control.value = self.orm_2_amis(self._field.default)  # type: ignore
+            if self._field.default is not None:
+                self._control.value = self.orm_2_amis(self._field.default)
         return self._control
 
     def amis_2_orm(self, value: float) -> Any:
@@ -87,7 +87,7 @@ class IntEnumControl(BaseAdminControl):
             super().get_formitem(request, codenames)
             d = self._control.dict(exclude_none=True)
             d.pop("type")
-            if self._field.null:  # type: ignore
+            if self._field.null:
                 d["clearable"] = True
             self._control = SelectItem(**d)
             self._control.options = self.options()
@@ -98,16 +98,16 @@ class IntEnumControl(BaseAdminControl):
             return value.name
 
     def amis_2_orm(self, value: Any) -> Any:
-        if value is None and self._field.null:  # type: ignore
+        if value is None and self._field.null:
             return None
-        for i in self._field.enum_type:  # type: ignore
+        for i in self._field.enum_type:
             if i.name == value:
                 return i.value
         raise TmpValueError(f"{self.label} 不能为 {value}")
 
     def options(self) -> List[str]:
         res = []
-        for i in self._field.enum_type:  # type: ignore
+        for i in self._field.enum_type:
             res.append(i.name)
         return res
 
@@ -119,7 +119,7 @@ class BooleanControl(IntEnumControl):
         return ["True", "False"]
 
     def amis_2_orm(self, value: Any) -> Any:
-        if not value and self._field.null:  # type: ignore
+        if not value and self._field.null:
             return None
         if value == "True":
             return True
@@ -157,7 +157,7 @@ class DateTimeControl(BaseAdminControl):
     def amis_2_orm(self, value: str) -> Any:
         if value:
             return datetime.datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
-        if self._field.null:  # type: ignore
+        if self._field.null:
             return None
         raise TmpValueError(f"{self.label} 不能为 {value}")
 
@@ -185,7 +185,7 @@ class DateControl(BaseAdminControl):
         if value:
             year, month, day = value.split("-")
             return datetime.date(int(year), int(month), int(day))
-        if self._field.null:  # type: ignore
+        if self._field.null:
             return None
         raise TmpValueError(f"{self.label} 不能为 {value}")
 
@@ -215,7 +215,7 @@ class TimeControl(BaseAdminControl):
     def amis_2_orm(self, value: Any) -> Any:
         if value:
             return datetime.time.fromisoformat(value)
-        if self._field.null:  # type: ignore
+        if self._field.null:
             return None
         raise TmpValueError(f"{self.label} 不能为 {value}")
 
@@ -237,7 +237,7 @@ class JsonControl(TextControl):
         if not self._control:
             super().get_formitem(request, codenames)
             self._control.validations = "isJson"
-            if not callable(self._field.default):  # type: ignore
+            if not callable(self._field.default):
                 self._control.required = True  # jsonfield不能为空不然写数据库必爆炸
                 if not self._control.value:  # 如果有默认值则已经在父类里面被调用
                     self._control.value = "{}"
@@ -280,12 +280,12 @@ class ForeignKeyControl(BaseAdminControl, RelationSelectApi):
         page: Optional[int],
         filter: Any = None,
     ):
-        field_model_all = self._field.related_model.all()  # type: ignore
+        field_model_all = self._field.related_model.all()
         # if filter:
         #     if isinstance(filter, dict):
-        #         field_model_all = self._field.related_model.filter(**filter)  # type: ignore
+        #         field_model_all = self._field.related_model.filter(**filter)
         #     else:
-        #         field_model_all = self._field.related_model.filter(filter)  # type: ignore
+        #         field_model_all = self._field.related_model.filter(filter)
         # if perPage is not None and page is not None:
         #     field_model = field_model_all.limit(perPage).offset((page - 1) * perPage)
         #     count = await field_model_all.count()
@@ -323,7 +323,7 @@ class ForeignKeyControl(BaseAdminControl, RelationSelectApi):
                 labelField="label",
                 valueField="value",
             )
-            if not self._field.null:  # type: ignore
+            if not self._field.null:
                 self._control.required = True
             else:
                 self._control.clearable = True
@@ -338,7 +338,7 @@ class ForeignKeyControl(BaseAdminControl, RelationSelectApi):
         if value is not None:
             if isinstance(value, dict):
                 value = value.get("value")
-            value = await self._field.related_model.filter(pk=value).first()  # type: ignore
+            value = await self._field.related_model.filter(pk=value).first()
         setattr(obj, self.name, value)
 
 
@@ -360,7 +360,7 @@ class ManyToManyControl(BaseAdminControl, RelationSelectApi):
                             title=self.label,
                             body=CRUD(
                                 api="get:"
-                                + self._field.model.__name__.lower()  # type: ignore
+                                + self._field.model.__name__.lower()
                                 + f"/select/{self.name}?pk=$pk",
                                 columns=[
                                     Column(label="主键", name="pk"),
@@ -381,9 +381,9 @@ class ManyToManyControl(BaseAdminControl, RelationSelectApi):
         page: Optional[int],
         filter: Any = None,
     ):
-        related_model = self._field.related_model  # type: ignore
+        related_model = self._field.related_model
         if pk is not None:
-            queryset = related_model.filter(**{self._field.related_name: pk})  # type: ignore
+            queryset = related_model.filter(**{self._field.related_name: pk})
         else:
             queryset = related_model.all()
         # if filter:
@@ -409,7 +409,7 @@ class ManyToManyControl(BaseAdminControl, RelationSelectApi):
                 label=self.label,
                 source=f"get:{self._prefix}/select/{self.name}",
             )
-            if self._field.null:  # type: ignore
+            if self._field.null:
                 self._control.clearable = True
         return self._control
 
@@ -422,7 +422,7 @@ class ManyToManyControl(BaseAdminControl, RelationSelectApi):
         if value is not None:
             pks = self.amis_2_orm(value)
             if len(pks) > 0:
-                return await self._field.related_model.filter(pk__in=pks)  # type: ignore
+                return await self._field.related_model.filter(pk__in=pks)
         return []
 
     async def set_value(self, request: Request, obj: Model, value: Any) -> Optional[Coroutine]:
@@ -467,12 +467,12 @@ class FileControl(BaseAdminControl):
             self._control = FileItem(
                 name=self.name,
                 label=self.label,
-                receiver=f"{self._field.model.__name__}/file/{self.name}",  # type: ignore
+                receiver=f"{self._field.model.__name__}/file/{self.name}",
             )
-            if not self._field.null:  # type: ignore
+            if not self._field.null:
                 self._control.required = True
-            if self._field.default is not None:  # type: ignore
-                self._control.value = self.orm_2_amis(self._field.default)  # type: ignore
+            if self._field.default is not None:
+                self._control.value = self.orm_2_amis(self._field.default)
         return self._control
 
     def orm_2_amis(self, value: str) -> Any:
@@ -492,12 +492,12 @@ class ImageControl(BaseAdminControl):
             self._control = ImageItem(
                 name=self.name,
                 label=self.label,
-                receiver=f"{self._field.model.__name__.lower()}/file/{self.name}",  # type: ignore
+                receiver=f"{self._field.model.__name__.lower()}/file/{self.name}",
             )
-            if not self._field.null:  # type: ignore
+            if not self._field.null:
                 self._control.required = True
-            if self._field.default is not None:  # type: ignore
-                self._control.value = self.orm_2_amis(self._field.default)  # type: ignore
+            if self._field.default is not None:
+                self._control.value = self.orm_2_amis(self._field.default)
         return self._control
 
     def get_column(self, request: Request) -> Column:
@@ -520,10 +520,10 @@ class RichTextControl(BaseAdminControl):
     def get_formitem(self, request: Request, codenames: Iterable[str]) -> FormItem:
         if not self._control:
             self._control = RichTextItem(type=self._control_type, name=self.name, label=self.label)
-            if not self._field.null:  # type: ignore
+            if not self._field.null:
                 self._control.required = True
-            if self._field.default is not None:  # type: ignore
-                self._control.value = self.orm_2_amis(self._field.default)  # type: ignore
+            if self._field.default is not None:
+                self._control.value = self.orm_2_amis(self._field.default)
         return self._control
 
 
@@ -591,7 +591,7 @@ class Password(StrControl):
     def get_formitem(self, request: Request, codenames: Iterable[str]) -> FormItem:
         if not self._control:
             self._control = FormItem(type=self._control_type, name=self.name, label=self.label)
-            if not self._field.null:  # type: ignore
-                if self._field.default is not None:  # type: ignore
-                    self._control.value = self.orm_2_amis(self._field.default)  # type: ignore
+            if not self._field.null:
+                if self._field.default is not None:
+                    self._control.value = self.orm_2_amis(self._field.default)
         return self._control

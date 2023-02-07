@@ -111,7 +111,7 @@ class BaseAdminControl(AbstractAmisAdminDB, AbstractControl, AmisOrm):
     label: str
     description: Optional[str]
     placeholder: Optional[str]
-    _field: fields.Field
+    _field: Any
     _control: FormItem = None  # type: ignore
     _column: Column = None  # type: ignore
     _column_inline: ColumnInline = None  # type: ignore
@@ -136,11 +136,11 @@ class BaseAdminControl(AbstractAmisAdminDB, AbstractControl, AmisOrm):
                 description=self.description,
                 placeholder=self.placeholder,
             )
-            if not callable(self._field.default):  # type: ignore
-                if not self._field.null:  # type: ignore
+            if not callable(self._field.default):
+                if not self._field.null:
                     self._control.required = True
-                if self._field.default is not None:  # type: ignore
-                    self._control.value = self.orm_2_amis(self._field.default)  # type: ignore
+                if self._field.default is not None:
+                    self._control.value = self.orm_2_amis(self._field.default)
         return self._control
 
     def options(self):
@@ -158,7 +158,7 @@ class BaseAdminControl(AbstractAmisAdminDB, AbstractControl, AmisOrm):
             options = self.options()
             if options:
                 self._column_inline.quickEdit.options = options
-                if self._field.null:  # type: ignore
+                if self._field.null:
                     self._column_inline.quickEdit.clearable = True
         return self._column_inline
 
@@ -169,15 +169,15 @@ class BaseAdminControl(AbstractAmisAdminDB, AbstractControl, AmisOrm):
     async def get_value(self, request: Request, obj: Model) -> Any:
         return self.orm_2_amis(getattr(obj, self.name))
 
-    def __init__(self, name: str, field: fields.Field, prefix: str, **kwargs):
+    def __init__(self, name: str, field: fields.Field[Any], prefix: str, **kwargs):
         super().__init__(name, prefix, **kwargs)
-        self._field = field  # type: ignore
+        self._field = field
         self.name = name
         label, description, placeholder = None, None, None
         if field.description:
             values = field_description.match(field.description)
             if values and not isinstance(
-                self._field, ManyToManyFieldInstance  # type: ignore
+                self._field, ManyToManyFieldInstance
             ):  # todo 还没想好多对多怎么处理 一对多也没想好怎么处理 枚举类型description默认有值，需要自己进行覆盖
                 label, description, placeholder = values.groups()
         self.label = kwargs.get("label") or label or name
@@ -187,11 +187,11 @@ class BaseAdminControl(AbstractAmisAdminDB, AbstractControl, AmisOrm):
     async def validate(self, value: Any, is_create=False) -> Any:
         if not value and is_create:
             if (
-                callable(self._field.default) and not self._field.null  # type: ignore
+                callable(self._field.default) and not self._field.null
             ):  # 不为空且默认值是函数的时候，前段页面如果传null则使用默认值
-                return self._field.default()  # type: ignore
+                return self._field.default()
         value = self.amis_2_orm(value)
-        self._field.validate(value)  # type: ignore
+        self._field.validate(value)
         return value
 
 
