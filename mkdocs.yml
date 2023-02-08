@@ -2,7 +2,7 @@ site_name: fast-tmp
 nav:
   - 主页: index.md
   - 入门教程: page.md
-  - ModelAdmin类讲解: ModelAdmin.md
+  - ModelAdmin: ModelAdmin.md
   - amis: amis.md
   - field: field.md
   - About: about.md
