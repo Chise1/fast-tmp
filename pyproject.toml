@@ -20,6 +20,7 @@ asgiref = "^3.5.2"
 tortoise-orm = "^0.19.2"
 python-multipart = "^0.0.5"
 toml = "^0.10.2"
+python-dotenv = "^0.21.1"
 
 [tool.poetry.dev-dependencies]
 cookiecutter = "^2.1.1"

@@ -1233,6 +1233,21 @@ files = [
 six = ">=1.5"
 
 [[package]]
+name = "python-dotenv"
+version = "0.21.1"
+description = "Read key-value pairs from a .env file and set them as environment variables"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "python-dotenv-0.21.1.tar.gz", hash = "sha256:1c93de8f636cde3ce377292818d0e440b6e45a82f215c3744979151fa8151c49"},
+    {file = "python_dotenv-0.21.1-py3-none-any.whl", hash = "sha256:41e12e0318bebc859fcc4d97d4db8d20ad21721a6aa5047dd59f090391cb549a"},
+]
+
+[package.extras]
+cli = ["click (>=5.0)"]
+
+[[package]]
 name = "python-jose"
 version = "3.3.0"
 description = "JOSE implementation in Python"
@@ -1679,4 +1694,4 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "677893740a667590f8c3bee71b29649c31471cb038dcf606f8cc4f6398994ad5"
+content-hash = "b7e2f039a5823999fc9cabbf24dc8f52df263405faf3812ec8c6aa49a3acc174"

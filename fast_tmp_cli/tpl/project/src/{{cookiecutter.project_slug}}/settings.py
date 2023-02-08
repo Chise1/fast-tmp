@@ -7,11 +7,11 @@ DEBUG = True
 
 TORTOISE_ORM = {
     "connections": {
-        "default": "sqlite://{{cookiecutter.project_slug}}.sqlite3",
+        "default": "sqlite://src.sqlite3",
     },
     'apps': {
         'fast_tmp': {
-            'models': ['fast_tmp.models','{{cookiecutter.project_slug}}.models' ],  # 注册app.models
+            'models': ['fast_tmp.models','src.models' ],  # 注册app.models
             'default_connection': 'default',
         }
     }

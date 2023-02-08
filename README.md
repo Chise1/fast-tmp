@@ -106,7 +106,6 @@ fast-tmp createsuperuser
 初始化项目之后，fast-tmp包里面有如下功能：
 
 1. 全局settings管理
-2. crud生成器
 
 ### 全局settings管理
 
