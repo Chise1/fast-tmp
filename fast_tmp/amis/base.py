@@ -1,11 +1,11 @@
-from typing import Optional, TypeVar
+from typing import List, Optional, TypeVar
 
 from pydantic.main import BaseModel
 
 from fast_tmp.amis.enums import ActionTypeEnum, ButtonLevelEnum, ButtonSize
 
 
-class BaseAmisModel(BaseModel):
+class SchemaNode(BaseModel):
     """
     所有amis类的父类
     """
@@ -13,10 +13,10 @@ class BaseAmisModel(BaseModel):
     type: str
 
 
-AmisModel = TypeVar("AmisModel", bound=BaseAmisModel)
+SchemaArray = TypeVar("SchemaArray", bound=List[SchemaNode])
 
 
-class _Action(BaseAmisModel):
+class _Action(SchemaNode):
     """
     操作按钮
     """
@@ -25,7 +25,7 @@ class _Action(BaseAmisModel):
     label: str
     actionType: ActionTypeEnum
     icon: Optional[str]
-    size: ButtonSize = ButtonSize.md
+    size: Optional[ButtonSize] = None
     level: ButtonLevelEnum = ButtonLevelEnum.primary
     tooltip: Optional[str]  # 鼠标挪上去的提示
     className: Optional[str]

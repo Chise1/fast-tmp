@@ -1,18 +1,18 @@
 from typing import List, Optional, Tuple, Union
 
-from fast_tmp.amis.base import BaseAmisModel
+from fast_tmp.amis.base import SchemaNode
 
 
-class Page(BaseAmisModel):
+class Page(SchemaNode):
     type = "page"
     title: Optional[str]
     subTitle: Optional[str]
     remark: Optional[str]
-    aside: Optional[Union[BaseAmisModel, List[BaseAmisModel]]]  # 往页面的边栏区域加内容
+    aside: Optional[Union[SchemaNode, List[SchemaNode]]]  # 往页面的边栏区域加内容
     toolbar: Optional[
-        Union[BaseAmisModel, List[BaseAmisModel]]
+        Union[SchemaNode, List[SchemaNode]]
     ]  # 往页面的右上角加内容，需要注意的是，当有 title 时，该区域在右上角，没有时该区域在顶部
-    body: List[BaseAmisModel] = []
+    body: List[SchemaNode] = []
     initApi: Optional[str]  # 获取初始数据
     initFetch: Optional[bool]  # 是否进行初始数据获取
 
@@ -21,10 +21,10 @@ class Page(BaseAmisModel):
     _create_fields: Tuple[str, ...] = ()
 
 
-class HBox(BaseAmisModel):
+class HBox(SchemaNode):
     type = "hbox"
     className: Optional[str]
-    columns: List[BaseAmisModel]
+    columns: List[SchemaNode]
 
 
 #

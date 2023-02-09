@@ -1,11 +1,11 @@
 from typing import List, Optional, Union
 
-from fast_tmp.amis.base import BaseAmisModel, _Action
+from fast_tmp.amis.base import SchemaNode, _Action
 from fast_tmp.amis.column import Column, Operation
 from fast_tmp.amis.forms import FilterModel
 
 
-class CRUD(BaseAmisModel):
+class CRUD(SchemaNode):
     type = "crud"
     api: str  # 相对路径
     # 可以在后面跟上按钮，则默认每一行都有按钮，

@@ -2,7 +2,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
-from fast_tmp.amis.base import BaseAmisModel
+from fast_tmp.amis.base import SchemaNode
 from fast_tmp.amis.formitem import FormItem
 
 
@@ -17,7 +17,7 @@ class WizardStep(BaseModel):
     body: List[FormItem]  # 当前步骤的表单项集合，请参考 FormItem。
 
 
-class Wizard(BaseAmisModel):
+class Wizard(SchemaNode):
     """
     表单向导，能够配置多个步骤引导用户一步一步完成表单提交。
     https://aisuda.bce.baidu.com/amis/zh-CN/components/wizard

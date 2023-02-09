@@ -105,6 +105,9 @@ class FormItem(AbstractControl):
     labelClassName: Optional[str]  # label 的类名
     mode: Optional[Mode]
     size: Optional[FormWidgetSize]
+    addOn: Optional[
+        BaseModel
+    ]  # 附加组件：https://aisuda.bce.baidu.com/amis/zh-CN/components/form/input-text#%E9%99%84%E5%8A%A0%E7%BB%84%E4%BB%B6
 
     class Config:
         orm_mode = True
@@ -219,7 +222,7 @@ class DatetimeItem(FormItem):
 
 
 class DateItem(FormItem):
-    type = FormItemEnum.date
+    type = FormItemEnum.input_date
     value: Optional[str]
     format: str = "YYYY-MM-DD"  # 格式请参考文档：https://baidu.gitee.io/amis/zh-CN/docs/components/form/date  # 'X'为时间戳格式
     inputFormat: str = "YYYY-MM-DD"  # 'X'为时间戳格式

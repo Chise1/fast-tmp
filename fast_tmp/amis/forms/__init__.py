@@ -2,11 +2,11 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
-from fast_tmp.amis.base import BaseAmisModel
+from fast_tmp.amis.base import SchemaNode
 from fast_tmp.amis.column import AbstractControl
 
 
-class Form(BaseAmisModel):
+class Form(SchemaNode):
     type = "form"
     name: Optional[str]
     title: Optional[str]
@@ -17,6 +17,7 @@ class Form(BaseAmisModel):
     # interval: int = 3000??
     primaryField: Optional[str]  # 设置主键"id"
     body: List[AbstractControl]
+    mode: Optional[str]
 
 
 class FilterModel(BaseModel):

@@ -8,7 +8,7 @@ from tortoise.models import Model
 from tortoise.queryset import QuerySet
 
 from fast_tmp.amis.actions import AjaxAction, DialogAction
-from fast_tmp.amis.base import BaseAmisModel, _Action
+from fast_tmp.amis.base import SchemaNode, _Action
 from fast_tmp.amis.column import Column, Operation
 from fast_tmp.amis.crud import CRUD
 from fast_tmp.amis.enums import ButtonLevelEnum
@@ -176,7 +176,7 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
         )
 
     def get_crud(self, request: Request, codenames: List[str]):
-        body: List[BaseAmisModel] = []
+        body: List[SchemaNode] = []
         columns = []
         if "create" in self.methods and self.create_fields and self.prefix + "_create" in codenames:
             body.extend(self.get_create_dialogation_button(request, codenames))

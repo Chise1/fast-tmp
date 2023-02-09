@@ -2,7 +2,7 @@ from typing import Any, Optional
 
 from pydantic import BaseModel
 
-from fast_tmp.amis.base import BaseAmisModel
+from fast_tmp.amis.base import SchemaNode
 
 
 class CardHeader(BaseModel):
@@ -13,7 +13,7 @@ class CardHeader(BaseModel):
     avatar: str
 
 
-class Card(BaseAmisModel):
+class Card(SchemaNode):
     """
     卡片
     https://aisuda.bce.baidu.com/amis/zh-CN/components/card

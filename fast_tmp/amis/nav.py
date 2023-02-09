@@ -1,6 +1,6 @@
 from pydantic.main import BaseModel
 
-from fast_tmp.amis.base import BaseAmisModel
+from fast_tmp.amis.base import SchemaNode
 
 
 class NavLinks(BaseModel):
@@ -8,7 +8,7 @@ class NavLinks(BaseModel):
     to: str
 
 
-class Nav(BaseAmisModel):
+class Nav(SchemaNode):
     type = "nav"
     stacked: bool = True
     className: str = "w-md"
