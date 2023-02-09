@@ -6,6 +6,7 @@ from fast_tmp.amis.base import SchemaNode
 # https://aisuda.bce.baidu.com/amis/zh-CN/components/chart#%E4%BA%8B%E4%BB%B6%E8%A1%A8
 class Chart(SchemaNode):
     type: str = "chart"
+    name:Optional[str]
     className: Optional[str]  # 外层 Dom 的类名
     body: Optional[SchemaNode]  # 内容容器
     api: Optional[str]  # 配置项接口地址
