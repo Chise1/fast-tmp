@@ -18,6 +18,7 @@ class Form(SchemaNode):
     primaryField: Optional[str]  # 设置主键"id"
     body: List[AbstractControl]
     mode: Optional[str]
+    target:Optional[str]
 
 
 class FilterModel(BaseModel):
