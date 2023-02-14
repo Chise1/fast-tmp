@@ -33,22 +33,6 @@ async def create_superuser(username: str, password: str):
     sys.stdout.write(f"success create {username}\n")
 
 
-async def make_permissions():
-    from tortoise import Tortoise
-    from fast_tmp.models import Permission
-    await Tortoise.init(config=settings.TORTOISE_ORM)
-    await Permission.migrate_permissions()
-    sys.stdout.write("success update table permission.\n")
-
-
-@app.command()
-def make_perm():
-    """
-    同步所有model的权限
-    """
-    async_to_sync(make_permissions)()
-
-
 @app.command()
 def createsuperuser(username: str, password: str):
     """
