@@ -100,6 +100,9 @@ class User(Model):
         return codenames == perms
 
     async def get_perms(self, codenames: Set[str]) -> Set[str]:
+        """
+        获取用户权限
+        """
         if self.is_superuser:
             return codenames
         perms = await Permission.filter(groups__users=self, codename__in=codenames)
