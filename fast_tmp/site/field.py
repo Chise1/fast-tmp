@@ -2,7 +2,7 @@ import datetime
 import json
 from abc import abstractmethod
 from decimal import Decimal
-from typing import Any, Coroutine, Iterable, List, Optional
+from typing import Any, Coroutine, Iterable, List, Optional, Tuple
 
 from starlette.requests import Request
 from tortoise import ForeignKeyFieldInstance, ManyToManyFieldInstance, Model, fields
@@ -271,6 +271,8 @@ class RelationSelectApi:
 
 class ForeignKeyControl(BaseAdminControl, RelationSelectApi):
     _control_type = FormItemEnum.select
+    __need_perms: Optional[Tuple[str, ...]] = None
+    _control: SelectItem = None  # type: ignore
 
     async def get_selects(
         self,
@@ -315,6 +317,8 @@ class ForeignKeyControl(BaseAdminControl, RelationSelectApi):
         raise AttributeError("foreignkey field can not be used in column inline.")
 
     def get_formitem(self, request: Request, codenames: Iterable[str]) -> FormItem:
+        from fast_tmp.site import resources
+
         if not self._control:
             self._control = SelectItem(
                 name=self.name,
@@ -327,6 +331,18 @@ class ForeignKeyControl(BaseAdminControl, RelationSelectApi):
                 self._control.required = True
             else:
                 self._control.clearable = True
+        if self.__need_perms:
+            perm = self.__need_perms[0]
+            if perm in codenames:
+                prefix = self._field.related_model.__name__.lower()
+                for model_prefix, model in resources.items():
+                    if prefix == model_prefix:
+                        controls = model.get_create_controls(request, codenames)
+                        self._control.creatable = True
+                        self._control.createBtnLabel = "新增"
+                        self._control.addControls = controls
+                        self._control.addApi = model.prefix + "/create"
+                        break
         return self._control
 
     def orm_2_amis(self, value: Any) -> Any:
@@ -340,6 +356,16 @@ class ForeignKeyControl(BaseAdminControl, RelationSelectApi):
                 value = value.get("value")
             value = await self._field.related_model.filter(pk=value).first()
         setattr(obj, self.name, value)
+
+    def need_codenames(self, request: Request) -> Tuple[str, ...]:
+        """
+        判断，如果用户有对应页面的创建权限，则可以为该表增加创建按钮
+        """
+        if self.__need_perms is None:
+            # todo: 增加到文档，创建按钮根据页面注册的类的prefix进行搜索。
+            prefix = self._field.related_model.__name__.lower()
+            self.__need_perms = (prefix + "_create",)
+        return self.__need_perms
 
 
 class ManyToManyControl(BaseAdminControl, RelationSelectApi):

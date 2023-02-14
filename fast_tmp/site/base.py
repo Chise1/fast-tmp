@@ -1,7 +1,7 @@
 import logging
 import re
 from abc import abstractmethod
-from typing import Any, Coroutine, Dict, Iterable, List, Optional
+from typing import Any, Coroutine, Dict, Iterable, List, Optional, Tuple
 
 from starlette.requests import Request
 from tortoise import ManyToManyFieldInstance, Model, fields
@@ -101,6 +101,13 @@ class AbstractControl:
         """
         获取内联修改的column
         """
+
+    def need_codenames(self, request: Request) -> Tuple[str, ...]:
+        """
+        返回需要的权限，
+        多对多和多对一对应的select控件提供添加按钮
+        """
+        return ()
 
 
 class BaseAdminControl(AbstractAmisAdminDB, AbstractControl, AmisOrm):
@@ -266,6 +273,12 @@ class PageRouter:
         支持的method为["POST", "GET", "DELETE", "PUT", "PATCH"]
         """
         raise NotFoundError("not found function.")
+
+    @abstractmethod
+    def get_create_controls(self, request: Request, codenames: Iterable[str]):
+        """
+        当外键或多对多创建的时候，子表的创建字段由此返回
+        """
 
 
 # 操作数据库的方法

@@ -28,23 +28,24 @@ class Permission(Model):
         """
         同步所有注册的模型的所有权限
         """
-        from fast_tmp.utils.model import get_all_models
+        from fast_tmp.site import model_list
 
-        all_models = get_all_models()
-        for model in all_models:
-            model_name = model.__name__.lower()
-            await cls.get_or_create(
-                codename=f"{model_name}_list", defaults={"label": f"{model_name}_list"}
-            )
-            await cls.get_or_create(
-                codename=f"{model_name}_create", defaults={"label": f"{model_name}_create"}
-            )
-            await cls.get_or_create(
-                codename=f"{model_name}_update", defaults={"label": f"{model_name}_update"}
-            )
-            await cls.get_or_create(
-                codename=f"{model_name}_delete", defaults={"label": f"{model_name}_delete"}
-            )
+        for models in model_list.values():
+            for model in models:
+                name = model.name
+                prefix = model.prefix
+                await cls.get_or_create(
+                    codename=f"{prefix}_list", defaults={"label": f"{name}_list"}
+                )
+                await cls.get_or_create(
+                    codename=f"{prefix}_create", defaults={"label": f"{name}_create"}
+                )
+                await cls.get_or_create(
+                    codename=f"{prefix}_update", defaults={"label": f"{name}_update"}
+                )
+                await cls.get_or_create(
+                    codename=f"{prefix}_delete", defaults={"label": f"{name}_delete"}
+                )
         return True
 
 

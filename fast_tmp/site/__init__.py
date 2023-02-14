@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Callable, Coroutine, Dict, Iterable, List, Optional, Set, Tuple, Type, Union
+from typing import Any, Callable, Coroutine, Dict, Iterable, List, Optional, Tuple, Type, Union
 
 from starlette.requests import Request
 from tortoise import transactions
@@ -95,11 +95,19 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
         ret["pk"] = self.get_formitem_field("pk")
         return ret
 
+    def get_create_controls(self, request, codenames):
+        """
+        该接口主要给多对一提供创建时候的选项问题。
+        """
+        formitems = self.get_create_fields()
+        return [(i.get_formitem(request, codenames)) for i in formitems.values()]
+
     def get_create_dialogation_button(
         self, request: Request, codenames: Iterable[str]
     ) -> List[_Action]:
-        formitems = self.get_create_fields()
-
+        """
+        页面创建按钮
+        """
         return [
             DialogAction(
                 label="新增",
@@ -109,7 +117,7 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
                         name=f"新增{self.name}",
                         title=f"新增{self.name}",
                         # tips: 你的field字段传实例了吗？
-                        body=[(i.get_formitem(request, codenames)) for i in formitems.values()],
+                        body=self.get_create_controls(request, codenames),
                         api=f"post:{self.prefix}/create",
                     ),
                 ),
@@ -341,11 +349,15 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
         """
         if self._permissions is None:
             self._permissions = [
-                self.prefix.lower() + "_list",
-                self.prefix.lower() + "_create",
-                self.prefix.lower() + "_update",
-                self.prefix.lower() + "_delete",
+                self.prefix + "_list",
+                self.prefix + "_create",
+                self.prefix + "_update",
+                self.prefix + "_delete",
             ]
+            for field in self.fields.values():
+                perms = field.need_codenames(request)
+                if perms:
+                    self._permissions.extend(perms)
         user = request.user
         if user.is_superuser:
             return self._permissions
@@ -435,7 +447,7 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
 
 
 model_list: Dict[str, List[PageRouter]] = {}
-resources: Set[str] = set()
+resources: Dict[str, PageRouter] = {}
 
 
 def register_model_site(model_group: Dict[str, List[PageRouter]]):
@@ -446,8 +458,8 @@ def register_model_site(model_group: Dict[str, List[PageRouter]]):
         for model in models:
             if model.prefix in resources:
                 raise ValueError(f"prefix {model.prefix} can not be same!")
-        else:
-            resources.add(model.prefix)
+            else:
+                resources[model.prefix] = model
     for bk, bv in model_group.items():
         for k, v in model_list.items():
             if bk == k:
@@ -457,9 +469,9 @@ def register_model_site(model_group: Dict[str, List[PageRouter]]):
             model_list[bk] = bv
 
 
-def get_model_site(resource: str) -> Optional[PageRouter]:
+def get_model_site(prefix: str) -> Optional[PageRouter]:
     for m_l in model_list.values():
         for i in m_l:
-            if i.prefix == resource:
+            if i.prefix == prefix:
                 return i
-    raise NotFoundError("can not found " + resource)
+    raise NotFoundError("can not found " + prefix)

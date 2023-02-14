@@ -113,12 +113,6 @@ class FormItem(AbstractControl):
         orm_mode = True
 
 
-class AddControl(BaseModel):
-    type: str = "text"
-    name: str
-    label: str
-
-
 class Item(BaseModel):
     label: str
     value: Union[str, int]
@@ -152,7 +146,6 @@ class SelectItem(FormItem):
     type: FormItemEnum = FormItemEnum.select
     options: Optional[Union[List[str], List[int], List[SelectOption]]]
     source: Optional[str]  # 通过数据源里面获取，也可以配置地址从远程获取，值格式为:options:[{label:..,value:...,}]
-    # children: Optional[List[Union[SelectOption, str, int]]]  # 这个在树结构在考虑
     multiple: Optional[bool]  # 是否多选
     delimeter: Optional[str]
     labelField: Optional[str]
@@ -166,29 +159,18 @@ class SelectItem(FormItem):
     # options#%E5%8A%A8%E6%80%81%E9%85%8D%E7%BD%AE
     searchable: Optional[bool]  # 前端对选项是否启动搜索功能
     autoComplete: Optional[bool]  # 是否对选项启动自动补全
+    #  可以修改选项值的选择器
+    creatable: Optional[bool]  # 是否支持新增选项
+    addControls: Optional[Tuple[FormItem, ...]]  # 配置弹框信息
+    addApi: Optional[str]  # 配置增加接口，如果为空则不会保存
+    editable: Optional[bool]  # 前端是否可编辑
+    editControls: Optional[Tuple[FormItem, ...]]  # 配置弹框信息
+    editApi: Optional[str]
+    deleteApi: Optional[str]  # 配置删除接口
+    createBtnLabel: Optional[str]
 
     class Config:
         orm_mode = True
-
-
-class SelectItemCanModifyItem(SelectItem):
-    """
-    可以修改选项值的选择器
-    """
-
-    creatable: bool = False  # 是否支持新增选项
-    addControls: Tuple[AddControl, ...] = (
-        AddControl(type="text", name="label", label="选项标题"),
-        AddControl(type="text", name="value", label="选项值"),
-    )  # 配置弹框信息，第一个为标题，第二个为选项值
-    addApi: Optional[str]  # 配置增加接口，如果为空则不会保存
-    editable: bool = False  # 前端是否可编辑
-    editControls: Tuple[AddControl, ...] = (
-        AddControl(type="text", name="label", label="选项标题"),
-        AddControl(type="text", name="value", label="选项值"),
-    )  # 配置修改值的弹框信息
-    editApi: Optional[str]
-    deleteApi: Optional[str]  # 配置删除接口
 
 
 class ArrayItem(FormItem):
