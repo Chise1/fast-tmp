@@ -1,3 +1,4 @@
+import enum
 from typing import Set
 
 from tortoise import Model, fields
@@ -11,6 +12,8 @@ class Permission(Model):
     label = fields.CharField(max_length=128, description="权限名")
     codename = fields.CharField(max_length=128, unique=True, description="权限码")
     groups: fields.ManyToManyRelation["Group"]
+    create_time = fields.DatetimeField(auto_now_add=True)
+    update_time = fields.DatetimeField(auto_now=True)
 
     def __eq__(self, other) -> bool:
         if other == self.codename or getattr(other, "codename", None) == self.codename:
@@ -62,6 +65,8 @@ class User(Model):
     is_staff = fields.BooleanField(default=False, description="职员(False则无法登录管理界面)")
     is_superuser = fields.BooleanField(default=False, description="超级管理员")
     groups: fields.ManyToManyRelation["Group"]
+    create_time = fields.DatetimeField(auto_now_add=True)
+    update_time = fields.DatetimeField(auto_now=True)
 
     # class Meta:
     #     abstract = settings.AUTH_USER_MODEL_NAME != "User"
@@ -124,6 +129,41 @@ class Group(Model):
     users: fields.ManyToManyRelation[User] = fields.ManyToManyField(
         "fast_tmp.User", related_name="groups", description="用户"
     )
+    create_time = fields.DatetimeField(auto_now_add=True)
+    update_time = fields.DatetimeField(auto_now=True)
 
     def __str__(self):
         return self.name
+
+
+class Operate(enum.IntEnum):
+    login = 1
+    create = 2
+    update = 3
+    delete = 4
+
+
+class OperateRecord(Model):
+    """
+    操作记录
+        登录记录
+        修改记录
+        创建记录
+        删除记录
+    除了登录记录，其他记录存储json格式
+    """
+
+    user: fields.ForeignKeyRelation[User] = fields.ForeignKeyField(
+        "fast_tmp.User", related_name="login_record"
+    )
+    operate = fields.IntEnumField(Operate, description="operate")
+    old = fields.TextField(null=True)
+    new = fields.TextField(null=True)
+    create_time = fields.DatetimeField(auto_now_add=True)
+
+    @classmethod
+    async def login(cls, user: User):
+        """
+        记录登录信息
+        """
+        await cls.create(user=user, operate=Operate.login)

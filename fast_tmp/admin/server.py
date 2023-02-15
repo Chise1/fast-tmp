@@ -1,17 +1,18 @@
 import os
+import time
 from datetime import timedelta
 from typing import Optional
 
-from fastapi import Depends, FastAPI, Form, Request
+from fastapi import BackgroundTasks, Depends, FastAPI, Form, Request
 from fastapi.templating import Jinja2Templates
 from starlette import status
 from starlette.responses import RedirectResponse
 from tortoise.exceptions import BaseORMException
 
-from fast_tmp.admin.site import GroupAdmin, PermissionAdmin, UserAdmin
+from fast_tmp.admin.site import GroupAdmin, OperateRecordAdmin, PermissionAdmin, UserAdmin
 from fast_tmp.conf import settings
 from fast_tmp.exceptions import FastTmpError, NoAuthError
-from fast_tmp.models import Permission, User
+from fast_tmp.models import OperateRecord, Permission, User
 from fast_tmp.responses import BaseRes
 from fast_tmp.site import model_list, register_model_site
 from fast_tmp.utils.token import create_access_token
@@ -29,7 +30,7 @@ base_path = os.path.dirname(__file__)
 templates = Jinja2Templates(directory=base_path + "/templates")
 register_tags(templates)
 admin = FastAPI(title="fast-tmp")
-register_model_site({"Auth": [UserAdmin(), GroupAdmin(), PermissionAdmin()]})
+register_model_site({"Auth": [OperateRecordAdmin(), UserAdmin(), GroupAdmin(), PermissionAdmin()]})
 admin.include_router(router)
 admin.exception_handler(NoAuthError)(auth_exception_handler)
 admin.exception_handler(FastTmpError)(fasttmp_exception_handler)
@@ -48,6 +49,7 @@ async def index(request: Request):
 @admin.post("/login", name="login")
 async def login(
     request: Request,
+    background_task: BackgroundTasks,
     username: Optional[str] = Form(None),
     password: Optional[str] = Form(None),
 ):
@@ -70,13 +72,15 @@ async def login(
 
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user.username, "id": user.pk}, expires_delta=access_token_expires
+        data={"sub": user.username, "id": user.pk, "create_time": time.time()},
+        expires_delta=access_token_expires,
     )
     res = RedirectResponse(
         request.url_for("admin:index"),
         status_code=status.HTTP_302_FOUND,
     )
     res.set_cookie("access_token", access_token, expires=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60)
+    background_task.add_task(OperateRecord.login, user)
     return res
 
 

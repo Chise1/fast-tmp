@@ -15,13 +15,14 @@ async def active_user_or_none(access_token: Optional[str] = Cookie(None)) -> Opt
     if access_token is not None:
         try:
             payload = decode_access_token(access_token)
-            username: str = payload.get("sub")
+            username: str = payload["sub"]
+            create_time = payload["create_time"]
             if username is None:
                 return None
         except Exception:
             return None
         user = await User.filter(username=username).first()
-        if user is not None and user.is_active:
+        if user is not None and user.is_active and user.update_time.timestamp() <= create_time:
             return user
     return None
 
