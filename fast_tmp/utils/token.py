@@ -10,8 +10,9 @@ ALGORITHM = settings.ALGORITHM
 
 def create_access_token(data: dict, expires_delta: timedelta):
     to_encode = data.copy()
-    expire = datetime.utcnow() + expires_delta
-    to_encode.update({"exp": expire})
+    now = datetime.now()
+    expire = now + expires_delta
+    to_encode.update({"exp": expire, "create_time": now.timestamp()})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 

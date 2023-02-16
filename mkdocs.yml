@@ -1,8 +1,6 @@
 site_name: fast-tmp
 nav:
   - 主页: index.md
-  - 入门教程: page.md
-  - ModelAdmin: ModelAdmin.md
-  - amis: amis.md
-  - field: field.md
-  - About: about.md
+  - 入门: page.md
+  - 参考: resource.md
+  - 定制化: customization.md

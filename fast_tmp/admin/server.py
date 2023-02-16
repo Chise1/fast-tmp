@@ -1,5 +1,4 @@
 import os
-import time
 from datetime import timedelta
 from typing import Optional
 
@@ -72,7 +71,7 @@ async def login(
 
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user.username, "id": user.pk, "create_time": time.time()},
+        data={"sub": user.username, "id": user.pk},
         expires_delta=access_token_expires,
     )
     res = RedirectResponse(

@@ -157,6 +157,8 @@ class OperateRecord(Model):
         "fast_tmp.User", related_name="login_record"
     )
     operate = fields.IntEnumField(Operate, description="operate")
+    schema = fields.CharField(max_length=255, null=True)  # 模型名称
+    schema_id = fields.IntField(null=True)  # 模型ID
     old = fields.TextField(null=True)
     new = fields.TextField(null=True)
     create_time = fields.DatetimeField(auto_now_add=True)
@@ -166,4 +168,7 @@ class OperateRecord(Model):
         """
         记录登录信息
         """
-        await cls.create(user=user, operate=Operate.login)
+        try:
+            await cls.create(user=user, operate=Operate.login)
+        except Exception as e:
+            print(e)

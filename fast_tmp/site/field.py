@@ -274,6 +274,10 @@ class ForeignKeyControl(BaseAdminControl, RelationSelectApi):
     __need_perms: Optional[Tuple[str, ...]] = None
     _control: SelectItem = None  # type: ignore
 
+    def related_prefix(self) -> str:
+        # todo: 增加到文档，创建按钮根据页面注册的类的prefix进行搜索。
+        return self._field.related_model.__name__.lower()
+
     async def get_selects(
         self,
         request: Request,
@@ -362,9 +366,7 @@ class ForeignKeyControl(BaseAdminControl, RelationSelectApi):
         判断，如果用户有对应页面的创建权限，则可以为该表增加创建按钮
         """
         if self.__need_perms is None:
-            # todo: 增加到文档，创建按钮根据页面注册的类的prefix进行搜索。
-            prefix = self._field.related_model.__name__.lower()
-            self.__need_perms = (prefix + "_create",)
+            self.__need_perms = (self.related_prefix() + "_create",)
         return self.__need_perms
 
 

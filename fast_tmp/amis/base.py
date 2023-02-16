@@ -13,6 +13,11 @@ class SchemaNode(BaseModel):
     type: str
 
 
+class Tpl(SchemaNode):
+    type = "tpl"
+    tpl: str
+
+
 SchemaArray = TypeVar("SchemaArray", bound=List[SchemaNode])
 
 

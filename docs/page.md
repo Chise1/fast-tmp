@@ -1,4 +1,4 @@
-# admin详细入门教程
+# 入门
 
 ## 创建项目
 
@@ -379,22 +379,28 @@ async def router(self, request: Request, prefix: str, method: str) -> BaseRes:
 ```
 
 ### 注册到admin
+
 在app.py文件修改对应代码为：
+
 ```python
 # 注意prefix，这个一旦确定不要修改
 register_model_site({"date": [AuthorModel(), BookModel(), SalesInfoPage(name="销售统计", prefix="sales_info")]})
 
 
 ```
+
 ### 注册权限
+
 启动服务，然后进入权限页面，点击同步权限。这样新注册的页面就会有对应的权限管理。
 如果接口有权限要求，可以在router里面获取用户，并根据user.has_perm函数判断是否有对应权限。
 页面默认需要${prefix}_list权限
 
 ### 完整admin
+
 注册成功，打开页面的效果如下：
 ![效果图](./images/page/chart2.png)
 完整的代码如下：
+
 ```python
 # admin.py
 import datetime

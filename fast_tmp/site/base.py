@@ -67,6 +67,10 @@ class AbstractAmisAdminDB:
 
 
 class AmisOrm:
+    """
+    orm和amis之间的数据转换
+    """
+
     def orm_2_amis(self, value: Any) -> Any:
         """
         orm的值转成amis需要的值
@@ -238,6 +242,8 @@ class ModelFilter:
 class PageRouter:
     """
     页面基类，用于提供注册到admin管理页面的抽象类
+    name: 导航栏名字
+    prefix: 为接口的resource
     """
 
     _name: str
@@ -253,7 +259,10 @@ class PageRouter:
 
     def __init__(self, prefix: str, name: str):
         """
-        name为左侧导航栏名字，prefix为接口的resource
+        注册到admin的页面会生成对应页面权限，权限codename为{prefix}_create、{prefix}_update、{prefix}_delete、{prefix}_list
+
+        name: 导航栏名字
+        prefix: 为接口的resource
         """
         self._name = name
         self._prefix = prefix
@@ -266,7 +275,7 @@ class PageRouter:
     def name(self) -> str:
         return self._name
 
-    async def router(self, request: Request, prefix: str, method: str) -> BaseRes:
+    async def router(self, request: Request, resource: str, method: str) -> BaseRes:
         """
         用于自定义接口的方法
         当自定义该接口之后，会被fast_tmp.admin.endpoint里面的```/{resource}/extra/{prefix}```接口调用
@@ -275,7 +284,9 @@ class PageRouter:
         raise NotFoundError("not found function.")
 
     @abstractmethod
-    def get_create_controls(self, request: Request, codenames: Iterable[str]):
+    def get_create_controls(
+        self, request: Request, codenames: Iterable[str]
+    ) -> Tuple[FormItem, ...]:
         """
         当外键或多对多创建的时候，子表的创建字段由此返回
         """

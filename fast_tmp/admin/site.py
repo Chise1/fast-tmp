@@ -57,7 +57,7 @@ class PermissionAdmin(ModelAdmin):
         buttons.append(AjaxAction(label="同步权限", api=f"post:{self.prefix}/extra/migrate"))
         return buttons
 
-    async def router(self, request: Request, prefix: str, method: str) -> BaseRes:
+    async def router(self, request: Request, resource: str, method: str) -> BaseRes:
         if await self.model.migrate_permissions():
             return BaseRes(msg="success update table permission")
         else:
@@ -93,7 +93,6 @@ class OperateRecordAdmin(ModelAdmin):
         queryset = queryset.select_related("user")
         if orderBy and orderBy in self.ordering:
             queryset = queryset.order_by("-" + orderBy if orderDir == "desc" else orderBy)
-        print(queryset.limit(perPage).offset((page - 1) * perPage).sql())
         datas = await queryset.limit(perPage).offset((page - 1) * perPage)
         return ListDataWithPage(
             total=count,

@@ -12,6 +12,7 @@ from fast_tmp.amis.base import SchemaNode, _Action
 from fast_tmp.amis.column import Column, Operation
 from fast_tmp.amis.crud import CRUD
 from fast_tmp.amis.enums import ButtonLevelEnum
+from fast_tmp.amis.formitem import FormItem
 from fast_tmp.amis.forms import FilterModel, Form
 from fast_tmp.amis.frame import Dialog
 from fast_tmp.amis.page import Page
@@ -27,34 +28,39 @@ logger = logging.getLogger(__file__)
 
 class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在update_fields内
     model: Type[Model]  # model
-    list_display: Tuple[str, ...] = ()
-    inline: Tuple[str, ...] = ()
+    list_display: Tuple[str, ...] = ()  # 页面展示的字段
+    inline: Tuple[str, ...] = ()  # 可在页面直接修改的字段
     # search list
-    searchs: Tuple[str, ...] = ()
+    searchs: Tuple[str, ...] = ()  # todo
     filters: Tuple[Union[str, ModelFilter], ...] = ()  # 过滤字段的字典，字段名和对应的ModelFilter
     ordering: Tuple[str, ...] = ()  # 定义哪些字段支持排序
     # create
-    create_fields: Tuple[str, ...] = ()
-    update_fields: Tuple[str, ...] = ()
+    create_fields: Tuple[str, ...] = ()  # 创建页面的字段
+    update_fields: Tuple[str, ...] = ()  # 更新页面的字段
+    # 如果有自定义页面字段，在这里加入。
     fields: Dict[str, BaseAdminControl] = None  # type: ignore
-    _permissions: Optional[List[str]] = None  # 设置为 ()即可不验证权限
-    methods: Tuple[str, ...] = (
+    methods: Tuple[str, ...] = (  # 页面功能，如果不想有创建或者更新或者删除，可以删除里面的字段。
         "list",
         "create",
         "put",
         "delete",
         # "deleteMany",
     )  # todo 需要retrieve？
-    select_defs: Dict[
+    _select_defs: Dict[
         str,
         Callable[
             [Request, Optional[str], Optional[int], Optional[int], Optional[Any]],
             Coroutine[Any, Any, List[dict]],
         ],
-    ]  # 自定义的页面处理函数
+    ]  # 自定义的页面处理函数,从fields里面汇集
     _filters = None
+    _permissions: Optional[List[str]] = None
 
     def get_filters(self, request: Request) -> Dict[str, ModelFilter]:
+        """
+        获取页面过滤字段
+        自定义可重写
+        """
         if self._filters is None:
             filters = {}
             for filter in self.filters:
@@ -74,6 +80,9 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
         return self._filters
 
     def queryset_filter(self, request: Request, queryset: QuerySet):
+        """
+        拼接过滤字段到sql中
+        """
         query = request.query_params
         filter_fs = self.get_filters(request)
         for k, v in query.items():
@@ -85,6 +94,9 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
         return queryset
 
     def get_create_fields(self) -> Dict[str, BaseAdminControl]:
+        """
+        获取创建页面的字段
+        """
         return {i: self.get_formitem_field(i) for i in self.create_fields}
 
     def get_update_fields(self) -> Dict[str, BaseAdminControl]:
@@ -95,12 +107,14 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
         ret["pk"] = self.get_formitem_field("pk")
         return ret
 
-    def get_create_controls(self, request, codenames):
+    def get_create_controls(
+        self, request: Request, codenames: Iterable[str]
+    ) -> Tuple[FormItem, ...]:
         """
         该接口主要给多对一提供创建时候的选项问题。
         """
         formitems = self.get_create_fields()
-        return [(i.get_formitem(request, codenames)) for i in formitems.values()]
+        return tuple([(i.get_formitem(request, codenames)) for i in formitems.values()])
 
     def get_create_dialogation_button(
         self, request: Request, codenames: Iterable[str]
@@ -422,10 +436,10 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
                 logger.warning("inline field " + i + " not in list_display")
 
         # 同步select或其他接口
-        self.select_defs = {}
+        self._select_defs = {}
         for field_name, field in self.fields.items():
             if isinstance(field, RelationSelectApi):
-                self.select_defs[field_name] = field.get_selects
+                self._select_defs[field_name] = field.get_selects
 
     async def select_options(
         self,
@@ -438,7 +452,9 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
         """
         外键的枚举获取值以及多对多获取对象列表
         """
-        return await self.select_defs[name](request, pk, perPage, page, None)  # todo: 增加select的搜索功能
+        return await self._select_defs[name](
+            request, pk, perPage, page, None
+        )  # todo: 增加select的搜索功能
 
     async def check_perm(self, request: Request, codename: str):
         user = request.user
