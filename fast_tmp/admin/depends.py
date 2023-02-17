@@ -1,3 +1,5 @@
+import datetime
+import time
 from typing import Optional
 
 from fastapi import Cookie, Depends
@@ -22,7 +24,12 @@ async def active_user_or_none(access_token: Optional[str] = Cookie(None)) -> Opt
         except Exception:
             return None
         user = await User.filter(username=username).first()
-        if user is not None and user.is_active and user.update_time.timestamp() <= create_time:
+        if (
+            user is not None
+            and user.is_active
+            and payload["exp"] >= datetime.datetime.now().timestamp()
+            and user.update_time.timestamp() <= create_time
+        ):
             return user
     return None
 

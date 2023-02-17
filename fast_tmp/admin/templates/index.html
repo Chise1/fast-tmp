@@ -65,11 +65,32 @@
             brandName: '{{ title }}',
             logo: "{{ static(path='logo.png') }}",
             header: {
-                type: 'tpl',
-                inline: false,
-                className: 'w-full',
-                tpl: '<div class="flex justify-between"><div></div><div><a href="/admin/logout">登出</a></div></div>'
-                // tpl: '<div class="flex justify-between"><div>顶部区域左侧</div><div>顶部区域右侧</div></div>'
+                type: 'wrapper',
+                body: [
+                    {
+                        type: "avatar",
+                        icon: "fa fa-user",
+                        src: "{{ avatar }}",
+                        text: "{{ name }}"
+                    }, {
+                        type: "dropdown-button",
+                        label: "{{ name }}",
+                        trigger: "hover",
+                        buttons: [// todo 增加修改用户信息的按钮 调整按钮为上下居中
+                            {
+                                type: "link",
+                                href: "/admin/logout",
+                                body: "登出",
+                                blank: false
+                            }
+                        ]
+                    }
+                ],
+                style: {
+                    width: "100%",
+                    padding: 0,
+                },
+                className: "flex justify-end"
             },
             // footer: '<div class="p-2 text-center bg-light">底部区域</div>',
             // asideBefore: '<div class="p-2 text-center">菜单前面区域</div>',
@@ -199,6 +220,17 @@
                     }
                 },
                 isCurrentUrl: isCurrentUrl,
+                // 另外在 amis 配置项中的 api 也可以配置适配器，针对某个特定接口单独处理。
+                responseAdaptor(api, payload, query, request, response) {
+                    if (response.headers["content-type"] === "text/html; charset=utf-8") {
+                        window.location.href = "/admin/login"
+                        return {
+                            status: 401,
+                            msg: "请登录"
+                        }
+                    }
+                    return payload;
+                },
                 theme: 'cxd'
             }
         );
