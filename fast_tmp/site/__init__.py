@@ -19,8 +19,8 @@ from fast_tmp.amis.page import Page
 from fast_tmp.exceptions import FieldsError, NotFoundError, PermError, TmpValueError
 from fast_tmp.models import Permission
 from fast_tmp.responses import ListDataWithPage
-from fast_tmp.site.base import ModelFilter, ModelSession, PageRouter
-from fast_tmp.site.field import BaseAdminControl, RelationSelectApi, create_column
+from fast_tmp.site.base import BaseControl, ModelFilter, ModelSession, PageRouter
+from fast_tmp.site.field import RelationSelectApi, create_column
 from fast_tmp.site.filter import make_filter_by_str
 
 logger = logging.getLogger(__file__)
@@ -38,7 +38,7 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
     create_fields: Tuple[str, ...] = ()  # 创建页面的字段
     update_fields: Tuple[str, ...] = ()  # 更新页面的字段
     # 如果有自定义页面字段，在这里加入。
-    fields: Dict[str, BaseAdminControl] = None  # type: ignore
+    fields: Dict[str, BaseControl] = None  # type: ignore
     methods: Tuple[str, ...] = (  # 页面功能，如果不想有创建或者更新或者删除，可以删除里面的字段。
         "list",
         "create",
@@ -93,16 +93,16 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
                 queryset = func.queryset(request, queryset, v)
         return queryset
 
-    def get_create_fields(self) -> Dict[str, BaseAdminControl]:
+    def get_create_fields(self) -> Dict[str, BaseControl]:
         """
         获取创建页面的字段
         """
         return {i: self.get_formitem_field(i) for i in self.create_fields}
 
-    def get_update_fields(self) -> Dict[str, BaseAdminControl]:
+    def get_update_fields(self) -> Dict[str, BaseControl]:
         return {i: self.get_formitem_field(i) for i in self.update_fields}
 
-    def get_update_fields_with_pk(self) -> Dict[str, BaseAdminControl]:
+    def get_update_fields_with_pk(self) -> Dict[str, BaseControl]:
         ret = self.get_update_fields()
         ret["pk"] = self.get_formitem_field("pk")
         return ret
@@ -218,10 +218,10 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
         body.append(crud)
         return body
 
-    def get_list_distplay(self) -> Dict[str, BaseAdminControl]:
+    def get_list_distplay(self) -> Dict[str, BaseControl]:
         return {i: self.get_formitem_field(i) for i in self.list_display}
 
-    def get_list_display_with_pk(self) -> Dict[str, BaseAdminControl]:
+    def get_list_display_with_pk(self) -> Dict[str, BaseControl]:
         """
         去除多对多字段
         """
@@ -300,7 +300,7 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
         await self.model.filter(pk=pk).delete()
 
     def prefetch(
-        self, request: Request, queryset: QuerySet, fields: Dict[str, BaseAdminControl]
+        self, request: Request, queryset: QuerySet, fields: Dict[str, BaseControl]
     ) -> QuerySet:
         """
         判断是否需要额外预加载的数据
@@ -396,15 +396,8 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
                     logger.error(f"can not found field {field} in {self.model.__name__}")
                     continue
                 self.fields[field] = create_column(field, field_type, self._prefix)
-            else:
-                if callable(field_):
-                    field_type = self.model._meta.fields_map.get(field)
-                    if not field_type:
-                        logger.error(f"can not found field {field} in {self.model.__name__}")
-                        continue
-                    self.fields[field] = field_(name=field, field=field_type, prefix=self.prefix)
 
-    def get_formitem_field(self, name: str) -> BaseAdminControl:
+    def get_formitem_field(self, name: str) -> BaseControl:
         ret = self.fields.get(name)
         if ret is None:
             raise NotFoundError("can not found field:" + name)

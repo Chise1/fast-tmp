@@ -8,7 +8,7 @@ from starlette import status
 from starlette.responses import RedirectResponse
 from tortoise.exceptions import BaseORMException
 
-from fast_tmp.admin.site import GroupAdmin, OperateRecordAdmin, PermissionAdmin, UserAdmin
+from fast_tmp.admin.site import GroupAdmin, OperateRecordAdmin, PermissionAdmin, UserAdmin, UserInfo
 from fast_tmp.conf import settings
 from fast_tmp.exceptions import FastTmpError, NoAuthError
 from fast_tmp.models import OperateRecord, Permission, User
@@ -29,7 +29,17 @@ base_path = os.path.dirname(__file__)
 templates = Jinja2Templates(directory=base_path + "/templates")
 register_tags(templates)
 admin = FastAPI(title="fast-tmp")
-register_model_site({"Auth": [OperateRecordAdmin(), UserAdmin(), GroupAdmin(), PermissionAdmin()]})
+register_model_site(
+    {
+        "Auth": [
+            OperateRecordAdmin(),
+            UserAdmin(),
+            GroupAdmin(),
+            PermissionAdmin(),
+            UserInfo(prefix="self", label="self"),
+        ]
+    }
+)
 admin.include_router(router)
 admin.exception_handler(NoAuthError)(auth_exception_handler)
 admin.exception_handler(FastTmpError)(fasttmp_exception_handler)
@@ -39,9 +49,16 @@ admin.exception_handler(BaseORMException)(tortoise_exception_handler)
 @admin.post("/", name="index", dependencies=[Depends(get_staff)])
 @admin.get("/", name="index", dependencies=[Depends(get_staff)])
 async def index(request: Request):
+    user = request.user
     return templates.TemplateResponse(
         "index.html",
-        {"request": request, "title": admin.title, "api": "/admin/site"},
+        {
+            "request": request,
+            "title": admin.title,
+            "api": "/admin/site",
+            "avatar": user.avatar,
+            "name": user.name,
+        },
     )
 
 
@@ -129,14 +146,7 @@ async def get_site(request: Request):
             pages.append(
                 {
                     "label": name,
-                    "children": [
-                        {
-                            "label": model.name,
-                            "url": model.prefix,
-                            "schemaApi": model.prefix + "/schema",
-                        }
-                        for model in ml_p
-                    ],
+                    "children": [model.site for model in ml_p],
                 }
             )
         if index_page:
@@ -153,14 +163,7 @@ async def get_site(request: Request):
             pages.append(
                 {
                     "label": name,
-                    "children": [
-                        {
-                            "label": model.name,
-                            "url": model.prefix,
-                            "schemaApi": model.prefix + "/schema",
-                        }
-                        for model in ml
-                    ],
+                    "children": [model.site for model in ml],
                 }
             )
         if index_page:

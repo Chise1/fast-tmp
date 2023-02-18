@@ -4,7 +4,7 @@ from abc import abstractmethod
 from typing import Any, Coroutine, Dict, Iterable, List, Optional, Tuple
 
 from starlette.requests import Request
-from tortoise import ManyToManyFieldInstance, Model, fields
+from tortoise import ManyToManyFieldInstance, Model
 from tortoise.queryset import QuerySet
 
 from fast_tmp.amis.column import Column, ColumnInline, QuickEdit
@@ -24,7 +24,6 @@ class AbstractAmisAdminDB:
     admin访问model的数据库指令
     """
 
-    _prefix: str  # 网段
     name: str
 
     def list_queryset(self, queryset: QuerySet) -> QuerySet:  # 列表
@@ -59,8 +58,7 @@ class AbstractAmisAdminDB:
         """
         return value
 
-    def __init__(self, _field_name: str, _prefix: str, **kwargs):
-        self._prefix = _prefix
+    def __init__(self, _field_name: str, **kwargs):
         if not _field_name:
             raise AmisStructError("field_name can not be none")
         self.name = _field_name
@@ -114,7 +112,7 @@ class AbstractControl:
         return ()
 
 
-class BaseAdminControl(AbstractAmisAdminDB, AbstractControl, AmisOrm):
+class BaseControl(AbstractAmisAdminDB, AbstractControl, AmisOrm):
     """
     默认的将model字段转control的类
     """
@@ -122,7 +120,8 @@ class BaseAdminControl(AbstractAmisAdminDB, AbstractControl, AmisOrm):
     label: str
     description: Optional[str]
     placeholder: Optional[str]
-    _field: Any
+    null = False
+    default = None
     _control: FormItem = None  # type: ignore
     _column: Column = None  # type: ignore
     _column_inline: ColumnInline = None  # type: ignore
@@ -147,11 +146,11 @@ class BaseAdminControl(AbstractAmisAdminDB, AbstractControl, AmisOrm):
                 description=self.description,
                 placeholder=self.placeholder,
             )
-            if not callable(self._field.default):
-                if not self._field.null:
+            if not callable(self.default):
+                if not self.null:
                     self._control.required = True
-                if self._field.default is not None:
-                    self._control.value = self.orm_2_amis(self._field.default)
+                if self.default is not None:
+                    self._control.value = self.orm_2_amis(self.default)
         return self._control
 
     def options(self):
@@ -169,33 +168,85 @@ class BaseAdminControl(AbstractAmisAdminDB, AbstractControl, AmisOrm):
             options = self.options()
             if options:
                 self._column_inline.quickEdit.options = options
-                if self._field.null:
+                if self.null:
                     self._column_inline.quickEdit.clearable = True
         return self._column_inline
 
     async def set_value(self, request: Request, obj: Model, value: Any):
-        value = await self.validate(value, is_create=request.method == "POST")
+        value = self.validate(value, is_create=request.method == "POST")
         setattr(obj, self.name, value)
 
     async def get_value(self, request: Request, obj: Model) -> Any:
         return self.orm_2_amis(getattr(obj, self.name))
 
-    def __init__(self, name: str, field: fields.Field[Any], prefix: str, **kwargs):
-        super().__init__(name, prefix, **kwargs)
-        self._field = field
+    def __init__(
+        self,
+        label: str,
+        name: str,
+        null: bool,
+        default: Any,
+        description: Optional[str] = None,
+        placeholder: Optional[str] = None,
+        **kwargs,
+    ):
+        super().__init__(name, **kwargs)
         self.name = name
-        label, description, placeholder = None, None, None
-        if field.description:
-            values = field_description.match(field.description)
-            if values and not isinstance(
-                self._field, ManyToManyFieldInstance
-            ):  # todo 还没想好多对多怎么处理 一对多也没想好怎么处理 枚举类型description默认有值，需要自己进行覆盖
-                label, description, placeholder = values.groups()
-        self.label = kwargs.get("label") or label or name
-        self.description = kwargs.get("description") or description
-        self.placeholder = kwargs.get("placeholder") or placeholder
+        self.null = null
+        self.default = default
+        self.label = label
+        self.description = description
+        self.placeholder = placeholder
 
-    async def validate(self, value: Any, is_create=False) -> Any:
+
+class BaseAdminControl(BaseControl):
+    """
+    ModelAdmin使用的类型
+    """
+
+    _field: Any
+    _prefix: str = ""  # 需要赋值
+
+    @property
+    def prefix(self):
+        if not self._prefix:
+            raise AttributeError("prefix can not be none")
+        return self._prefix
+
+    @prefix.setter
+    def prefix(self, prefix):
+        self._prefix = prefix
+
+    def __init__(
+        self,
+        label: str,
+        name: str,
+        null: bool,
+        default: Any,
+        description: Optional[str] = None,
+        placeholder: Optional[str] = None,
+        field: Any = None,
+        prefix: Optional[str] = None,
+        **kwargs,
+    ):
+        super().__init__(label, name, null, default, description, placeholder, **kwargs)
+        if field:
+            if field.description:
+                values = field_description.match(field.description)
+                if values and not isinstance(
+                    field, ManyToManyFieldInstance
+                ):  # todo 还没想好多对多怎么处理 一对多也没想好怎么处理 枚举类型description默认有值，需要自己进行覆盖
+                    label, description, placeholder = values.groups()
+                    print(values.groups())
+                    self.label = self.label or label or name
+                    self.description = self.description or description
+                    self.placeholder = self.placeholder or placeholder
+
+            self._field = field
+        self.prefix = prefix
+        if not self.label:
+            self.label = name
+
+    def validate(self, value: Any, is_create=False) -> Any:
         if not value and is_create:
             if (
                 callable(self._field.default) and not self._field.null
@@ -221,19 +272,22 @@ class ModelFilter:
         ret.update(self.kwargs)
         return ret
 
+    @abstractmethod
     def queryset(self, request: Request, queryset: QuerySet, val: Any) -> QuerySet:
-        return queryset
+        """
+        拼接字段用
+        """
 
     def __init__(
         self,
         name: str,
-        field: AmisOrm,
+        field: Optional[AmisOrm] = None,
         type: str = "input-text",
         label: Optional[str] = None,
         **kwargs,
     ):
         self.name = name
-        self._field = field
+        self._field = field or AmisOrm()
         self.type = type
         self.label = label or self.name
         self.kwargs = kwargs
@@ -290,6 +344,18 @@ class PageRouter:
         """
         当外键或多对多创建的时候，子表的创建字段由此返回
         """
+
+    @property
+    def site(self):
+        """
+        左侧导航栏的显示配置
+        """
+        return {
+            "label": self.name,
+            "url": self.prefix,
+            "schemaApi": self.prefix + "/schema",
+            # "visible": False,  # 不显示在菜单中
+        }
 
 
 # 操作数据库的方法

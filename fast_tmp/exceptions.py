@@ -1,6 +1,7 @@
 from typing import Dict, Optional
 
 from fastapi import HTTPException
+from starlette import status
 
 from fast_tmp.responses import BaseRes, FieldErrorRes
 
@@ -14,7 +15,7 @@ class FastTmpError(HTTPException):
 
 class NoAuthError(HTTPException):
     def __init__(self):
-        self.status_code = 302
+        self.status_code = status.HTTP_401_UNAUTHORIZED
         self.detail = BaseRes(msg="please sign in ").json()
 
 

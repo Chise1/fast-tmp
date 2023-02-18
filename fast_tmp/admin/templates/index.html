@@ -8,33 +8,33 @@
     <meta http-equiv="X-UA-Compatible" content="IE=Edge"/>
 
     {% if local_file() %}
-    <link
-            rel="stylesheet"
-            title="default"
-            href="{{ static(path='amis/sdk.css') }}"
-    />
-    <link
-            rel="stylesheet"
-            href="{{ static(path='amis/helper.css') }}"
-    />
-    <script src="{{ static(path='amis/sdk.js') }}"></script>
-    <script src="{{ static(path='amis/history.js') }}"></script>
+        <link
+                rel="stylesheet"
+                title="default"
+                href="{{ static(path='amis/sdk.css') }}"
+        />
+        <link
+                rel="stylesheet"
+                href="{{ static(path='amis/helper.css') }}"
+        />
+        <script src="{{ static(path='amis/sdk.js') }}"></script>
+        <script src="{{ static(path='amis/history.js') }}"></script>
     {% else %}
-    <link
-            rel="stylesheet"
-            title="default"
-            href="https://unpkg.com/amis@beta/sdk/sdk.css"
-    />
-    <link
-            rel="stylesheet"
-            href="https://unpkg.com/amis@beta/sdk/helper.css"
-    />
-    <link
-            rel="stylesheet"
-            href="https://unpkg.com/amis@beta/sdk/iconfont.css"
-    />
-    <script src="https://unpkg.com/amis@beta/sdk/sdk.js"></script>
-    <script src="https://unpkg.com/history@4.10.1/umd/history.js"></script>
+        <link
+                rel="stylesheet"
+                title="default"
+                href="https://unpkg.com/amis@beta/sdk/sdk.css"
+        />
+        <link
+                rel="stylesheet"
+                href="https://unpkg.com/amis@beta/sdk/helper.css"
+        />
+        <link
+                rel="stylesheet"
+                href="https://unpkg.com/amis@beta/sdk/iconfont.css"
+        />
+        <script src="https://unpkg.com/amis@beta/sdk/sdk.js"></script>
+        <script src="https://unpkg.com/history@4.10.1/umd/history.js"></script>
     {% endif %}
     <script src="https://unpkg.com/vue@2"></script>
     <style>
@@ -70,14 +70,19 @@
                     {
                         type: "avatar",
                         icon: "fa fa-user",
-                        src: "{{ avatar }}",
-                        text: "{{ name }}"
+                        {#src: "{{ avatar }}",#}
+                        text: "{{ name }}".charAt(0)
                     }, {
                         type: "dropdown-button",
                         label: "{{ name }}",
                         trigger: "hover",
-                        buttons: [// todo 增加修改用户信息的按钮 调整按钮为上下居中
+                        buttons: [// todo 调整按钮为上下居中
                             {
+                                label: "个人信息",
+                                type: "button",
+                                link: "self",
+                                actionType:"link"
+                            }, {
                                 type: "link",
                                 href: "/admin/logout",
                                 body: "登出",

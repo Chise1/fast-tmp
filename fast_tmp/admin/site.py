@@ -2,8 +2,15 @@ from typing import Iterable, List, Optional
 
 from starlette.requests import Request
 
+from fast_tmp.admin.depends import active_user_or_none
 from fast_tmp.amis.actions import AjaxAction
 from fast_tmp.amis.base import _Action
+from fast_tmp.amis.crud import CRUD
+from fast_tmp.amis.formitem import FormItem
+from fast_tmp.amis.forms import Form
+from fast_tmp.amis.page import Page
+from fast_tmp.amis.view.divider import Divider
+from fast_tmp.exceptions import NoAuthError, NotFoundError
 from fast_tmp.models import Group, OperateRecord, Permission, User
 from fast_tmp.responses import BaseRes, ListDataWithPage
 from fast_tmp.site import ModelAdmin
@@ -33,7 +40,9 @@ class UserAdmin(ModelAdmin):
         "is_superuser",
         "is_staff",
     )
-    fields = {"password": Password}  # type: ignore
+    fields = {
+        "password": Password(label="密码", name="password", null=True, default="")
+    }  # type: ignore
 
 
 class GroupAdmin(ModelAdmin):
@@ -108,3 +117,94 @@ class OperateRecordAdmin(ModelAdmin):
                 for data in datas
             ],
         )
+
+
+class UserInfo(ModelAdmin):
+    """
+    查看和修改用户自己的信息
+    """
+
+    model = OperateRecord
+    list_display = ("create_time", "schema", "operate", "schema_id", "old", "new")
+    ordering = ("create_time", "schema", "schema_id")
+    methods = ("list",)
+
+    async def list(
+        self,
+        request: Request,
+        perPage: int = 10,
+        page: int = 1,
+        orderBy: Optional[str] = None,
+        orderDir: Optional[str] = None,
+    ) -> ListDataWithPage:
+        base_queryset = self.queryset(request)
+        base_queryset = self.queryset_filter(request, base_queryset)
+        base_queryset = base_queryset.filter(user=request.user)  # 只读取自己的数据
+        queryset = self.prefetch(request, base_queryset, self.get_list_distplay())
+        if orderBy and orderBy in self.ordering:
+            queryset = queryset.order_by("-" + orderBy if orderDir == "desc" else orderBy)
+        datas = await queryset.limit(perPage).offset((page - 1) * perPage)
+        res = []
+        for i in datas:
+            ret = {}
+            for field_name, field in self.get_list_display_with_pk().items():
+                if field._many:
+                    continue
+                ret[field_name] = await field.get_value(request, i)
+            res.append(ret)
+        count = await base_queryset.count()
+        return ListDataWithPage(total=count, items=res)
+
+    async def get_app_page(self, request: Request) -> Page:
+        return Page(
+            title="个人信息",
+            body=[
+                Form(
+                    label="个人信息",
+                    initApi="get:self/extra/info",
+                    api="put:self/extra/info",
+                    body=[
+                        FormItem(type="input-text", name="name", label="名字"),
+                        Password(label="密码", name="password", null=True, default="").get_formitem(
+                            request, []
+                        ),
+                    ],
+                ),
+                Divider(),
+                self.get_crud(request, []),
+            ],
+        )
+
+    @property
+    def site(self):
+        return {
+            "label": self.name,
+            "url": self.prefix,
+            "schemaApi": self.prefix + "/schema",
+            "visible": False,  # 不显示在菜单中
+        }
+
+    def get_crud(self, request: Request, codenames: List[str]):
+        return CRUD(
+            api=self._prefix + "/list",
+            columns=self.get_list_fields(request),
+            quickSaveItemApi=self._prefix + "/patch/" + "$pk",
+            syncLocation=False,
+        )
+
+    async def router(self, request: Request, resource: str, method: str) -> BaseRes:
+        user = await active_user_or_none(request.cookies.get("access_token"))
+        if not user or not user.is_staff:
+            raise NoAuthError()
+        if resource == "info":
+            if method == "GET":
+                return BaseRes(data={"name": user.name, "password": ""})
+            if method == "PUT":
+                data = await request.json()
+                if data.get("name"):
+                    user.name = data["name"]
+                if data.get("password"):
+                    user.set_password(data["password"])
+                await user.save()
+                return BaseRes(msg="修改成功")
+        raise NotFoundError("not found function.")

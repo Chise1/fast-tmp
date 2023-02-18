@@ -40,6 +40,10 @@ all_perms = {
     "user_delete",
     "user_list",
     "user_update",
+    "self_list",
+    "self_delete",
+    "self_create",
+    "self_update",
 }
 
 

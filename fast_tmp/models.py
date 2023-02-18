@@ -157,11 +157,11 @@ class OperateRecord(Model):
         "fast_tmp.User", related_name="login_record"
     )
     operate = fields.IntEnumField(Operate, description="operate")
-    schema = fields.CharField(max_length=255, null=True)  # 模型名称
+    schema = fields.CharField(max_length=255, null=True, description="修改对象")  # 模型名称
     schema_id = fields.IntField(null=True)  # 模型ID
-    old = fields.TextField(null=True)
-    new = fields.TextField(null=True)
-    create_time = fields.DatetimeField(auto_now_add=True)
+    old = fields.TextField(null=True, description="修改前数据")
+    new = fields.TextField(null=True, description="修改后数据")
+    create_time = fields.DatetimeField(auto_now_add=True, description="修改时间")
 
     @classmethod
     async def login(cls, user: User):
@@ -172,3 +172,6 @@ class OperateRecord(Model):
             await cls.create(user=user, operate=Operate.login)
         except Exception as e:
             print(e)
+
+    class Meta:
+        ordering = ("-create_time",)

@@ -3,10 +3,10 @@ from typing import Any
 from starlette.requests import Request
 from tortoise.queryset import QuerySet
 
-from .base import BaseAdminControl, ModelFilter
+from .base import BaseControl, ModelFilter
 
 
-def make_filter_by_str(request: Request, name: str, field: BaseAdminControl) -> ModelFilter:
+def make_filter_by_str(request: Request, name: str, field: BaseControl) -> ModelFilter:
     """
     根据字符串自动生成model对应field的搜索功能
     """
@@ -20,6 +20,10 @@ def make_filter_by_str(request: Request, name: str, field: BaseAdminControl) -> 
 
 
 class CommonFilter(ModelFilter):
+    """
+    通用的搜索类型
+    """
+
     def queryset(self, request: Request, queryset: QuerySet, val: Any) -> QuerySet:
         val = self._field.amis_2_orm(val)
         return queryset.filter(**{self.name: val})

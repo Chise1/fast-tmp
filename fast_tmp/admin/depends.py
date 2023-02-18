@@ -1,5 +1,4 @@
 import datetime
-import time
 from typing import Optional
 
 from fastapi import Cookie, Depends

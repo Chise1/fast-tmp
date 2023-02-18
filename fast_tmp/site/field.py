@@ -31,7 +31,7 @@ from fast_tmp.contrib.auth.hashers import make_password
 from fast_tmp.contrib.tortoise.fields import FileField, ImageField, RichTextField
 from fast_tmp.exceptions import TmpValueError
 from fast_tmp.responses import ListDataWithPage
-from fast_tmp.site.base import BaseAdminControl
+from fast_tmp.site.base import BaseAdminControl, BaseControl
 from fast_tmp.utils import add_media_start, remove_media_start
 
 
@@ -327,7 +327,7 @@ class ForeignKeyControl(BaseAdminControl, RelationSelectApi):
             self._control = SelectItem(
                 name=self.name,
                 label=self.label,
-                source=f"get:{self._prefix}/select/{self.name}",
+                source=f"get:{self.prefix}/select/{self.name}",
                 labelField="label",
                 valueField="value",
             )
@@ -387,9 +387,7 @@ class ManyToManyControl(BaseAdminControl, RelationSelectApi):
                         dialog=Dialog(
                             title=self.label,
                             body=CRUD(
-                                api="get:"
-                                + self._field.model.__name__.lower()
-                                + f"/select/{self.name}?pk=$pk",
+                                api=f"get:{self.prefix}/select/{self.name}?pk=$pk",
                                 columns=[
                                     Column(label="主键", name="pk"),
                                     Column(label="名称", name="label"),
@@ -435,7 +433,7 @@ class ManyToManyControl(BaseAdminControl, RelationSelectApi):
             self._control = TransferItem(
                 name=self.name,
                 label=self.label,
-                source=f"get:{self._prefix}/select/{self.name}",
+                source=f"get:{self.prefix}/select/{self.name}",
             )
             if self._field.null:
                 self._control.clearable = True
@@ -489,13 +487,14 @@ class ManyToManyControl(BaseAdminControl, RelationSelectApi):
 
 class FileControl(BaseAdminControl):
     _control_type = FormItemEnum.input_file
+    prefix = ""
 
     def get_formitem(self, request: Request, codenames: Iterable[str]) -> FormItem:
         if not self._control:
             self._control = FileItem(
                 name=self.name,
                 label=self.label,
-                receiver=f"{self._field.model.__name__}/file/{self.name}",
+                receiver=f"{self.prefix}/file/{self.name}",
             )
             if not self._field.null:
                 self._control.required = True
@@ -514,13 +513,14 @@ class FileControl(BaseAdminControl):
 
 class ImageControl(BaseAdminControl):
     _control_type = FormItemEnum.input_image
+    prefix = ""
 
     def get_formitem(self, request: Request, codenames: Iterable[str]) -> FormItem:
         if not self._control:
             self._control = ImageItem(
                 name=self.name,
                 label=self.label,
-                receiver=f"{self._field.model.__name__.lower()}/file/{self.name}",
+                receiver=f"{self.prefix}/file/{self.name}",
             )
             if not self._field.null:
                 self._control.required = True
@@ -561,46 +561,55 @@ def create_column(
     prefix: str,
 ):
     if isinstance(field_type, IntEnumFieldInstance):
-        return IntEnumControl(field_name, field_type, prefix)
+        return IntEnumControl("", field_name, field_type.null, field_type.default, field=field_type)
     elif isinstance(field_type, CharEnumFieldInstance):
-        return StrEnumControl(field_name, field_type, prefix)
+        return StrEnumControl("", field_name, field_type.null, field_type.default, field=field_type)
     elif isinstance(
         field_type, (fields.IntField, fields.SmallIntField, fields.BigIntField, fields.FloatField)
     ):
-        return IntControl(field_name, field_type, prefix)
+        return IntControl("", field_name, field_type.null, field_type.default, field=field_type)
     elif isinstance(field_type, fields.TextField):
-        return TextControl(field_name, field_type, prefix)
+        return TextControl("", field_name, field_type.null, field_type.default, field=field_type)
     elif isinstance(field_type, fields.DatetimeField):
-        return DateTimeControl(field_name, field_type, prefix)
+        return DateTimeControl(
+            "", field_name, field_type.null, field_type.default, field=field_type
+        )
     elif isinstance(field_type, fields.DateField):
-        return DateControl(field_name, field_type, prefix)
+        return DateControl("", field_name, field_type.null, field_type.default, field=field_type)
     elif isinstance(field_type, fields.CharField):
-        return StrControl(field_name, field_type, prefix)
+        return StrControl("", field_name, field_type.null, field_type.default, field=field_type)
     elif isinstance(field_type, fields.BooleanField):
-        return BooleanControl(field_name, field_type, prefix)
+        return BooleanControl("", field_name, field_type.null, field_type.default, field=field_type)
     elif isinstance(field_type, fields.JSONField):
-        return JsonControl(field_name, field_type, prefix)
+        return JsonControl("", field_name, field_type.null, field_type.default, field=field_type)
     elif isinstance(field_type, fields.TimeField):
-        return TimeControl(field_name, field_type, prefix)
+        return TimeControl("", field_name, field_type.null, field_type.default, field=field_type)
     elif isinstance(field_type, ForeignKeyFieldInstance):
-        return ForeignKeyControl(field_name, field_type, prefix)
+        return ForeignKeyControl(
+            "", field_name, field_type.null, field_type.default, field=field_type, prefix=prefix
+        )
     elif isinstance(field_type, ManyToManyFieldInstance):
-        return ManyToManyControl(field_name, field_type, prefix)
+        return ManyToManyControl(
+            "", field_name, field_type.null, field_type.default, field=field_type, prefix=prefix
+        )
     elif isinstance(field_type, ImageField):
-        return ImageControl(field_name, field_type, prefix)
+        return ImageControl(
+            "", field_name, field_type.null, field_type.default, field=field_type, prefix=prefix
+        )
     elif isinstance(field_type, RichTextField):
-        return RichTextControl(field_name, field_type, prefix)
+        return RichTextControl(
+            "", field_name, field_type.null, field_type.default, field=field_type
+        )
     elif isinstance(field_type, FileField):
-        return FileControl(field_name, field_type, prefix)
+        return FileControl("", field_name, field_type.null, field_type.default, field=field_type)
     elif isinstance(field_type, fields.DecimalField):
-        return DecimalControl(field_name, field_type, prefix)
-
+        return DecimalControl("", field_name, field_type.null, field_type.default, field=field_type)
     else:
         raise AmisStructError("create_column error:", type(field_type))
 
 
-# todo 以后考虑创建更新的control分离
-class Password(StrControl):
+# fixme 以后考虑创建更新的control分离?
+class Password(BaseControl):
     _control_type = FormItemEnum.input_password
 
     async def get_value(self, request: Request, obj: Model) -> Any:
@@ -619,7 +628,7 @@ class Password(StrControl):
     def get_formitem(self, request: Request, codenames: Iterable[str]) -> FormItem:
         if not self._control:
             self._control = FormItem(type=self._control_type, name=self.name, label=self.label)
-            if not self._field.null:
-                if self._field.default is not None:
-                    self._control.value = self.orm_2_amis(self._field.default)
+            if not self.null:
+                if self.default is not None:
+                    self._control.value = self.orm_2_amis(self.default)
         return self._control

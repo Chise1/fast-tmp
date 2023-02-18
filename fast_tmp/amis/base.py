@@ -11,6 +11,13 @@ class SchemaNode(BaseModel):
     """
 
     type: str
+    # grid布局
+    columnClassName: Optional[str]
+    xs: Optional[int]
+    sm: Optional[int]
+    md: Optional[int]
+    lg: Optional[int]
+    valign: Optional[str]  # 'top' | 'middle' | 'bottom' | 'between'
 
 
 class Tpl(SchemaNode):
