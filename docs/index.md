@@ -28,3 +28,6 @@ sudo docker run -p 8000:8000 chise123/fast-tmp-example:v1.0.2
 然后访问```http://127.0.0.1:8000/admin``` 即可，
 超级用户的账户密码为```admin/123456```
 使用说明请参考[教程](./page.md)的快速入门。
+
+也可到qq群咨询
+![qq群](./images/qq群.jpg)
