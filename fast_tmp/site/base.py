@@ -12,7 +12,7 @@ from fast_tmp.amis.formitem import FormItem, FormItemEnum
 from fast_tmp.amis.page import Page
 from fast_tmp.amis.response import AmisStructError
 from fast_tmp.exceptions import NotFoundError
-from fast_tmp.responses import BaseRes, ListDataWithPage
+from fast_tmp.responses import AdminRes, ListDataWithPage
 
 logger = logging.getLogger(__file__)
 
@@ -35,7 +35,7 @@ class AbstractAmisAdminDB:
     def prefetch(self) -> Optional[str]:  # 列表
         """
         过滤规则，用于页面查询和过滤用
-        要求值必须相等
+        要求值必须为select（多对一）或prefetch（多对多）
         """
         return None
 
@@ -207,6 +207,16 @@ class BaseAdminControl(BaseControl):
     _prefix: str = ""  # 需要赋值
 
     @property
+    def field(self):
+        if not self._field:
+            raise AttributeError("prefix can not be none")
+        return self._field
+
+    @field.setter
+    def field(self, field):
+        self._field = field
+
+    @property
     def prefix(self):
         if not self._prefix:
             raise AttributeError("prefix can not be none")
@@ -236,12 +246,11 @@ class BaseAdminControl(BaseControl):
                     field, ManyToManyFieldInstance
                 ):  # todo 还没想好多对多怎么处理 一对多也没想好怎么处理 枚举类型description默认有值，需要自己进行覆盖
                     label, description, placeholder = values.groups()
-                    print(values.groups())
                     self.label = self.label or label or name
                     self.description = self.description or description
                     self.placeholder = self.placeholder or placeholder
 
-            self._field = field
+            self.field = field
         self.prefix = prefix
         if not self.label:
             self.label = name
@@ -249,11 +258,11 @@ class BaseAdminControl(BaseControl):
     def validate(self, value: Any, is_create=False) -> Any:
         if not value and is_create:
             if (
-                callable(self._field.default) and not self._field.null
+                callable(self.field.default) and not self.field.null
             ):  # 不为空且默认值是函数的时候，前段页面如果传null则使用默认值
-                return self._field.default()
+                return self.field.default()
         value = self.amis_2_orm(value)
-        self._field.validate(value)
+        self.field.validate(value)
         return value
 
 
@@ -329,7 +338,7 @@ class PageRouter:
     def name(self) -> str:
         return self._name
 
-    async def router(self, request: Request, resource: str, method: str) -> BaseRes:
+    async def router(self, request: Request, resource: str, method: str) -> AdminRes:
         """
         用于自定义接口的方法
         当自定义该接口之后，会被fast_tmp.admin.endpoint里面的```/{resource}/extra/{prefix}```接口调用

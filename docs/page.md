@@ -410,7 +410,7 @@ from fast_tmp.amis.forms import Form
 from fast_tmp.amis.page import Page
 from fast_tmp.amis.view.chart import Chart
 from fast_tmp.amis.view.divider import Divider
-from fast_tmp.responses import BaseRes
+from fast_tmp.responses import AdminRes
 from fast_tmp.site import PageRouter
 from starlette.requests import Request
 from tortoise.transactions import in_transaction
@@ -418,7 +418,7 @@ from tortoise.transactions import in_transaction
 
 class SalesInfoPage(PageRouter):
 
-    async def router(self, request: Request, prefix: str, method: str) -> BaseRes:
+    async def router(self, request: Request, prefix: str, method: str) -> AdminRes:
         if prefix == "list" and method == "GET":  # 获取请求信息
             starttime = request.query_params.get("starttime") or (
                     datetime.datetime.now() - datetime.timedelta(days=7)).strftime("%Y-%m-%d")
@@ -432,7 +432,7 @@ class SalesInfoPage(PageRouter):
                     f'select date(create_time / 1000, "unixepoch") as "day",count(id) from salesinfo where day>="{starttime}" and day<="{endtime}" group by day order by day'
                 ))[1]
                 if len(data_raw) == 0:
-                    return BaseRes(data=[])
+                    return AdminRes(data=[])
 
                 data_s = []
                 data_v = []
@@ -448,13 +448,13 @@ class SalesInfoPage(PageRouter):
                     else:
                         data_v.append(0)
                     day += datetime.timedelta(days=1)
-                return BaseRes(data={  # 返回echart标准数据
+                return AdminRes(data={  # 返回echart标准数据
                     "title": {"text": "销售情况"},
                     "xAxis": {"type": "category", "data": data_s},
                     "yAxis": {"type": "value"},
                     "series": [{"data": data_v, "type": "line"}]
                 })
-        return BaseRes(data=[])
+        return AdminRes(data=[])
 
     async def get_app_page(self, request: Request) -> Page:
         return Page(

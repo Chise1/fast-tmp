@@ -12,7 +12,7 @@ from fast_tmp.admin.site import GroupAdmin, OperateRecordAdmin, PermissionAdmin,
 from fast_tmp.conf import settings
 from fast_tmp.exceptions import FastTmpError, NoAuthError
 from fast_tmp.models import OperateRecord, Permission, User
-from fast_tmp.responses import BaseRes
+from fast_tmp.responses import AdminRes
 from fast_tmp.site import model_list, register_model_site
 from fast_tmp.utils.token import create_access_token
 
@@ -168,4 +168,4 @@ async def get_site(request: Request):
             )
         if index_page:
             pages.insert(0, {"label": index_page.name, "url": "/", "redirect": index_page.prefix})
-    return BaseRes(data={"pages": pages})
+    return AdminRes(data={"pages": pages})

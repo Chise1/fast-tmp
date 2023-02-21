@@ -1,5 +1,13 @@
 from starlette.requests import Request
-from test_example.admin import AuthorModel, BookModel, FieldTestingModel
+from test_example.admin import (
+    AddressAdmin,
+    AuthorModel,
+    BookModel,
+    EventAdmin,
+    FieldTestingModel,
+    ReporterAdmin,
+    TournamentAdmin,
+)
 from test_example.page import UserSelfInfo
 from tortoise.contrib.fastapi import register_tortoise
 
@@ -7,11 +15,14 @@ from fast_tmp.admin.register import register_static_service
 from fast_tmp.conf import settings
 from fast_tmp.factory import create_app
 from fast_tmp.models import User
-from fast_tmp.responses import BaseRes
+from fast_tmp.responses import AdminRes
 from fast_tmp.site import register_model_site
 
 register_model_site(
-    {"fieldtesting": [FieldTestingModel(), BookModel(), AuthorModel(), UserSelfInfo()]}
+    {
+        "fieldtesting": [FieldTestingModel(), BookModel(), AuthorModel(), UserSelfInfo()],
+        "t2": [ReporterAdmin(), EventAdmin(), AddressAdmin(), TournamentAdmin()],
+    }
 )
 app = create_app()
 app.title = "test_example"
@@ -31,7 +42,7 @@ async def create_user():
 @app.post("/form-test")
 async def test_form(request: Request):
     await request.json()
-    return BaseRes()
+    return AdminRes()
 
 
 register_tortoise(app, config=settings.TORTOISE_ORM, generate_schemas=True)

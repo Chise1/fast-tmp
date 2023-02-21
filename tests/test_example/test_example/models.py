@@ -55,12 +55,15 @@ class Tournament(Model):
 
 
 class Reporter(Model):
-    """Whom is assigned as the reporter"""
+    """
+    Reporter
+    Whom is assigned as the reporter
+    """
 
     id = fields.IntField(pk=True)
     name = fields.TextField()
 
-    events: fields.ReverseRelation["Event"]
+    events: fields.BackwardFKRelation["Event"]
 
     class Meta:
         table = "re_port_er"
@@ -70,7 +73,10 @@ class Reporter(Model):
 
 
 class Event(Model):
-    """Events on the calendar"""
+    """
+    Event
+    Events on the calendar
+    """
 
     event_id = fields.BigIntField(pk=True)
     #: The name

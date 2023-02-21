@@ -5,7 +5,13 @@ from decimal import Decimal
 from typing import Any, Coroutine, Iterable, List, Optional, Tuple
 
 from starlette.requests import Request
-from tortoise import ForeignKeyFieldInstance, ManyToManyFieldInstance, Model, fields
+from tortoise import (
+    BackwardFKRelation,  # OneToOneFieldInstance,
+    ForeignKeyFieldInstance,
+    ManyToManyFieldInstance,
+    Model,
+    fields,
+)
 from tortoise.fields.data import CharEnumFieldInstance, IntEnumFieldInstance
 
 from fast_tmp.amis.actions import DialogAction
@@ -370,6 +376,108 @@ class ForeignKeyControl(BaseAdminControl, RelationSelectApi):
         return self.__need_perms
 
 
+# todo
+# class OneToOneControl(BaseAdminControl, RelationSelectApi):
+#     _control_type = FormItemEnum.select
+#     __need_perms: Optional[Tuple[str, ...]] = None
+#     _control: SelectItem = None  # type: ignore
+#
+#     def related_prefix(self) -> str:
+#         # todo: 增加到文档，创建按钮根据页面注册的类的prefix进行搜索。
+#         return self._field.related_model.__name__.lower()
+#
+#     async def get_selects(
+#             self,
+#             request: Request,
+#             pk: Optional[str],
+#             perPage: Optional[int],
+#             page: Optional[int],
+#             filter: Any = None,
+#     ):
+#         field_model_all = self._field.related_model.all()
+#         # if filter:
+#         #     if isinstance(filter, dict):
+#         #         field_model_all = self._field.related_model.filter(**filter)
+#         #     else:
+#         #         field_model_all = self._field.related_model.filter(filter)
+#         # if perPage is not None and page is not None:
+#         #     field_model = field_model_all.limit(perPage).offset((page - 1) * perPage)
+#         #     count = await field_model_all.count()
+#         #     data = await field_model
+#         #     return ListDataWithPage(
+#         #         total=count,
+#         #         items=[{"value": i.pk, "label": str(i)} for i in data],
+#         #     )
+#         # else:
+#         data = await field_model_all
+#         return {"options": [{"value": i.pk, "label": str(i)} for i in data]}
+#
+#     def prefetch(self) -> Optional[str]:
+#         return "select"
+#
+#     def get_column(self, request: Request) -> Column:
+#         if not self._column:
+#             self._column = Custom(
+#                 label=self.name,
+#                 name=self.name,
+#                 onMount=f"const text = document.createTextNode(value.label);dom.appendChild(text);${self.name}=value.value;",
+#                 onUpdate=f"const value=data.{self.name};dom.current.firstChild.textContent=value.label;${self.name}=value.value;",
+#             )
+#         return self._column
+#
+#     def get_column_inline(self, request: Request) -> Column:
+#         raise AttributeError("foreignkey field can not be used in column inline.")
+#
+#     def get_formitem(self, request: Request, codenames: Iterable[str]) -> FormItem:
+#         from fast_tmp.site import resources
+#
+#         if not self._control:
+#             self._control = SelectItem(
+#                 name=self.name,
+#                 label=self.label,
+#                 source=f"get:{self.prefix}/select/{self.name}",
+#                 labelField="label",
+#                 valueField="value",
+#             )
+#             if not self._field.null:
+#                 self._control.required = True
+#             else:
+#                 self._control.clearable = True
+#         if self.__need_perms:
+#             perm = self.__need_perms[0]
+#             if perm in codenames:
+#                 prefix = self._field.related_model.__name__.lower()
+#                 for model_prefix, model in resources.items():
+#                     if prefix == model_prefix:
+#                         controls = model.get_create_controls(request, codenames)
+#                         self._control.creatable = True
+#                         self._control.createBtnLabel = "新增"
+#                         self._control.addControls = controls
+#                         self._control.addApi = model.prefix + "/create"
+#                         break
+#         return self._control
+#
+#     def orm_2_amis(self, value: Any) -> Any:
+#         if not value:
+#             return {"label": "-", "value": None}
+#         return {"label": str(value), "value": value.pk}
+#
+#     async def set_value(self, request: Request, obj: Model, value: Any):
+#         if value is not None:
+#             if isinstance(value, dict):
+#                 value = value.get("value")
+#             value = await self._field.related_model.filter(pk=value).first()
+#         setattr(obj, self.name, value)
+#
+#     def need_codenames(self, request: Request) -> Tuple[str, ...]:
+#         """
+#         判断，如果用户有对应页面的创建权限，则可以为该表增加创建按钮
+#         """
+#         if self.__need_perms is None:
+#             self.__need_perms = (self.related_prefix() + "_create",)
+#         return self.__need_perms
+
+
 class ManyToManyControl(BaseAdminControl, RelationSelectApi):
     _many = True
     _control_type = FormItemEnum.select
@@ -485,6 +593,75 @@ class ManyToManyControl(BaseAdminControl, RelationSelectApi):
         return [{"label": str(i), "value": i.pk} for i in value]
 
 
+# todo 增加创建按钮?
+class BackwardFKControl(ManyToManyControl):
+    _many = True
+    _control_type = FormItemEnum.select
+
+    def prefetch(self) -> Optional[str]:
+        return "prefetch"
+
+    def get_column(self, request: Request) -> Column:
+        if not self._column:
+            self._column = Operation(
+                label=self.label,
+                buttons=[
+                    DialogAction(
+                        label="查看",
+                        dialog=Dialog(
+                            title=self.label,
+                            body=CRUD(
+                                api=f"get:{self.prefix}/select/{self.name}?pk=$pk",
+                                columns=[
+                                    Column(label="主键", name="pk"),
+                                    Column(label="名称", name="label"),
+                                ],
+                            ),
+                        ),
+                    )
+                ],
+            )
+        return self._column
+
+    async def get_selects(
+        self,
+        request: Request,
+        pk: Optional[str],
+        perPage: Optional[int],
+        page: Optional[int],
+        filter: Any = None,
+    ):
+        related_model = self._field.related_model
+        if pk is not None:
+            queryset = related_model.filter(**{self._field.related_name: pk})
+        else:
+            queryset = related_model.all()
+        # if filter:
+        #     if isinstance(filter, dict):
+        #         queryset = queryset.filter(**filter)
+        #     else:
+        #         queryset = queryset(filter)
+        if pk is not None:
+            count = await queryset.count()
+            data = await queryset
+            return ListDataWithPage(
+                total=count,
+                items=[{"value": i.pk, "label": str(i)} for i in data],
+            )
+        else:
+            data = await queryset
+            return {"options": [{"value": i.pk, "label": str(i)} for i in data]}
+
+    def get_formitem(self, request: Request, codenames: Iterable[str]) -> FormItem:
+        raise AttributeError("BackwardFKControl field can not be created")
+
+    def get_column_inline(self, request: Request) -> Column:
+        raise AttributeError("manytomany field can not be used in column inline.")
+
+    def orm_2_amis(self, value: Any) -> Any:
+        return [{"label": str(i), "value": i.pk} for i in value]
+
+
 class FileControl(BaseAdminControl):
     _control_type = FormItemEnum.input_file
     prefix = ""
@@ -588,6 +765,15 @@ def create_column(
         return ForeignKeyControl(
             "", field_name, field_type.null, field_type.default, field=field_type, prefix=prefix
         )
+    elif isinstance(field_type, BackwardFKRelation):  # 多对一反向
+        return BackwardFKControl(
+            "", field_name, field_type.null, field_type.default, field=field_type, prefix=prefix
+        )
+
+    # elif isinstance(field_type, OneToOneFieldInstance):
+    #     return OneToOneControl(
+    #         "", field_name, field_type.null, field_type.default, field=field_type, prefix=prefix
+    #     )
     elif isinstance(field_type, ManyToManyFieldInstance):
         return ManyToManyControl(
             "", field_name, field_type.null, field_type.default, field=field_type, prefix=prefix

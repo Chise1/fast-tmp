@@ -1,4 +1,4 @@
-from test_example.models import Author, Book, FieldTesting
+from test_example.models import Address, Author, Book, Event, FieldTesting, Reporter, Tournament
 
 from fast_tmp.site import ModelAdmin
 
@@ -62,8 +62,33 @@ class BookModel(ModelAdmin):
 
 class AuthorModel(ModelAdmin):
     model = Author
-    list_display = ("name", "birthday")
-    create_fields = ("name", "birthday")
+    list_display = ("name", "birthday", "books")
+    create_fields = ("name", "birthday", "books")
     inline = ("name",)
     update_fields = ("name", "birthday")
     filters = ("birthday", "birthday__gte", "birthday__lte")
+
+
+class TournamentAdmin(ModelAdmin):
+    model = Tournament
+    list_display = ("id", "name", "desc")
+    create_fields = ("name", "desc")
+
+
+class ReporterAdmin(ModelAdmin):
+    model = Reporter
+    list_display = ("name", "events")
+    create_fields = list_display
+    update_fields = create_fields
+
+
+class EventAdmin(ModelAdmin):
+    model = Event
+    list_display = ("name", "tournament", "address", "reporter")
+    create_fields = list_display
+
+
+class AddressAdmin(ModelAdmin):
+    model = Address
+    list_display = ("city", "street", "event")
+    create_fields = list_display

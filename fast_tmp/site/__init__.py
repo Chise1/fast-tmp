@@ -122,6 +122,9 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
         """
         页面创建按钮
         """
+        create_controls = self.get_create_controls(request, codenames)
+        if not create_controls:
+            return []
         return [
             DialogAction(
                 label="新增",
@@ -131,7 +134,7 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
                         name=f"新增{self.name}",
                         title=f"新增{self.name}",
                         # tips: 你的field字段传实例了吗？
-                        body=self.get_create_controls(request, codenames),
+                        body=create_controls,
                         api=f"post:{self.prefix}/create",
                     ),
                 ),
@@ -208,9 +211,9 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
         if buttons:
             columns.append(buttons)
         crud = CRUD(
-            api=self._prefix + "/list",
+            api=self.prefix + "/list",
             columns=columns,
-            quickSaveItemApi=self._prefix + "/patch/" + "$pk",
+            quickSaveItemApi=self.prefix + "/patch/" + "$pk",
             syncLocation=False,
         )
         if len(self.get_filters(request)) > 0 and self.prefix + "_list" in codenames:
@@ -382,7 +385,7 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
 
     def make_fields(self):
         if not self.fields.get("pk"):
-            self.fields["pk"] = create_column("pk", self.model._meta.pk, self._prefix)
+            self.fields["pk"] = create_column("pk", self.model._meta.pk, self.prefix)
         s = []
         s.extend(self.list_display)
         s.extend(self.create_fields)
@@ -395,7 +398,7 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
                 if not field_type:
                     logger.error(f"can not found field {field} in {self.model.__name__}")
                     continue
-                self.fields[field] = create_column(field, field_type, self._prefix)
+                self.fields[field] = create_column(field, field_type, self.prefix)
 
     def get_formitem_field(self, name: str) -> BaseControl:
         ret = self.fields.get(name)

@@ -5,7 +5,7 @@ from starlette.responses import RedirectResponse, Response
 from tortoise.exceptions import BaseORMException
 
 from fast_tmp.exceptions import FastTmpError, NoAuthError
-from fast_tmp.responses import BaseRes
+from fast_tmp.responses import AdminRes
 
 
 async def auth_exception_handler(request: Request, exc: NoAuthError):
@@ -19,4 +19,4 @@ async def fasttmp_exception_handler(request: Request, exc: FastTmpError):
 
 
 async def tortoise_exception_handler(request: Request, exc: BaseORMException):
-    return JSONResponse(content=BaseRes(msg=str(exc), status=400).dict(), status_code=200)
+    return JSONResponse(content=AdminRes(msg=str(exc), status=400).dict(), status_code=200)

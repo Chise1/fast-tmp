@@ -8,13 +8,13 @@ class ListDataWithPage(BaseModel):  # 带分页的数据
     total: int = 0
 
 
-class BaseRes(BaseModel):
+class AdminRes(BaseModel):
     status: int = 0
     msg: str = ""
     data: Any = {}
 
 
-class FieldErrorRes(BaseRes):
+class FieldErrorRes(AdminRes):
     status: int = 422
     msg: str = ""
     data: Any = None

@@ -7,7 +7,7 @@ from starlette.requests import Request
 from fast_tmp.admin.depends import get_staff
 from fast_tmp.conf import settings
 from fast_tmp.exceptions import PermError
-from fast_tmp.responses import BaseRes
+from fast_tmp.responses import AdminRes
 from fast_tmp.site import ModelSession, PageRouter, get_model_site
 
 router = APIRouter()
@@ -25,7 +25,7 @@ async def list_view(
 ):
     await page_model.check_perm(request, prefix + "_list")
     datas = await page_model.list(request, perPage, page, orderBy, orderDir)
-    return BaseRes(data=datas)
+    return AdminRes(data=datas)
 
 
 @router.get("/{prefix}/select/{field_name}", dependencies=[Depends(get_staff)])
@@ -43,7 +43,7 @@ async def select_view(
     """
     await page_model.check_perm(request, prefix + "_list")
     datas = await page_model.select_options(request, field_name, pk, perPage, page)
-    return BaseRes(data=datas)
+    return AdminRes(data=datas)
 
 
 @router.post("/{prefix}/patch/{pk}", dependencies=[Depends(get_staff)])
@@ -59,7 +59,7 @@ async def patch_data(
     await page_model.check_perm(request, prefix + "_update")
     data = await request.json()
     await page_model.patch(request, pk, data)
-    return BaseRes().dict()
+    return AdminRes().dict()
 
 
 @router.put("/{prefix}/update/{pk}", dependencies=[Depends(get_staff)])
@@ -83,7 +83,7 @@ async def update_view(
 ):
     await page_model.check_perm(request, prefix + "_update")
     data = await page_model.get_update(request, pk)
-    return BaseRes(data=data)
+    return AdminRes(data=data)
 
 
 @router.post("/{prefix}/create", dependencies=[Depends(get_staff)])
@@ -106,7 +106,7 @@ async def delete_func(
 ):
     await page_model.check_perm(request, prefix + "_delete")
     await page_model.delete(request, pk)
-    return BaseRes()
+    return AdminRes()
 
 
 @router.get("/{prefix}/schema", dependencies=[Depends(get_staff)])
@@ -114,7 +114,7 @@ async def get_schema(
     request: Request,
     page: PageRouter = Depends(get_model_site),
 ):
-    return BaseRes(data=(await page.get_app_page(request)).dict(exclude_none=True))
+    return AdminRes(data=(await page.get_app_page(request)).dict(exclude_none=True))
 
 
 # todo 考虑清除没有被使用的文件 考虑对上传的文件进行校验，判断该字段是否应该上传文件
@@ -144,7 +144,7 @@ async def update_file(
     async with aiofiles.open(os.path.join(cwd, file.filename), "wb") as f:
         await f.write(await file.read())
     res_path = f"/{settings.MEDIA_ROOT}/{prefix}/{name}/{file.filename}"
-    return BaseRes(data={"value": res_path})
+    return AdminRes(data={"value": res_path})
 
 
 @router.api_route("/{prefix}/extra/{resource}", methods=["POST", "GET", "DELETE", "PUT", "PATCH"])

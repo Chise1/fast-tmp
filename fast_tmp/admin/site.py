@@ -12,7 +12,7 @@ from fast_tmp.amis.page import Page
 from fast_tmp.amis.view.divider import Divider
 from fast_tmp.exceptions import NoAuthError, NotFoundError
 from fast_tmp.models import Group, OperateRecord, Permission, User
-from fast_tmp.responses import BaseRes, ListDataWithPage
+from fast_tmp.responses import AdminRes, ListDataWithPage
 from fast_tmp.site import ModelAdmin
 from fast_tmp.site.field import Password
 
@@ -66,11 +66,11 @@ class PermissionAdmin(ModelAdmin):
         buttons.append(AjaxAction(label="同步权限", api=f"post:{self.prefix}/extra/migrate"))
         return buttons
 
-    async def router(self, request: Request, resource: str, method: str) -> BaseRes:
+    async def router(self, request: Request, resource: str, method: str) -> AdminRes:
         if await self.model.migrate_permissions():
-            return BaseRes(msg="success update table permission")
+            return AdminRes(msg="success update table permission")
         else:
-            return BaseRes(msg="success update table failed")
+            return AdminRes(msg="success update table failed")
 
 
 # todo 需要完善创建、更新和删除的操作记录
@@ -192,13 +192,13 @@ class UserInfo(ModelAdmin):
             syncLocation=False,
         )
 
-    async def router(self, request: Request, resource: str, method: str) -> BaseRes:
+    async def router(self, request: Request, resource: str, method: str) -> AdminRes:
         user = await active_user_or_none(request.cookies.get("access_token"))
         if not user or not user.is_staff:
             raise NoAuthError()
         if resource == "info":
             if method == "GET":
-                return BaseRes(data={"name": user.name, "password": ""})
+                return AdminRes(data={"name": user.name, "password": ""})
             if method == "PUT":
                 data = await request.json()
                 if data.get("name"):
@@ -206,5 +206,5 @@ class UserInfo(ModelAdmin):
                 if data.get("password"):
                     user.set_password(data["password"])
                 await user.save()
-                return BaseRes(msg="修改成功")
+                return AdminRes(msg="修改成功")
         raise NotFoundError("not found function.")

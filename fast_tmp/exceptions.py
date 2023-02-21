@@ -3,35 +3,35 @@ from typing import Dict, Optional
 from fastapi import HTTPException
 from starlette import status
 
-from fast_tmp.responses import BaseRes, FieldErrorRes
+from fast_tmp.responses import AdminRes, FieldErrorRes
 
 
 class FastTmpError(HTTPException):
     status_code = 200
 
     def __init__(self, content: str):
-        self.detail = BaseRes(status=400, msg=content).json()
+        self.detail = AdminRes(status=400, msg=content).json()
 
 
 class NoAuthError(HTTPException):
     def __init__(self):
         self.status_code = status.HTTP_401_UNAUTHORIZED
-        self.detail = BaseRes(msg="please sign in ").json()
+        self.detail = AdminRes(msg="please sign in ").json()
 
 
 class TmpValueError(FastTmpError):
     def __init__(self, content: str):
-        self.detail = BaseRes(status=400, msg=content or "field vale is error").json()
+        self.detail = AdminRes(status=400, msg=content or "field vale is error").json()
 
 
 class NotFoundError(FastTmpError):
     def __init__(self, content: Optional[str] = None):
-        self.detail = BaseRes(status=400, msg=content or "not found model").json()
+        self.detail = AdminRes(status=400, msg=content or "not found model").json()
 
 
 class PermError(FastTmpError):
     def __init__(self, content: Optional[str] = None):
-        self.detail = BaseRes(status=400, msg=content or "you have no permission").json()
+        self.detail = AdminRes(status=400, msg=content or "you have no permission").json()
 
 
 class FieldsError(FastTmpError):
