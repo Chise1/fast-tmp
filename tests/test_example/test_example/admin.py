@@ -78,14 +78,14 @@ class TournamentAdmin(ModelAdmin):
 class ReporterAdmin(ModelAdmin):
     model = Reporter
     list_display = ("name", "events")
-    create_fields = list_display
+    create_fields = ("name",)
     update_fields = create_fields
 
 
 class EventAdmin(ModelAdmin):
     model = Event
     list_display = ("name", "tournament", "address", "reporter")
-    create_fields = list_display
+    create_fields = ("name", "tournament", "address", "reporter")
 
 
 class AddressAdmin(ModelAdmin):

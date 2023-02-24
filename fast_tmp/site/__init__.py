@@ -20,7 +20,7 @@ from fast_tmp.exceptions import FieldsError, NotFoundError, PermError, TmpValueE
 from fast_tmp.models import Permission
 from fast_tmp.responses import ListDataWithPage
 from fast_tmp.site.base import BaseControl, ModelFilter, ModelSession, PageRouter
-from fast_tmp.site.field import RelationSelectApi, create_column
+from fast_tmp.site.field import PkControl, RelationSelectApi, create_column
 from fast_tmp.site.filter import make_filter_by_str
 
 logger = logging.getLogger(__file__)
@@ -227,6 +227,7 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
     def get_list_display_with_pk(self) -> Dict[str, BaseControl]:
         """
         去除多对多字段
+        检查外键，如果存在外键
         """
         ret = self.get_list_distplay()
         ret["pk"] = self.get_formitem_field("pk")
@@ -385,7 +386,7 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
 
     def make_fields(self):
         if not self.fields.get("pk"):
-            self.fields["pk"] = create_column("pk", self.model._meta.pk, self.prefix)
+            self.fields["pk"] = PkControl("pk", "pk", True, Any)
         s = []
         s.extend(self.list_display)
         s.extend(self.create_fields)
