@@ -1,7 +1,6 @@
 import os
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SECRET_KEY = os.getenv("SECRET_KEY") # todo 环境变量默认配置该参数
 
 DEBUG = True
 
