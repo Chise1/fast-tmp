@@ -1,7 +1,7 @@
 import os
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SECRET_KEY = "{{ random_ascii_string(64, punctuation=True) }}" # 如果出现\x，则会报错，需要删除\x
+SECRET_KEY = os.getenv("SECRET_KEY") # todo 环境变量默认配置该参数
 
 DEBUG = True
 
