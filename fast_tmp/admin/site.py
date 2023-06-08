@@ -1,6 +1,7 @@
-from typing import Iterable, List, Optional
+from typing import Iterable, List, Optional, Union
 
 from starlette.requests import Request
+from starlette.responses import Response
 
 from fast_tmp.admin.depends import active_user_or_none
 from fast_tmp.amis.actions import AjaxAction
@@ -66,7 +67,9 @@ class PermissionAdmin(ModelAdmin):
         buttons.append(AjaxAction(label="同步权限", api=f"post:{self.prefix}/extra/migrate"))
         return buttons
 
-    async def router(self, request: Request, resource: str, method: str) -> AdminRes:
+    async def router(
+        self, request: Request, resource: str, method: str
+    ) -> Union[AdminRes, Response]:
         if await self.model.migrate_permissions():
             return AdminRes(msg="success update table permission")
         else:

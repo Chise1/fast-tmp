@@ -25,6 +25,8 @@ class CommonFilter(ModelFilter):
     """
 
     def queryset(self, request: Request, queryset: QuerySet, val: Any) -> QuerySet:
+        if not val:
+            return queryset
         val = self._field.amis_2_orm(val)
         return queryset.filter(**{self.name: val})
 

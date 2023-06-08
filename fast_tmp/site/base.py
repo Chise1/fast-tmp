@@ -1,9 +1,10 @@
 import logging
 import re
 from abc import abstractmethod
-from typing import Any, Coroutine, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Coroutine, Dict, Iterable, List, Optional, Tuple, Union
 
 from starlette.requests import Request
+from starlette.responses import Response
 from tortoise import ManyToManyFieldInstance, Model
 from tortoise.queryset import QuerySet
 
@@ -338,7 +339,9 @@ class PageRouter:
     def name(self) -> str:
         return self._name
 
-    async def router(self, request: Request, resource: str, method: str) -> AdminRes:
+    async def router(
+        self, request: Request, resource: str, method: str
+    ) -> Union[AdminRes, Response]:
         """
         用于自定义接口的方法
         当自定义该接口之后，会被fast_tmp.admin.endpoint里面的```/{resource}/extra/{prefix}```接口调用

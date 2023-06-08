@@ -1,4 +1,5 @@
 import os.path
+import uuid
 from typing import Optional
 
 from fastapi import APIRouter, Depends, UploadFile
@@ -141,7 +142,7 @@ async def update_file(
     cwd = os.path.join(settings.MEDIA_PATH, prefix, name)
     if not os.path.exists(cwd):
         os.mkdir(cwd)
-    async with aiofiles.open(os.path.join(cwd, file.filename), "wb") as f:
+    async with aiofiles.open(os.path.join(cwd, file.filename or uuid.uuid4().__str__()), "wb") as f:
         await f.write(await file.read())
     res_path = f"/{settings.MEDIA_ROOT}/{prefix}/{name}/{file.filename}"
     return AdminRes(data={"value": res_path})

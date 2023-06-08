@@ -43,6 +43,7 @@ class ActionTypeEnum(str, Enum):
     prev = "prev"
     next = "next"
     close = "close"
+    download = "download"
 
 
 class ButtonSize(
