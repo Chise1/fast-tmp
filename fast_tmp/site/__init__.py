@@ -212,6 +212,7 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
             columns.append(buttons)
         crud = CRUD(
             api=self.prefix + "/list",
+            name=self.prefix.replace("/",""),
             columns=columns,
             quickSaveItemApi=self.prefix + "/patch/" + "$pk",
             syncLocation=False,

@@ -26,6 +26,7 @@ class AjaxAction(_Action):
     actionType = ActionTypeEnum.ajax
     confirmText: Optional[str] = None  # 如果配置了这个字段则会有弹出框提示
     api: str
+    target:Optional[str]
     redirect: Optional[str] = None  # 如果配置路径，可以实现跳转
     feedback: Optional[FeedBack] = None
     # 如果重载需要携带参数，则可以输入：{"reload": "xxx?a=${a}&b=${b}"}

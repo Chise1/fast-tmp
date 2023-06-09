@@ -8,6 +8,7 @@ from fast_tmp.amis.forms import FilterModel
 class CRUD(SchemaNode):
     type = "crud"
     api: str  # 相对路径
+    name:Optional[str]
     # 可以在后面跟上按钮，则默认每一行都有按钮，
     # 参考：https://baidu.gitee.io/amis/docs/components/dialog?page=1
     columns: List[Union[Column, _Action, Operation]]
