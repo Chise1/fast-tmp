@@ -35,7 +35,7 @@ class _Action(SchemaNode):
 
     type = "button"
     label: str
-    actionType: Union[ActionTypeEnum, str]
+    actionType: ActionTypeEnum
     icon: Optional[str]
     size: Optional[Union[ButtonSize, str]] = None
     level: ButtonLevelEnum = ButtonLevelEnum.primary
