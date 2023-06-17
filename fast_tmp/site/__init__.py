@@ -212,7 +212,7 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
             columns.append(buttons)
         crud = CRUD(
             api=self.prefix + "/list",
-            name=self.prefix.replace("/",""),
+            name=self.prefix.replace("/", ""),
             columns=columns,
             quickSaveItemApi=self.prefix + "/patch/" + "$pk",
             syncLocation=False,
@@ -234,7 +234,7 @@ class ModelAdmin(ModelSession, PageRouter):  # todo inline字段必须都在upda
         ret["pk"] = self.get_formitem_field("pk")
         return ret
 
-    async def get_app_page(self, request: Request) -> Page:
+    async def get_app_page(self, request: Request) -> Union[Page, dict]:
         codenames = await self.permission_code(request)
         return Page(title=self.name, body=self.get_crud(request, codenames))
 

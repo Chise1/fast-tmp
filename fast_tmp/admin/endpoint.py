@@ -1,11 +1,12 @@
 import os.path
 import uuid
-from typing import Optional
+from typing import Optional, Union
 
 from fastapi import APIRouter, Depends, UploadFile
 from starlette.requests import Request
 
 from fast_tmp.admin.depends import get_staff
+from fast_tmp.amis.page import Page
 from fast_tmp.conf import settings
 from fast_tmp.exceptions import PermError
 from fast_tmp.responses import AdminRes
@@ -114,8 +115,11 @@ async def delete_func(
 async def get_schema(
     request: Request,
     page: PageRouter = Depends(get_model_site),
-):
-    return AdminRes(data=(await page.get_app_page(request)).dict(exclude_none=True))
+) -> Union[dict, AdminRes]:
+    data = await page.get_app_page(request)
+    if isinstance(data, Page):
+        data = data.dict(exclude_none=True)
+    return AdminRes(data=data)
 
 
 # todo 考虑清除没有被使用的文件 考虑对上传的文件进行校验，判断该字段是否应该上传文件

@@ -344,6 +344,7 @@ class ForeignKeyControl(BaseAdminControl, RelationSelectApi):
                 source=f"get:{self.prefix}/select/{self.name}",
                 labelField="label",
                 valueField="value",
+                clearable=True,
             )
             if not self._field.null:
                 self._control.required = True

@@ -314,7 +314,7 @@ class PageRouter:
     _prefix: str
 
     @abstractmethod
-    async def get_app_page(self, request: Request) -> Page:
+    async def get_app_page(self, request: Request) -> Union[Page, dict]:
         """
         继承该类并实现该接口,返回一个Page实例
         该接口会被fast_tmp.admin.endpoint里面的```/{resource}/schema```接口调用

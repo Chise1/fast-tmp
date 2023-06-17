@@ -158,7 +158,7 @@ class UserInfo(ModelAdmin):
         count = await base_queryset.count()
         return ListDataWithPage(total=count, items=res)
 
-    async def get_app_page(self, request: Request) -> Page:
+    async def get_app_page(self, request: Request) -> Union[Page, dict]:
         return Page(
             title="个人信息",
             body=[

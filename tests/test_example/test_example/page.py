@@ -1,6 +1,8 @@
 """
 测试插件功能，支持自己写入规则
 """
+from typing import Union
+
 from starlette.requests import Request
 
 from fast_tmp.amis.formitem import FormItem
@@ -18,7 +20,7 @@ class UserSelfInfo(PageRouter):
     def __init__(self):
         super().__init__("info", "info")
 
-    async def get_app_page(self, request: Request) -> Page:
+    async def get_app_page(self, request: Request) -> Union[Page, dict]:
         return Page(
             title="userselfinfo",
             body=[

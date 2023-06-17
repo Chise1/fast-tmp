@@ -148,6 +148,7 @@ class TestPermission(BaseSite):
                         {
                             "type": "crud",
                             "api": "book/list",
+                            "name": "book",
                             "columns": [
                                 {"name": "name", "label": "name"},
                                 {
@@ -158,7 +159,7 @@ class TestPermission(BaseSite):
                                     "onUpdate": "const value=data.author;dom.current.firstChild.textContent=value.label;$author=value.value;",
                                 },
                                 {"name": "rating", "label": "rating"},
-                                {"label": "cover", "name": "cover", "type": "image"},
+                                {"type": "image", "name": "cover", "label": "cover"},
                             ],
                             "affixHeader": False,
                             "quickSaveItemApi": "book/patch/$pk",

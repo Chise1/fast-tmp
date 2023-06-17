@@ -26,12 +26,14 @@ class AjaxAction(_Action):
     actionType = ActionTypeEnum.ajax
     confirmText: Optional[str] = None  # 如果配置了这个字段则会有弹出框提示
     api: str
-    target:Optional[str]
+    target: Optional[str]
     redirect: Optional[str] = None  # 如果配置路径，可以实现跳转
     feedback: Optional[FeedBack] = None
     # 如果重载需要携带参数，则可以输入：{"reload": "xxx?a=${a}&b=${b}"}
     reload: Optional[str] = None  # 可以把name传递过来，则请求成功自动刷新,页面刷新则为window，多个用逗号分开
     message: Optional[ActionMessage] = None  # 修改默认toast信息
+    disabled: Optional[bool]
+    disabledTip: Optional[str]
 
 
 class CopyAction(_Action):
